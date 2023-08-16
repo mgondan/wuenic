@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: macOS
+        os: [macOS]
     steps:
       - uses: actions/checkout@v2
       - uses: royratcliffe/swi-prolog-pack-cover@main
