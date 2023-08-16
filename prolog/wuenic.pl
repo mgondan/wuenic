@@ -1,7 +1,7 @@
 :- module(wuenic, [ test_wuenic/0 ]).
 
 test_wuenic :-
-  true.
+  fail.
 
 :- begin_tests(wuenic).
 % :- use_module(library(wuenic)).
