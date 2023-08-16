@@ -1,3 +1,17 @@
+:- module(wuenic_bgd, 
+  [ country/2,
+    estimate_required/5,
+    admin/4,
+    gov/4,
+    vaccinated/4,
+    target/4,
+    legacy/4,
+    survey_results/6,
+    wgd/10,
+    births_UNPD/3,
+    si_UNPD/3
+  ].
+
 %  Bangladesh - BGD
 %  Sun May 28 11:37:15 2023
 
