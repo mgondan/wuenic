@@ -1,6 +1,6 @@
 /* wuenic_ver_3.pl version 3.
 
-Implements WHO & UNICEF rules for estimating national 
+Implements WHO & UNICEF rules for estimating national
 infant immunization coverage. Includes explanations and
 grade of confidence in estimate.
 
@@ -13,7 +13,7 @@ Based on methods described in:
   http://www.who.int/bulletin/volumes/87/7/08-053819.pdf
 
   Burton A, Gacic-Dobo M, Karimov R, Kowalski R.
-  A computational logic-based representation of the WHO and UNICEF 
+  A computational logic-based representation of the WHO and UNICEF
   estimates of national immunization coverage. DRAFT 23 January 2011.
 
   Articles and code available at: http://sites.google.com/site/wuenic/
@@ -32,7 +32,7 @@ depends upon: xsb 3.1 prolog compiler; library: lists, standard.
 http://xsb.sourceforge.net/
 
 Created:       6 November 2011.
-Last update:   6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv1 or mcv2 GoC  
+Last update:   6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv1 or mcv2 GoC
 
 Naming conventions:
     predicates names: lower_case_underscore_separated
@@ -48,24 +48,24 @@ Auxaliarity predicates and utility routines appear at the end of the module.
 %TBD: Delete (or fix) bubble up GoC.
 %TBD: Add green line
 
-working group decisions:	comment		
-							ignoreGov, acceptGov, *modifyGov,				
+working group decisions:	comment
+							ignoreGov, acceptGov, *modifyGov,
 							ignoreAdmin, acceptAdmin, *modifyAdmin,
 							ignoreReported, acceptReported, *modifiyReported,
 							ignoreSurvey, acceptSurvey, modifySurvey,
-							interpolate, calibrate, *use_reported,  
+							interpolate, calibrate, *use_reported,
 							assignAnchor, assignWUENIC, assignGoC.
-							
-Input atomic sentences: 
+
+Input atomic sentences:
     admin(country,vaccine,year,percent coverage).
     gov(country,vaccine,year,percent coverge).
-    legacy(country,vaccine,year,percent coverage). 
+    legacy(country,vaccine,year,percent coverage).
     survey_results(country,vaccine,year,surveyid,description,percent coverage).
     estimate_required(country,vaccine,year,presentation,comment).
     wgd(country,vaccine,year1,year2,action,explanation1,coverageID1,coverageAssign1,coverageID2,coverageAsign2)
 	births_UNPD(country,year,births)
 	si_UNPD(country,year,births_surviving_to_age_one)
-	
+
 WHO and UNICEF working group memebers as of 1 January 2010 - 30 April 2012:
         Dr David BROWN, UNICEF/New York (dbrown@unicef.org)
         Mr Tony BURTON, WHO/Geneva  (burtona@who.int)
@@ -73,7 +73,7 @@ WHO and UNICEF working group memebers as of 1 January 2010 - 30 April 2012:
         Mr Rouslan KARIMOV, UNICEF/NEW YORK (rkarimov@unicef.org)
         Dr Robert KOWALSKI, Imperial College London (r.kowalski@imperial.ac.uk)
  */
- 
+
 % use xsb tabling feature to increases inference time.
 % ---------------------------------------------------
 :- table anchor_point/6.
@@ -112,7 +112,7 @@ wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2
 births_UNPD(country,year,births).
 si_UNPD(country,year,surviving_infants).
 
-% Load country-specific predicates describing data, survey_results, 
+% Load country-specific predicates describing data, survey_results,
 % working group decisions and whether an estimate is required.
 % Call estimate/0 to create country-specific estimates.
 % -----------------------------------------------------
@@ -152,8 +152,8 @@ estimate :-
 		SurveyInfo,
 		Rule,
 		Explanation],
-		
- 	   wuenic(
+
+	   wuenic(
 		CountryCode,
 		Vaccine,
 		Year,
@@ -172,11 +172,11 @@ estimate :-
 		Source,
 		SeriesValue,
 		SurveyInfo),
-		
+
 		Estimates),
-	       
+
 	open_out_file(OutFile,'wuenic.out',	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
-	output_results(Estimates,OutFile), close(OutFile).	       
+	output_results(Estimates,OutFile), close(OutFile).
 
 % Final estimate where there are wuenic values
 % --------------------------------------------
@@ -184,111 +184,111 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	estimate_required(C,V,Y,_,_),
 	wuenic_I(C,V,Y,Rule,Explain,Cov),
 	bound_0_100(Cov,Coverage),
-	
+
 	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 	%assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 
-	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,ReportedGoC,SeriesValue,Source,SurveyInfo),
+	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo),
 	change_from_previous_revision(C,V,Y,Coverage,Change),
 	collect_explanations(C,V,Y,Text),
 	concat_atom([Explain,' ',Text,' ',Change,' ',GoCExplanation],Explanation).
 
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
-	
+
 	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC) :-
 		not(member(V,['rcv1'])),
 		assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC).
 
 	assign_Grade_of_Confidence(C,rcv1,Y,Rule,Coverage,GoCExplanation,GC) :-
-		member(V,['rcv1']),
 		estimate_required(C,rcv1,Y,_,na),
 		assign_GoC(C,mcv1,Y,Rule,Coverage,GoCExplanation,GC).
 
 	assign_Grade_of_Confidence(C,rcv1,Y,Rule,Coverage,GoCExplanation,GC) :-
-		member(V,['rcv1']),
 		estimate_required(C,rcv1,Y,_,mcv2),
 		assign_GoC(C,mcv2,Y,Rule,Coverage,GoCExplanation,GC).
 
 	% GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars) - modified 4 July 2016 TB
 	% --------------------------------------------------------------------------------------------------
 	assign_GoC(C,V,Y,Rule,Coverage,Support,'3') :- three_stars(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'2') :- two_stars(C,V,Y,Rule,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
+	assign_GoC(C,V,Y,Rule,_Coverage,Support,'2') :- two_stars(C,V,Y,Rule,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- challenge(C,V,Y,Rule,Coverage,_),
-												   setof(Evidence,challenge(C,V,Y,Rule,Coverge,Evidence),List),
+												   setof(Evidence,challenge(C,V,Y,Rule,Coverage,Evidence),List), % MG: changed Coverge to Coverage
 												   concat_atom(['Estimate challenged by: ',List],Support),
 												   not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- no_data(C,V,Y,Rule,Coverge,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,Rule,_,Support,GC) :- workingGroupDecision(C,V,Y,assignGoC,Explanation,_,GC),
+	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- no_data(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
+	assign_GoC(C,V,Y,_Rule,_,Support,GC) :- workingGroupDecision(C,V,Y,assignGoC,Explanation,_,GC),
 												   concat_atom(['GoC=Assigned by working group. ',Explanation],Support).
 
 	% Supported by reported data, survey and denominator
 	% --------------------------------------------------
-	three_stars(C,V,Y,Rule,Coverage,'GoC=R+ S+ D+') :-
+        % MG, issue: three_stars does not return Coverage
+	three_stars(C,V,Y,Rule,_Coverage,'GoC=R+ S+ D+') :-
 		goc_reported_condition(C,V,Y,Rule,'R+'),
 		goc_survey_condition(C,V,Y,Rule,'S+'),
 		goc_denominator_condition(C,V,Y,'D+').
 
-		goc_reported_condition(C,V,Y,Rule,'R+') :-
+		% MG, issue: Rule = R? (here and below)
+                goc_reported_condition(C,V,Y,_Rule,'R+') :-
 			reported(C,V,Y,_,_),
 			wuenic_I(C,V,Y,R,_,_),
 			member(R,['R:','R: AP']).
-			
-		goc_reported_condition(C,V,Y,Rule,'R-') :-
+
+		goc_reported_condition(C,V,Y,_Rule,'R-') :-
 			reported(C,V,Y,_,_),
 			wuenic_I(C,V,Y,R,_,_),
 			not(member(R,['R:','R: AP'])).
-				
+
 		goc_survey_condition(C,V,Y,Rule,'S+') :-
 			supporting_survey_in_scope(C,V,Y,Rule),
 			not(challenging_survey_in_scope(C,V,Y)).
-			
+
 		goc_survey_condition(C,V,Y,_,'S-') :-
 			challenging_survey_in_scope(C,V,Y).
-			
-%  simplify previous rule to.					
+
+%  simplify previous rule to.
 %			supporting_survey_in_scope(C,V,Y,Rule) :-
 %				survey(C,V,Y,_,_),
 %				wuenic_I(C,V,Y,'S: AP',_,_).
 
 % rewrite rule to look at relationship between estimate rule and
 % surveys in scope rule rather than difference in COV and SurveyCoverage
-%								
+%
 			supporting_survey_in_scope(C,V,Y,_) :-
 				estimate_required(C,V,SurveyYear,_,_),
 				survey(C,V,SurveyYear,_,SurveyCoverage),
 				confidence_survey_scope(Scope),
 				abs(Y - SurveyYear) =< Scope,
 				confidence_survey_threshold(Threshold),
-				wuenic_I(C,V,Y,_,Explanation,Cov),
+				wuenic_I(C,V,Y,_,_Explanation,Cov),
 				abs(Cov - SurveyCoverage) =< Threshold.
 
 % rewrite to look for surveys that challenge surveys.
 % Modified 2017-05-05 Burton
-%				
+%
 			challenging_survey_in_scope(C,V,Y) :-
 				estimate_required(C,V,SurveyYear,_,_),
 				survey(C,V,SurveyYear,_,SurveyCoverage),
 				confidence_survey_scope(Scope),
 				abs(Y - SurveyYear) =< Scope,
 				confidence_survey_threshold(Threshold),
-				wuenic_I(C,V,Y,_,Explanation,Cov),
+				wuenic_I(C,V,Y,_,_Explanation,Cov),
 				abs(Cov - SurveyCoverage) > Threshold.
-		
+
 		goc_denominator_condition(C,V,Y,'D+') :-
 			goc_unpd_recal(C,V,Y),
 			recal_unpd(C,V,Y,CovRec),
 			confidence_UNPD_threshold(Threshold),
-			wuenic_I(C,V,Y,Rule,Explain,Coverage),
+			wuenic_I(C,V,Y,_Rule,_Explain,Coverage),
 			abs(Coverage - CovRec) < Threshold.
 		goc_denominator_condition(C,V,Y,'D-') :-
 			goc_unpd_recal(C,V,Y),
 			recal_unpd(C,V,Y,CovRec),
 			confidence_UNPD_threshold(Threshold),
-			wuenic_I(C,V,Y,Rule,Explain,Coverage),
+			wuenic_I(C,V,Y,_Rule,_Explain,Coverage),
 			abs(Coverage - CovRec) >= Threshold.
-						
+
 			% Ensure unpd data exist.
 			% ------------------------
 			goc_unpd_recal(C,V,Y) :- vaccinated(C,V,Y,_), births_UNPD(C,Y,_), si_UNPD(C,Y,_).
@@ -297,7 +297,7 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 			% and births and surviving infants from UNPD estimates.
 			% Births used for bcg and hepb birth dose, surviving infants
 			% for remaining vaccines.
-			% ------------------------	
+			% ------------------------
 			recal_unpd(C,V,Y,CovRec) :-
 				member(V,['bcg','hepbb']),
 				vaccinated(C,V,Y,Vaccinated),
@@ -305,10 +305,10 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 				CovRec is Vaccinated / Births * 100.
 				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / Births.
 			recal_unpd(C,V,Y,CovRec) :-
-				member(V,['dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepb3','hib3','rotac','pcv3','yfv']),  
+				member(V,['dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepb3','hib3','rotac','pcv3','yfv']),
 				vaccinated(C,V,Y,Vaccinated),
 				si_UNPD(C,Y,SI),
-				CovRec is Vaccinated / SI * 100.	
+				CovRec is Vaccinated / SI * 100.
 				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / SI.
 
 	two_stars(C,V,Y,Rule,Support) :-
@@ -337,24 +337,24 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	one_source(C,V,Y,Rule,'GoC=S+') :-
 		not(two_sources(C,V,Y,_,_)),
 		goc_survey_condition(C,V,Y,Rule,'S+').
-	one_source(C,V,Y,Rule,'GoC=D+') :-
+	one_source(C,V,Y,_Rule,'GoC=D+') :-
 		not(two_sources(C,V,Y,_,_)),
 		goc_denominator_condition(C,V,Y,'D+').
 
 	% Empirical evidence challenges estimate.
 	% --------------------------------------
-	challenge(C,V,Y,Rule,Coverage,Condition) :-
+	challenge(C,V,Y,Rule,_Coverage,Condition) :-
 		(goc_reported_condition(C,V,Y,Rule,'R-'),Condition = 'R-');
 		(goc_survey_condition(C,V,Y,Rule,'S-'),Condition = 'S-');
 		(goc_denominator_condition(C,V,Y,'D-'),Condition = 'D-').
 
 	% No empirical supporting evidence.
 	% --------------------------------
-	no_data(C,V,Y,Rule,Coverage,'GoC=No accepted empirical data') :-
+	no_data(C,V,Y,_Rule,_Coverage,'GoC=No accepted empirical data') :-
 		not(goc_reported_condition(C,V,Y,_,_)),
 		not(goc_survey_condition(C,V,Y,_,_)),
 		not(goc_denominator_condition(C,V,Y,_)).
-		
+
 	change_from_previous_revision(C,V,Y,Coverage,'') :-
 		legacy(C,V,Y,PreviousCoverage),
 		PreviousCoverage = Coverage.
@@ -366,16 +366,16 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 
 	change_from_previous_revision(C,V,Y,_,'') :-
 		not(legacy(C,V,Y,_)).
-		
+
 % Estimate for non-DTP1 & RCV1 vaccines.
-% ---------------------------------------	
+% ---------------------------------------
 wuenic_I(C,V,Y,Rule,Explanation,Coverage) :-
 	wuenic_II(C,V,Y,Rule,Explanation,Coverage),
 	not(workingGroupDecision(C,V,Y,assignWUENIC,_,_,_)),
 	not(member(V,['dtp1','rcv1'])).
 
 % Estimate for DTP1 where DTP3 estimate <= DTP1 estimate.
-% --------------------------------------------------------	
+% --------------------------------------------------------
 wuenic_I(C,dtp1,Y,Rule,Explanation,Coverage) :-
 	wuenic_II(C,dtp1,Y,Rule,Explanation,Coverage),
 	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
@@ -386,14 +386,14 @@ wuenic_I(C,dtp1,Y,Rule,Explanation,Coverage) :-
 % -----------------------------------------
 wuenic_I(C,dtp1,Y,'RMF:',Explanation,RMFCoverage) :-
 	wuenic_II(C,dtp1,Y,_,_,DTP1Coverage),
-	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),	
+	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
 	wuenic_II(C,dtp3,Y,_,_,DTP3Coverage),
 	DTP3Coverage > DTP1Coverage,
 	rmf(DTP3Coverage,RMFCoverage),
 	concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
 
-% Estimate for DTP1 where DTP1 not reported: RMF	
-% -----------------------------------------	
+% Estimate for DTP1 where DTP1 not reported: RMF
+% -----------------------------------------
 wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
 	wuenic_II(C,dtp3,Y,_,_,DTP3Coverage),
 	not(wuenic_II(C,dtp1,Y,_,_,_)),
@@ -403,18 +403,18 @@ wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
 
 % ==================
 % Estimate for RCV1 where RCV1 given at MCV1.
-% -------------------------------------------	
+% -------------------------------------------
 wuenic_I(C,rcv1,Y,Rule,'Estimate based on estimated MCV1. ',Coverage) :-
 	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
-	wuenic_II(C,mcv1,Y,Rule,Explanation,Coverage),
+	wuenic_II(C,mcv1,Y,Rule,_Explanation,Coverage),
 	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
 	not(firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose)).
 
 % Estimate for RCV1 where RCV1 given at MCV2.
-% -------------------------------------------	
+% -------------------------------------------
 wuenic_I(C,rcv1,Y,Rule,'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate',Coverage) :-
 	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
-	wuenic_II(C,mcv2,Y,Rule,Explanation,Coverage),
+	wuenic_II(C,mcv2,Y,Rule,_Explanation,Coverage),
 	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
 	firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose).
 
@@ -426,8 +426,7 @@ wuenic_I(C,V,Y,'W:',Explanation,Coverage) :-
 
 % First rubella given with second measles dose
 % ---------------------------------------------
-firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose) :-
-  member(FirstRubellaDose,['mcv2']).
+firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 
 %   Preliminary estimates.
 % ==============================================
@@ -467,27 +466,27 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported administrative data. ',Cover
 	both_anchors_resolved_to_reported(RuleBefore,RuleAfter),
 	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
 	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)).
-	
+
 % Estimate between anchor points: between two reported anchors, interpolation.
 % -----------------------------------------------------------------------------
 wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
 	reported_time_series(C,V,Y,Source,Coverage),
 	member(Source,['interpolated']),
-	between_anchor_points(C,V,Y,YrBefore,RuleBefore,_,YrAfter,RuleAfter,_),
+	between_anchor_points(C,V,Y,_YrBefore,RuleBefore,_,_YrAfter,RuleAfter,_),
 	both_anchors_resolved_to_reported(RuleBefore,RuleAfter),
 	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
 	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)),
-	% DWB 2023-APR concat_atom(['Estimate based on interpolation between coverage reported by national government. '],Explain).	
-	concat_atom(['Estimate informed by interpolation between reported data. '],Explain).	
-	
+	% DWB 2023-APR concat_atom(['Estimate based on interpolation between coverage reported by national government. '],Explain).
+	concat_atom(['Estimate informed by interpolation between reported data. '],Explain).
+
 % Estimate between anchor points: calibrated
 % ------------------------------------------
 wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
+	reported_time_series(C,V,Y,_,_ReportedCoverage), % MG: _ReportedCoverage because the line seems to be a guard
 	between_anchor_points(C,V,Y,YrBefore,RuleBefore,_,YrAfter,RuleAfter,_),
 	not(both_anchors_resolved_to_reported(RuleBefore,RuleAfter)),
 	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
-	calibrate(C,V,YrBefore,YrAfter,Y,Coverage),	
+	calibrate(C,V,YrBefore,YrAfter,Y,Coverage),
 	concat_atom(['Reported data calibrated to ',YrBefore,' and ',YrAfter,' levels. '],Explanation).
 
 % Estimate between anchor points: interpolation forced by working group.
@@ -507,12 +506,12 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported data. ',ReportedCoverage) :-
 	reported_time_series(C,V,Y,Source,ReportedCoverage),
 	member(Source,['admin','gov']),
 	not(anchor_point(C,V,Y,_,_,_)),
-	
+
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
 	not(anchor_point_earlier(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
-	
+
 % Estimate before earliest anchor: reported-extrapolated / interpolated
 % ------------------------------------------
 % DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on interpolation between data reported by national government. ',ReportedCoverage) :-
@@ -520,24 +519,24 @@ wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. 
 	reported_time_series(C,V,Y,Source,ReportedCoverage),
 	member(Source,['interpolated']),
 	not(anchor_point(C,V,Y,_,_,_)),
-	
+
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
 	not(anchor_point_earlier(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
-	
+
 % Estimate before earliest anchor: reported-extrapolated / interpolated
 % ------------------------------------------
 wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by national government. ',ReportedCoverage) :-
 	reported_time_series(C,V,Y,Source,ReportedCoverage),
 	member(Source,['extrapolated']),
 	not(anchor_point(C,V,Y,_,_,_)),
-	
+
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
 	not(anchor_point_earlier(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
-	
+
 % Estimate before earliest anchor: calibrated
 % ---------------------------------------------
 wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
@@ -590,7 +589,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. 
 	Y > AnchorYear,
 	not(anchor_point_later(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
-	
+
 % Estimate after latest anchor: reported-extrapolated / interpolated
 % ------------------------------------------------------------------
 wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by national government. ',ReportedCoverage) :-
@@ -602,13 +601,13 @@ wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by nati
 	Y > AnchorYear,
 	not(anchor_point_later(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
-	
+
 % Estimate after latest anchor: calibrated
 % ----------------------------------------
 wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	reported_time_series(C,V,Y,_,ReportedCoverage),
 	not(anchor_point(C,V,Y,_,_,_)),
-	
+
 	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
 	Y > AnchorYear,
 	not(anchor_point_later(C,V,AnchorYear)),
@@ -621,7 +620,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	concat_atom(['Reported data calibrated to ',AnchorYear,' levels.'],Explanation).
 
 both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
-  member(RuleBefore,['R: AP']),	
+  member(RuleBefore,['R: AP']),
   member(RuleAfter,['R: AP']).
 
 % DWB 2023-APR	explain(ro,gov,'Estimate based on coverage reported by national government. ').
@@ -636,11 +635,11 @@ explain(ro,extrapolated,'Estimate informed by extrapolation from reported data. 
 % =====================
 % Level two processing:
 %   Determine coverage value at anchor points
-%   defined as years where there are multiple 
-%   data points (reported | survey | wgd). 
+%   defined as years where there are multiple
+%   data points (reported | survey | wgd).
 %
 %	Anchor point assignments:
-%		Reported (gov,admin,extrapolated / interpolated timer series) supported by survey. 
+%		Reported (gov,admin,extrapolated / interpolated timer series) supported by survey.
 %		Reported not supported by survey.
 %		Reported value "anchored" by working group.
 %		Working group assigns anchor point value.
@@ -663,14 +662,14 @@ anchor_point(C,V,Y,'S: AP',Explanation,SurveyCoverage) :-
 	not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
 	not(survey_supports_reported(ReportedCoverage,SurveyCoverage)),
 	concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',Explain,' '],Explanation).
-		
+
 % Anchor point: anchor point value set to reported value
 % by working group.
 % -----------------------------------------------------
 anchor_point(C,V,Y,'R: AP',Explanation,AssignedCoverage) :-
 	reported_time_series(C,V,Y,_,AssignedCoverage),
 	workingGroupDecision(C,V,Y,assignAnchor,Explanation,_,AssignedCoverage).
-	
+
 % Anchor point: anchor point value NOT set to reported value
 % by working group.
 % -----------------------------------------------------
@@ -686,7 +685,7 @@ survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
   survey_reported_threshold(Threshold),
   (abs(ReportedCoverage - SurveyCoverage) =< Threshold).
 
-explain(ap,gov,Explain,Explanation) :- 
+explain(ap,gov,Explain,Explanation) :-
   % DWB 2023-APR concat_atom(['Estimate based on coverage reported by national government supported by survey. ',Explain],Explanation).
   concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
 explain(ap,admin,Explain,Explanation) :-
@@ -698,18 +697,18 @@ explain(ap,interpolated,Explain,Explanation) :-
 explain(ap,extrapolated,Explain,Explanation) :-
   concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
 
-% ==============================================	
+% ==============================================
 % Level one processing:
-% 
-%   Review data reported by national authorities 
+%
+%   Review data reported by national authorities
 %   and survey results. Reported and survey data
 %   are accepted, ignored, or modified. Modified
 %   data are accepted in the modified form.
 % ==============================================
 
-% Final survey information. If multiple survey in the	
+% Final survey information. If multiple survey in the
 % same year, accepted and modified results are averaged.
-% ----------------------------------	
+% ----------------------------------
 survey(C,V,Y,Explanation,Coverage) :-
 %	bagof(Cov,survey_accepted(C,V,Y,_,_,Cov),CoverageList),
 	bagof(Cov,Dist^SID^survey_accepted(C,V,Y,SID,Dist,Cov),CoverageList),
@@ -725,16 +724,16 @@ survey_accepted(C,V,Y,SurveyID,_,Coverage) :-
 	survey_results_for_analysis(C,V,Y,SurveyID,_,Coverage),
 	not(survey_results_modified(C,V,Y,SurveyID,_,_)),
 	not(survey_reason_to_exclude(C,V,Y,SurveyID,_)).
-	
+
 % Modified survey results accepted.
 % ---------------------------------
 survey_accepted(C,V,Y,SurveyID,_,ModifiedCoverage) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,_,Coverage),
+	survey_results_for_analysis(C,V,Y,SurveyID,_,_Coverage),
 	survey_results_modified(C,V,Y,SurveyID,_,ModifiedCoverage),
 	not(survey_reason_to_exclude(C,V,Y,SurveyID,_)).
 
 % Survey results modified for recall bias.
-% --------------------------------------- 
+% ---------------------------------------
 survey_results_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
 	recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage).
 
@@ -746,8 +745,8 @@ recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
 	member(V,['dtp3','pol3','hib3','hepb3','pcv3']),
 
 	% Associate third dose with first dose.
-	vaccine(V,FirstDose),	
-	
+	vaccine(V,FirstDose),
+
 	% Third dose, card only
 	survey_results(C,V,Y,SurveyID,DescriptionCard3Dose,C3Cov),
 	member(confirm:MethodCard3Dose,DescriptionCard3Dose), member(MethodCard3Dose,['card']),
@@ -767,7 +766,7 @@ recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
 	member(AgeCohortCard1Dose,['12-23 m','18-29 m','15-26 m','24-35 m']),
 
 	Adj is C3Cov / C1Cov,
- 	ThirdHistoryAdj is ((CoH1Cov - C1Cov)*Adj),
+	ThirdHistoryAdj is ((CoH1Cov - C1Cov)*Adj),
 	CovAdjustedRecall is C3Cov + ThirdHistoryAdj,
 
 	bound_0_100(CovAdjustedRecall,ModifiedCoverage),
@@ -777,7 +776,6 @@ recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
 	Coverage \= ModifiedCoverage,
 
 	SurveyCoverage is round(Coverage),
-	FinalCoverage is round(ModifiedCoverage),
 	CH1 is round(CoH1Cov),
 	C1 is round(C1Cov),
 	C3 is round(C3Cov),
@@ -839,7 +837,7 @@ survey_results_for_analysis(C,V,Y,SurveyID,Description,Coverage) :-
 % Timeseries consists of:
 %    coverage reported (gov or admin) by government
 %    interpolated values if no reported or reported excluded between 2 years of reported.
-%    value of nearest year for years no reported or reported excluded 
+%    value of nearest year for years no reported or reported excluded
 %        before/after earliest/latest reported value (extrapolated)
 % ==============================================
 % Reported data.
@@ -849,9 +847,9 @@ reported_time_series(C,V,Y,Source,Coverage) :-
 		reported(C,V,Y,Source,Coverage),
 		not(reported_reason_to_exclude(C,V,Y,_,_)).
 
-% Interpolation, reported data excluded between two years 
+% Interpolation, reported data excluded between two years
 % -------------------------------------------------------
-reported_time_series(C,V,Y,interpolated,Coverage) :-	
+reported_time_series(C,V,Y,interpolated,Coverage) :-
 		estimate_required(C,V,Y,_,_),
 		reported(C,V,Y,_,_),
 
@@ -864,16 +862,16 @@ reported_time_series(C,V,Y,interpolated,Coverage) :-
 
 % Interpolation, no reported data between two years
 % -------------------------------------------------
-reported_time_series(C,V,Y,interpolated,Coverage) :-	
+reported_time_series(C,V,Y,interpolated,Coverage) :-
 		estimate_required(C,V,Y,_,_),
 		not(reported(C,V,Y,_,_)),
-		
+
 		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
 		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
 
 % Extrapolation, reported data for year beyond earliest / latest required estimate excluded
 % ---------------------------------------------------------------------------------------
-reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-	
+reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
 		estimate_required(C,V,Y,_,_),
 		reported(C,V,Y,_,_),
 
@@ -882,17 +880,17 @@ reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
 		NReasons >= 1,
 
 		not(year_between_reported(C,V,Y,_,_,_,_)),
-		nearest_reported(C,V,Y,YearNearest,CoverageNearest).
-		
+		nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
+
 % Extrapolation, no reported data for year beyond earliest / latest required estimate
 % ---------------------------------------------------------------------------------
-reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-	
+reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
 	estimate_required(C,V,Y,_,_),
 	not(reported(C,V,Y,_,_)),
 	not(year_between_reported(C,V,Y,_,_,_,_)),
-	nearest_reported(C,V,Y,YearNearest,CoverageNearest).
+	nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
 
-% =====================================		
+% =====================================
 % Reasons to exclude reported data are:
 %  1. Working group decision.
 %  2. Coverage > 100%
@@ -913,7 +911,7 @@ reported_reason_to_exclude(C,V,Y,100,Explanation) :-
 	Coverage > 100,
 	concat_atom(['Reported data excluded because ',Coverage,' percent greater than 100 percent. '],Explanation).
 
-% Reason to exclude reported: Sawtooth - inconsistent temporal change	
+% Reason to exclude reported: Sawtooth - inconsistent temporal change
 % --------------------------------------------------------------------
 reported_reason_to_exclude(C,V,Y,sawtooth,Explanation) :-
 	reported(C,V,Y,_,Coverage),
@@ -925,16 +923,16 @@ reported_reason_to_exclude(C,V,Y,sawtooth,Explanation) :-
 	sawtooth_threshold(Threshold),
 
     % Increase
-	(((Coverage - CoverageBefore) > Threshold, 
- 	  (Coverage - CoverageAfter)  > Threshold,
-	 concat_atom(['Reported data excluded due to an increase from ',CoverageBefore,' percent to ', 
+	(((Coverage - CoverageBefore) > Threshold,
+	  (Coverage - CoverageAfter)  > Threshold,
+	 concat_atom(['Reported data excluded due to an increase from ',CoverageBefore,' percent to ',
 			Coverage,' percent with decrease ',CoverageAfter,' percent. '],Explanation))
 	; % or
 
 	%Decline
-	((CoverageBefore - Coverage)  > Threshold, 
+	((CoverageBefore - Coverage)  > Threshold,
 	 (CoverageAfter  - Coverage)  > Threshold,
-	 concat_atom(['Reported data excluded due to decline in reported coverage from ',CoverageBefore,' percent to ', 
+	 concat_atom(['Reported data excluded due to decline in reported coverage from ',CoverageBefore,' percent to ',
 			Coverage,' percent with increase to ',CoverageAfter,' percent. '],Explanation))).
 
 % Reason to exclude reported: sudden change in most recently reported data for classic vaccines.
@@ -943,26 +941,26 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	reported(C,V,Y,_,Coverage),
 	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
 	not(reported_later(C,V,Y)),
-	not(member(V,['pcv3','rotac'])),  
+	not(member(V,['pcv3','rotac'])),
 	YPrevious is Y - 1,
 	reported(C,V,YPrevious,_,CoveragePreviousYear),
 	sawtooth_threshold(Threshold),
 	abs(CoveragePreviousYear - Coverage) > Threshold,
-	concat_atom(['Reported data excluded due to sudden change in coverage from ',CoveragePreviousYear,' level to ', 
-			Coverage,' percent. '],Explanation).	
-	
+	concat_atom(['Reported data excluded due to sudden change in coverage from ',CoveragePreviousYear,' level to ',
+			Coverage,' percent. '],Explanation).
+
 % Reason to exclude reported: sudden decline in most recently reported data for new vaccines.
 % ------------------------------------------------------------------------------------------
 reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	reported(C,V,Y,_,Coverage),
 	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
 	not(reported_later(C,V,Y)),
-	member(V,['pcv3','rotac']),  
+	member(V,['pcv3','rotac']),
 	YPrevious is Y - 1,
 	reported(C,V,YPrevious,_,CoveragePreviousYear),
 	sawtooth_threshold(Threshold),
 	(CoveragePreviousYear - Coverage) > Threshold,
-	concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ', 
+	concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ',
 			Coverage,' percent. '],Explanation).
 
 reported_later(C,V,Year) :-
@@ -970,11 +968,11 @@ reported_later(C,V,Year) :-
   YearAfter > Year.
 
 % ==================================================
-% Level 0: 
+% Level 0:
 % Reported to WHO and UNICEF is government estimate.
 % If government estimate missing, then reported is
 % administrative data. If both missing, reported is missing.
-% --------------------------------------------------------- 
+% ---------------------------------------------------------
 reported(C,V,Y,gov,Coverage) :-
 	gov(C,V,Y,Coverage),
 	not(workingGroupDecision(C,V,Y,ignoreGov,_,_,_)).
@@ -982,7 +980,7 @@ reported(C,V,Y,gov,Coverage) :-
 reported(C,V,Y,admin,Coverage) :-
 	gov(C,V,Y,_),
 	workingGroupDecision(C,V,Y,ignoreGov,_,_,_),
-	admin(C,V,Y,Coverage),	
+	admin(C,V,Y,Coverage),
 	not(workingGroupDecision(C,V,Y,ignoreAdmin,_,_,_)).
 
 reported(C,V,Y,admin,Coverage) :-
@@ -990,9 +988,9 @@ reported(C,V,Y,admin,Coverage) :-
 	not(gov(C,V,Y,_)),
 	not(workingGroupDecision(C,V,Y,ignoreAdmin,_,_,_)).
 
-% ==========================================	
+% ==========================================
 % Utilities and general auxiliary predicates
-% -------------------------------------------	
+% -------------------------------------------
 % Determine whether a working group decision
 % applies for a given year if working group
 % decision applies over an interval of time.
@@ -1004,18 +1002,18 @@ workingGroupDecision(C,V,Y,Action,Explanation,SurveyID,Coverage) :-
 
 anchor_point_earlier(C,V,AnchorYear) :- anchor_point(C,V,Year,_,_,_), Year < AnchorYear.
 anchor_point_later(C,V,AnchorYear)   :- anchor_point(C,V,Year,_,_,_), Year > AnchorYear.
-anchor_point_between(C,V,YearBefore,YearAfter) :- 
-	anchor_point(C,V,YearBetween,_,_,_), 
-	YearBefore < YearBetween, 
+anchor_point_between(C,V,YearBefore,YearAfter) :-
+	anchor_point(C,V,YearBetween,_,_,_),
+	YearBefore < YearBetween,
 	YearAfter  > YearBetween.
-	
+
 % routines for interpolated points
 % --------------------------------
 year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter) :-
 	reported(C,V,YearBefore,_,CoverageBefore),
 	YearBefore < Y,
 	not(reported_reason_to_exclude(C,V,YearBefore,_,_)),
-	
+
 	reported(C,V,YearAfter,_,CoverageAfter),
 	YearAfter > Y,
 	not(reported_reason_to_exclude(C,V,YearAfter,_,_)),
@@ -1026,7 +1024,7 @@ reported_data_between(C,V,YearBefore,YearAfter) :-
 	not(reported_reason_to_exclude(C,V,YearBetween,_,_)),
 	YearBetween > YearBefore,
 	YearBetween < YearAfter.
-		
+
 % Extrapolation using nearest neighbor
 % ----------------------------------
 nearest_reported(C,V,Y,YearNearest,CoverageNearest) :-
@@ -1053,11 +1051,11 @@ between_anchor_points(C,V,Y,PreceedingAnchorYear,PreceedingRule,PreceedingCov,
 rmf(DTP3Coverage,RMFCoverage) :-
 	RMFCoverage is round(DTP3Coverage +
        (-0.0058*(DTP3Coverage * DTP3Coverage)) + (0.3912*DTP3Coverage) + 18.258).
-	
+
 % Provide interpolated value between two points.
 % ----------------------------------------------
 interpolate(EarlyYear,EarlyCoverage,LateYear,LateCoverage,Year,Coverage) :-
-	Coverage is round(EarlyCoverage + 
+	Coverage is round(EarlyCoverage +
 	           (Year - EarlyYear)*
 			((LateCoverage - EarlyCoverage)/(LateYear - EarlyYear))).
 
@@ -1067,12 +1065,12 @@ calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
 
 	anchor_point(C,V,PreceedingAnchorYear,_,_,PreceedingCoverage),
 	anchor_point(C,V,SucceedingAnchorYear,_,_,SucceedingCoverage),
-	
-	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),	
+
+	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),
 	reported_time_series(C,V,SucceedingAnchorYear,_,SucceedingReportedCoverage),
-		
+
 	reported_time_series(C,V,Y,_,ReportedCoverage),
-	
+
 	interpolate(PreceedingAnchorYear,PreceedingReportedCoverage,
 	            SucceedingAnchorYear,SucceedingReportedCoverage,
 	            Y,ReportedInterpolated),
@@ -1080,7 +1078,7 @@ calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
 	interpolate(PreceedingAnchorYear,PreceedingCoverage,
 	            SucceedingAnchorYear,SucceedingCoverage,
 	            Y,AnchorInterpolated),
-	            
+
 	Adj is AnchorInterpolated - ReportedInterpolated,
 	Coverage is round(ReportedCoverage + Adj).
 
@@ -1089,14 +1087,14 @@ calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
 calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
 	anchor_point(C,V,PreceedingAnchorYear,_,_,PreceedingCoverage),
 	anchor_point(C,V,SucceedingAnchorYear,_,_,_),
-	
+
 	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),
-	not(reported_time_series(C,V,SucceedingAnchorYear,_,_)),	
+	not(reported_time_series(C,V,SucceedingAnchorYear,_,_)),
 	Adj is PreceedingCoverage - PreceedingReportedCoverage,
-		
+
 	reported_time_series(C,V,Y,_,ReportedCoverage),
 	Coverage is round(ReportedCoverage + Adj).
-	
+
 % Ensure estimates are between 0 and 99.
 % ---------------------------------------
 bound_0_100(X,Y) :- X >= 0, X < 99, Y is round(X).
@@ -1105,7 +1103,8 @@ bound_0_100(X,Y) :- X >= 99, Y is 99.
 
 % Add underlying data to each C,V,Y estimate
 % ------------------------------------------
-collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,ReportedGoC,SeriesValue,Source,SurveyInfo) :-
+% MG, issue: does not return ReportedGoC
+collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo) :-
 	legacy_estimate(C,V,Y,PrevRev),
 	admin_data(C,V,Y,Admin),
 	gov_data(C,V,Y,Gov),
@@ -1119,7 +1118,7 @@ collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdS
 
 legacy_estimate(C,V,Y,PrevRev) :- legacy(C,V,Y,PrevRev).
 legacy_estimate(C,V,Y,'') :- not(legacy(C,V,Y,_)).
-	
+
 admin_data(C,V,Y,Admin) :- admin(C,V,Y,Admin).                                       admin_data(C,V,Y,'') :- not(admin(C,V,Y,_)).
 gov_data(C,V,Y,Gov) :- gov(C,V,Y,Gov).                                               gov_data(C,V,Y,'') :- not(gov(C,V,Y,_)).
 reported_data(C,V,Y,Reported) :- reported(C,V,Y,_,Reported).                         reported_data(C,V,Y,'') :- not(reported(C,V,Y,_,_)).
@@ -1141,7 +1140,7 @@ collect_explanations(C,V,Y,Explanations) :-
 
 explanation(C,V,Y,Text) :- survey_reason_to_exclude(C,V,Y,_,Text).
 explanation(C,V,Y,Text) :- survey_results_modified(C,V,Y,_,Text,_).
-explanation(C,V,Y,Text) :- reported_reason_to_exclude(C,V,Y,_,Text). 
+explanation(C,V,Y,Text) :- reported_reason_to_exclude(C,V,Y,_,Text).
 explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,comment,Text,_,_).
 explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,acceptSurvey,Text,_,_).
 explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,acceptReported,Text,_,_).
