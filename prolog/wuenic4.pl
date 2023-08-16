@@ -190,7 +190,7 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 	%assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 
-	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo),
+	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,SeriesValue,Source,SurveyInfo),
 	change_from_previous_revision(C,V,Y,Coverage,Change),
 	collect_explanations(C,V,Y,Text),
 	my_concat_atom([Explain,' ',Text,' ',Change,' ',GoCExplanation],Explanation).
@@ -1103,37 +1103,92 @@ bound_0_100(X,Y) :- X >= 0, X < 99, Y is round(X).
 bound_0_100(X,Y) :- X < 0, Y is 0.
 bound_0_100(X,Y) :- X >= 99, Y is 99.
 
-% Add underlying data to each C,V,Y estimate
-% ------------------------------------------
-% MG, issue: does not return ReportedGoC
-collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo) :-
-	legacy_estimate(C,V,Y,PrevRev),
-	admin_data(C,V,Y,Admin),
-	gov_data(C,V,Y,Gov),
-	reported_data(C,V,Y,Reported),
-	vaccinated_data(C,V,Y,Vaccinated),
-	target_data(C,V,Y,Target),
-	time_series_data(C,V,Y,Source,SeriesValue),
-	unpd_births_data(C,Y,UnpdBirths),
-	unpd_si_data(C,Y,UnpdSI),
-	survey_data(C,V,Y,SurveyInfo).
+% Add underlying data to each C, V, Y estimate
+collect_data(C, V, Y, PrevRev, Admin, Gov, Reported, Vaccinated,
+        Target, UnpdBirths, UnpdSI, SeriesValue, Source, SurveyInfo)
+ => legacy_estimate(C, V, Y, PrevRev),
+    admin_data(C, V, Y, Admin),
+    gov_data(C, V, Y, Gov),
+    reported_data(C, V, Y, Reported),
+    vaccinated_data(C, V, Y, Vaccinated),
+    target_data(C, V, Y, Target),
+    time_series_data(C, V, Y, Source, SeriesValue),
+    unpd_births_data(C, Y, UnpdBirths),
+    unpd_si_data(C, Y, UnpdSI),
+    survey_data(C, V, Y, SurveyInfo).
 
-legacy_estimate(C,V,Y,PrevRev) :- legacy(C,V,Y,PrevRev).
-legacy_estimate(C,V,Y,'') :- not(legacy(C,V,Y,_)).
+legacy_estimate(C, V, Y, PrevRev),
+    legacy(C, V, Y, D)
+ => PrevRev = D.
 
-admin_data(C,V,Y,Admin) :- admin(C,V,Y,Admin).                                       admin_data(C,V,Y,'') :- not(admin(C,V,Y,_)).
-gov_data(C,V,Y,Gov) :- gov(C,V,Y,Gov).                                               gov_data(C,V,Y,'') :- not(gov(C,V,Y,_)).
-reported_data(C,V,Y,Reported) :- reported(C,V,Y,_,Reported).                         reported_data(C,V,Y,'') :- not(reported(C,V,Y,_,_)).
-vaccinated_data(C,V,Y,Vaccinated) :- vaccinated(C,V,Y,Vaccinated).                   vaccinated_data(C,V,Y,'') :- not(vaccinated(C,V,Y,_)).
-target_data(C,V,Y,Target) :- target(C,V,Y,Target).                                   target_data(C,V,Y,'') :- not(target(C,V,Y,_)).
-unpd_births_data(C,Y,UnpdBirths) :- births_UNPD(C,Y,UnpdBirths).                     unpd_births_data(C,Y,'') :- not(births_UNPD(C,Y,_)).
-unpd_si_data(C,Y,UnpdSI) :- si_UNPD(C,Y,UnpdSI).                                     unpd_si_data(C,Y,'') :- not(si_UNPD(C,Y,_)).
+legacy_estimate(_C, _V, _Y, PrevRev)
+ => PrevRev = ''.
 
-time_series_data(C,V,Y,Source,SeriesValue) :- reported_time_series(C,V,Y,Source,SeriesValue).
-time_series_data(C,V,Y,'','') :- not(reported_time_series(C,V,Y,_,_)).
+admin_data(C, V, Y, Admin),
+    admin(C, V, Y, D)
+ => Admin = D.
 
-survey_data(C,V,Y,SurveyInfo) :- survey(C,V,Y,_,SurveyInfo).
-survey_data(C,V,Y,'') :- not(survey(C,V,Y,_,_)).
+admin_data(_C, _V, _Y, Admin)
+ => Admin = ''.
+
+gov_data(C, V, Y, Gov),
+    gov(C, V, Y, D)
+ => Gov = D.
+
+gov_data(_C, _V, _Y, Gov)
+ => Gov = ''.
+
+reported_data(C, V, Y, Reported),
+    reported(C, V, Y, _, D)
+ => Reported = D.
+
+reported_data(_C, _V, _Y, Reported)
+ => Reported = ''.
+
+vaccinated_data(C, V, Y, Vaccinated),
+    vaccinated(C, V, Y, D)
+ => Vaccinated = D.
+
+vaccinated_data(_C, _V, _Y, Vaccinated)
+ => Vaccinated = ''.
+
+target_data(C, V, Y, Target),
+    target(C, V, Y, D)
+ => Target = D.
+
+target_data(_C, _V, _Y, Target)
+ => Target = ''.
+
+unpd_births_data(C, Y, Births),
+    births_UNPD(C, Y, D)
+ => Births = D.
+
+unpd_births_data(_C, _Y, Births)
+ => Births = ''.
+
+unpd_si_data(C, Y, UnpdSI),
+    si_UNPD(C, Y, D)
+ => UnpdSI = D.
+
+unpd_si_data(_C, _Y, UnpdSI)
+ => UnpdSI = ''.
+
+time_series_data(C, V, Y, Source, Value),
+    reported_time_series(C, V, Y, S, D)
+ => Source = S,
+    Value = D.
+
+time_series_data(_C, _V, _Y, Source, Value)
+ => Source = '',
+    Value = ''.
+
+% MG: Check if this can be removed
+survey_data(C, V, Y, Info),
+    survey(C, V, Y, _, D)
+ => Info = D.
+
+survey_data(_C, _V, _Y, Info)
+ => Info = ''.
 
 % Collect explanations in natural language terms
 %
