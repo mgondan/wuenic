@@ -81,11 +81,6 @@ WHO and UNICEF working group memebers as of 1 January 2010 - 30 April 2012:
 :- table reported/5.
 :- table wuenic_I/6.
 
-:- import member/2 from lists.
-:- import length/2 from lists.
-:- import sum_list/2 from lists.
-:- import concat_atom/2 from string.
-
 :- op(500,xfy,:).
 
 % sawtooth_threshold : difference in increase/decrease between Y+/-1 and Y in reported data
