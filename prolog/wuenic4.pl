@@ -1135,19 +1135,39 @@ time_series_data(C,V,Y,'','') :- not(reported_time_series(C,V,Y,_,_)).
 survey_data(C,V,Y,SurveyInfo) :- survey(C,V,Y,_,SurveyInfo).
 survey_data(C,V,Y,'') :- not(survey(C,V,Y,_,_)).
 
-% Collection explanations.
-% -----------------------
-collect_explanations(C,V,Y,Explanations) :-
-	findall(Text,explanation(C,V,Y,Text),Explanations).
+% Collect explanations in natural language terms
+%
+% MG, todo: store information in the first place
+collect_explanations(C, V, Y, Explanations) :-
+    findall(Text, explanation(C, V, Y, Text), Explanations).
 
-explanation(C,V,Y,Text) :- survey_reason_to_exclude(C,V,Y,_,Text).
-explanation(C,V,Y,Text) :- survey_results_modified(C,V,Y,_,Text,_).
-explanation(C,V,Y,Text) :- reported_reason_to_exclude(C,V,Y,_,Text).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,comment,Text,_,_).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,acceptSurvey,Text,_,_).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,acceptReported,Text,_,_).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,ignoreGov,Text,_,_).
-%explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,interpolate,Text,_,_).
+collect_explanations(C, V, Y, Explanations) :-
+    findall(T, explanation(C, V, Y, T), Explanations).
+
+explanation(C, V, Y, Text) :-
+    survey_reason_to_exclude(C, V, Y, _, Text).
+
+explanation(C, V, Y, Text) :-
+    survey_results_modified(C, V, Y, _, Text, _).
+
+explanation(C, V, Y, Text) :-
+    reported_reason_to_exclude(C, V, Y, _, Text).
+
+explanation(C, V, Y, Text) :-
+    workingGroupDecision(C, V, Y, comment, Text, _, _).
+
+explanation(C, V, Y, Text) :-
+    workingGroupDecision(C, V, Y, acceptSurvey, Text, _, _).
+
+explanation(C, V, Y, Text) :-
+    workingGroupDecision(C, V, Y, acceptReported, Text, _, _).
+
+explanation(C, V, Y, Text) :-
+    workingGroupDecision(C, V, Y, ignoreGov, Text, _, _).
+
+% MG, issue: Why has this been commented out?
+% explanation(C, V, Y, Text) :-
+%     workingGroupDecision(C, V, Y, interpolate, Text, _, _).
 
 open_out_file(Out,File,Header) :-
 	open(File,write,Out),
@@ -1164,3 +1184,14 @@ output_fields([H|T],Out) :- write(Out,H),write(Out,'\t'),output_fields(T,Out).
 my_concat_atom(List, String) :-
     maplist(term_string, List, Strings),
     atomics_to_string(Strings, String).
+
+
+
+
+
+
+
+
+
+
+
