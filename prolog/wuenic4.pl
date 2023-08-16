@@ -102,15 +102,17 @@ vaccine(hib3,hib1).
 vaccine(hepb3,hepb1).
 vaccine(pcv3,pcv1).
 
-admin(country,vaccine,year,coverage).
-gov(country,vaccine,year,coverage).
-vaccinated(country,vaccine,year,vaccinated).
-target(country,vaccine,year,vaccinated).
-legacy(country,vaccine,year,coverage).
-survey_results(country,vaccine,year,id,description,coverage).
-wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
-births_UNPD(country,year,births).
-si_UNPD(country,year,surviving_infants).
+% Imported from data
+%
+% admin(country,vaccine,year,coverage).
+% gov(country,vaccine,year,coverage).
+% vaccinated(country,vaccine,year,vaccinated).
+% target(country,vaccine,year,vaccinated).
+% legacy(country,vaccine,year,coverage).
+% survey_results(country,vaccine,year,id,description,coverage).
+% wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
+% births_UNPD(country,year,births).
+% si_UNPD(country,year,surviving_infants).
 
 % Load country-specific predicates describing data, survey_results,
 % working group decisions and whether an estimate is required.
@@ -191,7 +193,7 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo),
 	change_from_previous_revision(C,V,Y,Coverage,Change),
 	collect_explanations(C,V,Y,Text),
-	concat_atom([Explain,' ',Text,' ',Change,' ',GoCExplanation],Explanation).
+	my_concat_atom([Explain,' ',Text,' ',Change,' ',GoCExplanation],Explanation).
 
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
@@ -214,12 +216,12 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	assign_GoC(C,V,Y,Rule,_Coverage,Support,'2') :- two_stars(C,V,Y,Rule,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- challenge(C,V,Y,Rule,Coverage,_),
 												   setof(Evidence,challenge(C,V,Y,Rule,Coverage,Evidence),List), % MG: changed Coverge to Coverage
-												   concat_atom(['Estimate challenged by: ',List],Support),
+												   my_concat_atom(['Estimate challenged by: ',List],Support),
 												   not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 
 	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- no_data(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 	assign_GoC(C,V,Y,_Rule,_,Support,GC) :- workingGroupDecision(C,V,Y,assignGoC,Explanation,_,GC),
-												   concat_atom(['GoC=Assigned by working group. ',Explanation],Support).
+												   my_concat_atom(['GoC=Assigned by working group. ',Explanation],Support).
 
 	% Supported by reported data, survey and denominator
 	% --------------------------------------------------
@@ -362,7 +364,7 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	change_from_previous_revision(C,V,Y,Coverage,Change) :-
 		legacy(C,V,Y,PreviousCoverage),
 		not(PreviousCoverage = Coverage),
-		concat_atom(['Estimate of ',Coverage,' percent changed from previous revision value of ',PreviousCoverage,' percent. '],Change).
+		my_concat_atom(['Estimate of ',Coverage,' percent changed from previous revision value of ',PreviousCoverage,' percent. '],Change).
 
 	change_from_previous_revision(C,V,Y,_,'') :-
 		not(legacy(C,V,Y,_)).
@@ -390,7 +392,7 @@ wuenic_I(C,dtp1,Y,'RMF:',Explanation,RMFCoverage) :-
 	wuenic_II(C,dtp3,Y,_,_,DTP3Coverage),
 	DTP3Coverage > DTP1Coverage,
 	rmf(DTP3Coverage,RMFCoverage),
-	concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
+	my_concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
 
 % Estimate for DTP1 where DTP1 not reported: RMF
 % -----------------------------------------
@@ -399,7 +401,7 @@ wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
 	not(wuenic_II(C,dtp1,Y,_,_,_)),
 	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
 	rmf(DTP3Coverage,RMFCoverage),
-	concat_atom(['Estimate based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
+	my_concat_atom(['Estimate based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
 
 % ==================
 % Estimate for RCV1 where RCV1 given at MCV1.
@@ -477,7 +479,7 @@ wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
 	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
 	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)),
 	% DWB 2023-APR concat_atom(['Estimate based on interpolation between coverage reported by national government. '],Explain).
-	concat_atom(['Estimate informed by interpolation between reported data. '],Explain).
+	my_concat_atom(['Estimate informed by interpolation between reported data. '],Explain).
 
 % Estimate between anchor points: calibrated
 % ------------------------------------------
@@ -487,7 +489,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	not(both_anchors_resolved_to_reported(RuleBefore,RuleAfter)),
 	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
 	calibrate(C,V,YrBefore,YrAfter,Y,Coverage),
-	concat_atom(['Reported data calibrated to ',YrBefore,' and ',YrAfter,' levels. '],Explanation).
+	my_concat_atom(['Reported data calibrated to ',YrBefore,' and ',YrAfter,' levels. '],Explanation).
 
 % Estimate between anchor points: interpolation forced by working group.
 % ---------------------------------------------------------------------
@@ -497,7 +499,7 @@ wuenic_II(C,V,Y,'W-I:',Explanation,Coverage) :-
 	workingGroupDecision(C,V,Y,interpolate,WGD_E,_,_),
 	interpolate(YrBefore,CoverageBefore,YrAfter,CoverageAfter,Y,Coverage),
 	% DWB 2023-APR concat_atom(['Estimate based on interpolation between ',YrBefore,' and ',YrAfter,' levels. ',WGD_E],Explanation).
-	concat_atom(['Estimate informed by interpolation between ',YrBefore,' and ',YrAfter,' levels. ',WGD_E],Explanation).
+	my_concat_atom(['Estimate informed by interpolation between ',YrBefore,' and ',YrAfter,' levels. ',WGD_E],Explanation).
 
 % Estimate before earliest anchor: reported
 % ------------------------------------------
@@ -551,7 +553,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
 	Adj is AnchorCoverage - ReportedCoverageAtAnchor,
 	Coverage is round(ReportedCoverage + Adj),
-	concat_atom(['Reported data calibrated to ',AnchorYear,' levels. '],Explanation).
+	my_concat_atom(['Reported data calibrated to ',AnchorYear,' levels. '],Explanation).
 
 % Estimate after latest anchor: reported
 % --------------------------------------
@@ -617,7 +619,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	%not(reported_reason_to_exclude(C,V,Y,_,_)),
 	Adj is AnchorCoverage - ReportedCoverageAtAnchor,
 	Coverage is round(ReportedCoverage + Adj),
-	concat_atom(['Reported data calibrated to ',AnchorYear,' levels.'],Explanation).
+	my_concat_atom(['Reported data calibrated to ',AnchorYear,' levels.'],Explanation).
 
 both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
   member(RuleBefore,['R: AP']),
@@ -661,7 +663,7 @@ anchor_point(C,V,Y,'S: AP',Explanation,SurveyCoverage) :-
 	survey(C,V,Y,Explain,SurveyCoverage),
 	not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
 	not(survey_supports_reported(ReportedCoverage,SurveyCoverage)),
-	concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',Explain,' '],Explanation).
+	my_concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',Explain,' '],Explanation).
 
 % Anchor point: anchor point value set to reported value
 % by working group.
@@ -677,7 +679,7 @@ anchor_point(C,V,Y,'W: AP',Explanation,AssignedCoverage) :-
 	reported_time_series(C,V,Y,_,Coverage),
 	workingGroupDecision(C,V,Y,assignAnchor,WGD_EXP,_,AssignedCoverage),
 	Coverage \= AssignedCoverage,
-	concat_atom(['Estimate of ',AssignedCoverage,' percent assigned by working group. ', WGD_EXP], Explanation).
+	my_concat_atom(['Estimate of ',AssignedCoverage,' percent assigned by working group. ', WGD_EXP], Explanation).
 
 % Determine whether survey supports reported
 % -------------------------------------------
@@ -687,15 +689,15 @@ survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
 
 explain(ap,gov,Explain,Explanation) :-
   % DWB 2023-APR concat_atom(['Estimate based on coverage reported by national government supported by survey. ',Explain],Explanation).
-  concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
+  my_concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
 explain(ap,admin,Explain,Explanation) :-
   % DWB 2023-APR concat_atom(['Estimate based on administrative data reported by national government supported by survey. ',Explain],Explanation).
-  concat_atom(['Estimate informed by reported administrative data supported by survey. ',Explain],Explanation).
+  my_concat_atom(['Estimate informed by reported administrative data supported by survey. ',Explain],Explanation).
 explain(ap,interpolated,Explain,Explanation) :-
   % DWB 2023-APR concat_atom(['Estimate based on interpolation between data reported by national government supported by survey. ',Explain],Explanation).
-  concat_atom(['Estimate informed by interpolation between reported data supported by survey. ',Explain],Explanation).
+  my_concat_atom(['Estimate informed by interpolation between reported data supported by survey. ',Explain],Explanation).
 explain(ap,extrapolated,Explain,Explanation) :-
-  concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
+  my_concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
 
 % ==============================================
 % Level one processing:
@@ -716,7 +718,7 @@ survey(C,V,Y,Explanation,Coverage) :-
 	length(CoverageList,N),
 	sum_list(CoverageList,SumCov),
 	Coverage is round(SumCov / N),
-	concat_atom(['Survey evidence of ',Coverage,' percent based on ',N, ' survey(s). '],Explanation).
+	my_concat_atom(['Survey evidence of ',Coverage,' percent based on ',N, ' survey(s). '],Explanation).
 
 % Unmodified survey results accpeted.
 % -----------------------------------
@@ -783,7 +785,7 @@ recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
 	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
 	member(title:Survey,Description),
 
-	concat_atom([Survey,' card or history results of ',SurveyCoverage,' percent modifed for recall bias to ',
+	my_concat_atom([Survey,' card or history results of ',SurveyCoverage,' percent modifed for recall bias to ',
 			ModifiedCoverage,' percent based on 1st dose card or history coverage of ',
 			CH1,' percent, 1st dose card only coverage of ',C1,' percent and 3rd dose card only coverage of ',
 			C3,' percent. '],Explanation).
@@ -803,7 +805,7 @@ survey_reason_to_exclude(C,V,Y,SurveyID,Explanation) :-
 	member(ss:SampleSize,Description),
 	SampleSize < 300,
 	not(workingGroupDecision(C,V,Y,acceptSurvey,Explanation,SurveyID,_)),
-	concat_atom(['Survey results ignored. Sample size ',SampleSize,' less than 300. '],Explanation).
+	my_concat_atom(['Survey results ignored. Sample size ',SampleSize,' less than 300. '],Explanation).
 
 % Reason to exclude survey: working group decision to exclude survey identified by survey id.
 % -------------------------------------------------------------------------------------------
@@ -811,7 +813,7 @@ survey_reason_to_exclude(C,V,Y,SurveyID,Explain) :-
 	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
 	workingGroupDecision(C,V,Y,ignoreSurvey,Explanation,SurveyID,_),
 	member(title:Survey,Description),
-	concat_atom([Survey,' results ignored by working group. ',Explanation],Explain).
+	my_concat_atom([Survey,' results ignored by working group. ',Explanation],Explain).
 
 % Reason to exclude survey: working group decision to delate all surveys identified by country, vaccine, year.
 % ------------------------------------------------------------------------------------------------------------
@@ -819,7 +821,7 @@ survey_reason_to_exclude(C,V,Y,SurveyID,Explain) :-
 	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
 	workingGroupDecision(C,V,Y,ignoreSurvey,Explanation,na,_),
 	member(title:Survey,Description),
-	concat_atom([Survey,' results ignored by working group. ',Explanation],Explain).
+	my_concat_atom([Survey,' results ignored by working group. ',Explanation],Explain).
 
 % Survey results passed for inclusion in the analysis include:
 % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months of age
@@ -901,7 +903,7 @@ reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
 reported_reason_to_exclude(C,V,Y,wdg,Explain) :-
 	reported(C,V,Y,_,_),
 	workingGroupDecision(C,V,Y,ignoreReported,Exp,_,_),
-	concat_atom(['Reported data excluded. ',Exp],Explain).
+	my_concat_atom(['Reported data excluded. ',Exp],Explain).
 
 % Reason to exclude reported: Reported coverage > 100%
 % ----------------------------------------------------
@@ -909,7 +911,7 @@ reported_reason_to_exclude(C,V,Y,100,Explanation) :-
 	reported(C,V,Y,_,Coverage),
 	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
 	Coverage > 100,
-	concat_atom(['Reported data excluded because ',Coverage,' percent greater than 100 percent. '],Explanation).
+	my_concat_atom(['Reported data excluded because ',Coverage,' percent greater than 100 percent. '],Explanation).
 
 % Reason to exclude reported: Sawtooth - inconsistent temporal change
 % --------------------------------------------------------------------
@@ -925,14 +927,14 @@ reported_reason_to_exclude(C,V,Y,sawtooth,Explanation) :-
     % Increase
 	(((Coverage - CoverageBefore) > Threshold,
 	  (Coverage - CoverageAfter)  > Threshold,
-	 concat_atom(['Reported data excluded due to an increase from ',CoverageBefore,' percent to ',
+	 my_concat_atom(['Reported data excluded due to an increase from ',CoverageBefore,' percent to ',
 			Coverage,' percent with decrease ',CoverageAfter,' percent. '],Explanation))
 	; % or
 
 	%Decline
 	((CoverageBefore - Coverage)  > Threshold,
 	 (CoverageAfter  - Coverage)  > Threshold,
-	 concat_atom(['Reported data excluded due to decline in reported coverage from ',CoverageBefore,' percent to ',
+	 my_concat_atom(['Reported data excluded due to decline in reported coverage from ',CoverageBefore,' percent to ',
 			Coverage,' percent with increase to ',CoverageAfter,' percent. '],Explanation))).
 
 % Reason to exclude reported: sudden change in most recently reported data for classic vaccines.
@@ -946,7 +948,7 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	reported(C,V,YPrevious,_,CoveragePreviousYear),
 	sawtooth_threshold(Threshold),
 	abs(CoveragePreviousYear - Coverage) > Threshold,
-	concat_atom(['Reported data excluded due to sudden change in coverage from ',CoveragePreviousYear,' level to ',
+	my_concat_atom(['Reported data excluded due to sudden change in coverage from ',CoveragePreviousYear,' level to ',
 			Coverage,' percent. '],Explanation).
 
 % Reason to exclude reported: sudden decline in most recently reported data for new vaccines.
@@ -960,7 +962,7 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	reported(C,V,YPrevious,_,CoveragePreviousYear),
 	sawtooth_threshold(Threshold),
 	(CoveragePreviousYear - Coverage) > Threshold,
-	concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ',
+	my_concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ',
 			Coverage,' percent. '],Explanation).
 
 reported_later(C,V,Year) :-
@@ -1157,3 +1159,8 @@ output_results([H|T],Out) :- output_fields(H,Out), output_results(T,Out).
 
 output_fields([],Out) :- nl(Out).
 output_fields([H|T],Out) :- write(Out,H),write(Out,'\t'),output_fields(T,Out).
+
+% MG, temporary: concatenate string representation also of non-atoms
+my_concat_atom(List, String) :-
+    maplist(term_string, List, Strings),
+    atomics_to_string(Strings, String).
