@@ -3,6 +3,9 @@
 test_wuenic :-
   true.
 
+user:main :-
+  true.
+
 :- begin_tests(wuenic).
 % :- use_module(library(wuenic)).
 
