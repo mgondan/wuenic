@@ -111,7 +111,6 @@ survey_results(country,vaccine,year,id,description,coverage).
 wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
 births_UNPD(country,year,births).
 si_UNPD(country,year,surviving_infants).
-firstRubellaAtSecondMCV(country,rcv1,year,firstRubellaDose).
 
 % Load country-specific predicates describing data, survey_results, 
 % working group decisions and whether an estimate is required.
@@ -419,16 +418,16 @@ wuenic_I(C,rcv1,Y,Rule,'First dose of rubella vaccine given with second dose of 
 	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
 	firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose).
 
-	% First rubella given with second measles dose
-	% ---------------------------------------------
-	firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose) :-
-		member(FirstRubellaDose,['mcv2']).
-
 % ===============
 % Estimate assigned by working group.
 % -----------------------------------
 wuenic_I(C,V,Y,'W:',Explanation,Coverage) :-
 	workingGroupDecision(C,V,Y,assignWUENIC,Explanation,_,Coverage).
+
+% First rubella given with second measles dose
+% ---------------------------------------------
+firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose) :-
+  member(FirstRubellaDose,['mcv2']).
 
 %   Preliminary estimates.
 % ==============================================
@@ -441,15 +440,6 @@ wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
 	not(anchor_point(C,V,_,_,_,_)),
 	explain(ro,Source,Explain).
 
-% DWB 2023-APR	explain(ro,gov,'Estimate based on coverage reported by national government. ').
-    explain(ro,gov,'Estimate informed by reported data. ').
-% DWB 2023-APR	explain(ro,admin,'Estimate based on reported administrative estimate. ').
-    explain(ro,admin,'Estimate informed by reported administrative data. ').
-% DWB 2023-APR	explain(ro,interpolated,'Estimate based on interpolation between reported values. ').
-    explain(ro,interpolated,'Estimate informed by interpolation between reported data. ').
-% DWB 2023-APR	explain(ro,extrapolated,'Estimate based on extrapolation from data reported by national government. ').
-    explain(ro,extrapolated,'Estimate informed by extrapolation from reported data. ').
-	
 % Estimate at anchor points.
 % --------------------------
 wuenic_II(C,V,Y,Rule,Explanation,Coverage) :-
@@ -466,10 +456,6 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported data. ',Coverage) :-
 	both_anchors_resolved_to_reported(RuleBefore,RuleAfter),
 	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
 	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)).
-
-	both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
-		member(RuleBefore,['R: AP']),	
-		member(RuleAfter,['R: AP']).
 
 % Estimate between anchor points: between two reported anchors, admin data.
 % -------------------------------------------------------------------------
@@ -633,7 +619,20 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	Adj is AnchorCoverage - ReportedCoverageAtAnchor,
 	Coverage is round(ReportedCoverage + Adj),
 	concat_atom(['Reported data calibrated to ',AnchorYear,' levels.'],Explanation).
-	
+
+both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
+  member(RuleBefore,['R: AP']),	
+  member(RuleAfter,['R: AP']).
+
+% DWB 2023-APR	explain(ro,gov,'Estimate based on coverage reported by national government. ').
+explain(ro,gov,'Estimate informed by reported data. ').
+% DWB 2023-APR	explain(ro,admin,'Estimate based on reported administrative estimate. ').
+explain(ro,admin,'Estimate informed by reported administrative data. ').
+% DWB 2023-APR	explain(ro,interpolated,'Estimate based on interpolation between reported values. ').
+explain(ro,interpolated,'Estimate informed by interpolation between reported data. ').
+% DWB 2023-APR	explain(ro,extrapolated,'Estimate based on extrapolation from data reported by national government. ').
+explain(ro,extrapolated,'Estimate informed by extrapolation from reported data. ').
+
 % =====================
 % Level two processing:
 %   Determine coverage value at anchor points
@@ -656,24 +655,6 @@ anchor_point(C,V,Y,'R: AP',Explanation,ReportedCoverage) :-
 	survey_supports_reported(ReportedCoverage,SurveyCoverage),
 	explain(ap,Source,Explain,Explanation).
 
-	% Determine whether survey supports reported
-	% -------------------------------------------
-	survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
-		survey_reported_threshold(Threshold),
-		(abs(ReportedCoverage - SurveyCoverage) =< Threshold).
-
-	explain(ap,gov,Explain,Explanation) :- 
-		% DWB 2023-APR concat_atom(['Estimate based on coverage reported by national government supported by survey. ',Explain],Explanation).
-		concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
-	explain(ap,admin,Explain,Explanation) :-
-		% DWB 2023-APR concat_atom(['Estimate based on administrative data reported by national government supported by survey. ',Explain],Explanation).
-		concat_atom(['Estimate informed by reported administrative data supported by survey. ',Explain],Explanation).
-	explain(ap,interpolated,Explain,Explanation) :-
-		% DWB 2023-APR concat_atom(['Estimate based on interpolation between data reported by national government supported by survey. ',Explain],Explanation).
-		concat_atom(['Estimate informed by interpolation between reported data supported by survey. ',Explain],Explanation).
-	explain(ap,extrapolated,Explain,Explanation) :-
-		concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
-		
 % Anchor point: survey results challenge reported.
 % -----------------------------------------------
 anchor_point(C,V,Y,'S: AP',Explanation,SurveyCoverage) :-
@@ -698,7 +679,25 @@ anchor_point(C,V,Y,'W: AP',Explanation,AssignedCoverage) :-
 	workingGroupDecision(C,V,Y,assignAnchor,WGD_EXP,_,AssignedCoverage),
 	Coverage \= AssignedCoverage,
 	concat_atom(['Estimate of ',AssignedCoverage,' percent assigned by working group. ', WGD_EXP], Explanation).
-	
+
+% Determine whether survey supports reported
+% -------------------------------------------
+survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
+  survey_reported_threshold(Threshold),
+  (abs(ReportedCoverage - SurveyCoverage) =< Threshold).
+
+explain(ap,gov,Explain,Explanation) :- 
+  % DWB 2023-APR concat_atom(['Estimate based on coverage reported by national government supported by survey. ',Explain],Explanation).
+  concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
+explain(ap,admin,Explain,Explanation) :-
+  % DWB 2023-APR concat_atom(['Estimate based on administrative data reported by national government supported by survey. ',Explain],Explanation).
+  concat_atom(['Estimate informed by reported administrative data supported by survey. ',Explain],Explanation).
+explain(ap,interpolated,Explain,Explanation) :-
+  % DWB 2023-APR concat_atom(['Estimate based on interpolation between data reported by national government supported by survey. ',Explain],Explanation).
+  concat_atom(['Estimate informed by interpolation between reported data supported by survey. ',Explain],Explanation).
+explain(ap,extrapolated,Explain,Explanation) :-
+  concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
+
 % ==============================================	
 % Level one processing:
 % 
@@ -952,10 +951,6 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	concat_atom(['Reported data excluded due to sudden change in coverage from ',CoveragePreviousYear,' level to ', 
 			Coverage,' percent. '],Explanation).	
 	
-	reported_later(C,V,Year) :-
-		reported(C,V,YearAfter,_,_),
-		YearAfter > Year.
-	
 % Reason to exclude reported: sudden decline in most recently reported data for new vaccines.
 % ------------------------------------------------------------------------------------------
 reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
@@ -969,7 +964,11 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	(CoveragePreviousYear - Coverage) > Threshold,
 	concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ', 
 			Coverage,' percent. '],Explanation).
-			
+
+reported_later(C,V,Year) :-
+  reported(C,V,YearAfter,_,_),
+  YearAfter > Year.
+
 % ==================================================
 % Level 0: 
 % Reported to WHO and UNICEF is government estimate.
