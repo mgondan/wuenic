@@ -122,9 +122,8 @@ firstRubellaAtSecondMCV(country,rcv1,year,firstRubellaDose).
 % working group decisions and whether an estimate is required.
 % Call estimate/0 to create country-specific estimates.
 % -----------------------------------------------------
-:- ['data.pl'].
-:- estimate.
-:- halt.
+% :- ['data.pl'].
+% :- estimate.
 
 % ==================================================
 % top level predicate. Creates and outputs estimates.
