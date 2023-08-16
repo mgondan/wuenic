@@ -19,207 +19,207 @@ country(bgd,'Bangladesh').
 date('Sun May 28 11:37:15 2023').
 
 estimate_required(bgd,bcg,1997,na,'na').
- estimate_required(bgd,bcg,1998,na,'na').
- estimate_required(bgd,bcg,1999,na,'na').
- estimate_required(bgd,bcg,2000,na,'na').
- estimate_required(bgd,bcg,2001,na,'na').
- estimate_required(bgd,bcg,2002,na,'na').
- estimate_required(bgd,bcg,2003,na,'na').
- estimate_required(bgd,bcg,2004,na,'na').
- estimate_required(bgd,bcg,2005,na,'na').
- estimate_required(bgd,bcg,2006,na,'na').
- estimate_required(bgd,bcg,2007,na,'na').
- estimate_required(bgd,bcg,2008,na,'na').
- estimate_required(bgd,bcg,2009,na,'na').
- estimate_required(bgd,bcg,2010,na,'na').
- estimate_required(bgd,bcg,2011,na,'na').
- estimate_required(bgd,bcg,2012,na,'na').
- estimate_required(bgd,bcg,2013,na,'na').
- estimate_required(bgd,bcg,2014,na,'na').
- estimate_required(bgd,bcg,2015,na,'na').
- estimate_required(bgd,bcg,2016,na,'na').
- estimate_required(bgd,bcg,2017,na,'na').
- estimate_required(bgd,bcg,2018,na,'na').
- estimate_required(bgd,bcg,2019,na,'na').
- estimate_required(bgd,bcg,2020,na,'na').
- estimate_required(bgd,bcg,2021,na,'na').
- estimate_required(bgd,bcg,2022,na,'na').
- estimate_required(bgd,dtp1,1997,na,'na').
- estimate_required(bgd,dtp1,1998,na,'na').
- estimate_required(bgd,dtp1,1999,na,'na').
- estimate_required(bgd,dtp1,2000,na,'na').
- estimate_required(bgd,dtp1,2001,na,'na').
- estimate_required(bgd,dtp1,2002,na,'na').
- estimate_required(bgd,dtp1,2003,na,'na').
- estimate_required(bgd,dtp1,2004,na,'na').
- estimate_required(bgd,dtp1,2005,na,'na').
- estimate_required(bgd,dtp1,2006,na,'na').
- estimate_required(bgd,dtp1,2007,na,'na').
- estimate_required(bgd,dtp1,2008,na,'na').
- estimate_required(bgd,dtp1,2009,na,'na').
- estimate_required(bgd,dtp1,2010,na,'na').
- estimate_required(bgd,dtp1,2011,na,'na').
- estimate_required(bgd,dtp1,2012,na,'na').
- estimate_required(bgd,dtp1,2013,na,'na').
- estimate_required(bgd,dtp1,2014,na,'na').
- estimate_required(bgd,dtp1,2015,na,'na').
- estimate_required(bgd,dtp1,2016,na,'na').
- estimate_required(bgd,dtp1,2017,na,'na').
- estimate_required(bgd,dtp1,2018,na,'na').
- estimate_required(bgd,dtp1,2019,na,'na').
- estimate_required(bgd,dtp1,2020,na,'na').
- estimate_required(bgd,dtp1,2021,na,'na').
- estimate_required(bgd,dtp1,2022,na,'na').
- estimate_required(bgd,dtp3,1997,na,'na').
- estimate_required(bgd,dtp3,1998,na,'na').
- estimate_required(bgd,dtp3,1999,na,'na').
- estimate_required(bgd,dtp3,2000,na,'na').
- estimate_required(bgd,dtp3,2001,na,'na').
- estimate_required(bgd,dtp3,2002,na,'na').
- estimate_required(bgd,dtp3,2003,na,'na').
- estimate_required(bgd,dtp3,2004,na,'na').
- estimate_required(bgd,dtp3,2005,na,'na').
- estimate_required(bgd,dtp3,2006,na,'na').
- estimate_required(bgd,dtp3,2007,na,'na').
- estimate_required(bgd,dtp3,2008,na,'na').
- estimate_required(bgd,dtp3,2009,na,'na').
- estimate_required(bgd,dtp3,2010,na,'na').
- estimate_required(bgd,dtp3,2011,na,'na').
- estimate_required(bgd,dtp3,2012,na,'na').
- estimate_required(bgd,dtp3,2013,na,'na').
- estimate_required(bgd,dtp3,2014,na,'na').
- estimate_required(bgd,dtp3,2015,na,'na').
- estimate_required(bgd,dtp3,2016,na,'na').
- estimate_required(bgd,dtp3,2017,na,'na').
- estimate_required(bgd,dtp3,2018,na,'na').
- estimate_required(bgd,dtp3,2019,na,'na').
- estimate_required(bgd,dtp3,2020,na,'na').
- estimate_required(bgd,dtp3,2021,na,'na').
- estimate_required(bgd,dtp3,2022,na,'na').
- estimate_required(bgd,hepb3,2003,hepb,'na').
- estimate_required(bgd,hepb3,2004,hepb,'na').
- estimate_required(bgd,hepb3,2005,hepb,'na').
- estimate_required(bgd,hepb3,2006,hepb,'na').
- estimate_required(bgd,hepb3,2007,hepb,'na').
- estimate_required(bgd,hepb3,2008,hepb,'na').
- estimate_required(bgd,hepb3,2009,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2010,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2011,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2012,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2013,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2014,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2015,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2016,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2017,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2018,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2019,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2020,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2021,dtphepbhib,'na').
- estimate_required(bgd,hepb3,2022,dtphepbhib,'na').
- estimate_required(bgd,hib3,2009,dtphepbhib,'na').
- estimate_required(bgd,hib3,2010,dtphepbhib,'na').
- estimate_required(bgd,hib3,2011,dtphepbhib,'na').
- estimate_required(bgd,hib3,2012,dtphepbhib,'na').
- estimate_required(bgd,hib3,2013,dtphepbhib,'na').
- estimate_required(bgd,hib3,2014,dtphepbhib,'na').
- estimate_required(bgd,hib3,2015,dtphepbhib,'na').
- estimate_required(bgd,hib3,2016,dtphepbhib,'na').
- estimate_required(bgd,hib3,2017,dtphepbhib,'na').
- estimate_required(bgd,hib3,2018,dtphepbhib,'na').
- estimate_required(bgd,hib3,2019,dtphepbhib,'na').
- estimate_required(bgd,hib3,2020,dtphepbhib,'na').
- estimate_required(bgd,hib3,2021,dtphepbhib,'na').
- estimate_required(bgd,hib3,2022,dtphepbhib,'na').
- estimate_required(bgd,ipv1,2015,na,'na').
- estimate_required(bgd,ipv1,2016,na,'na').
- estimate_required(bgd,ipv1,2017,ipv,'na').
- estimate_required(bgd,ipv1,2018,ipv,'na').
- estimate_required(bgd,ipv1,2019,ipv,'na').
- estimate_required(bgd,ipv1,2020,ipv,'na').
- estimate_required(bgd,ipv1,2021,ipv,'na').
- estimate_required(bgd,ipv1,2022,ipv,'na').
- estimate_required(bgd,mcv1,1997,na,'na').
- estimate_required(bgd,mcv1,1998,na,'na').
- estimate_required(bgd,mcv1,1999,na,'na').
- estimate_required(bgd,mcv1,2000,na,'na').
- estimate_required(bgd,mcv1,2001,na,'na').
- estimate_required(bgd,mcv1,2002,na,'na').
- estimate_required(bgd,mcv1,2003,na,'na').
- estimate_required(bgd,mcv1,2004,na,'na').
- estimate_required(bgd,mcv1,2005,na,'na').
- estimate_required(bgd,mcv1,2006,na,'na').
- estimate_required(bgd,mcv1,2007,na,'na').
- estimate_required(bgd,mcv1,2008,na,'na').
- estimate_required(bgd,mcv1,2009,na,'na').
- estimate_required(bgd,mcv1,2010,na,'na').
- estimate_required(bgd,mcv1,2011,na,'na').
- estimate_required(bgd,mcv1,2012,na,'na').
- estimate_required(bgd,mcv1,2013,na,'na').
- estimate_required(bgd,mcv1,2014,na,'na').
- estimate_required(bgd,mcv1,2015,na,'na').
- estimate_required(bgd,mcv1,2016,na,'na').
- estimate_required(bgd,mcv1,2017,na,'na').
- estimate_required(bgd,mcv1,2018,na,'na').
- estimate_required(bgd,mcv1,2019,na,'na').
- estimate_required(bgd,mcv1,2020,na,'na').
- estimate_required(bgd,mcv1,2021,na,'na').
- estimate_required(bgd,mcv1,2022,na,'na').
- estimate_required(bgd,mcv2,2012,mr,'na').
- estimate_required(bgd,mcv2,2013,mr,'na').
- estimate_required(bgd,mcv2,2014,measles,'na').
- estimate_required(bgd,mcv2,2015,measles,'na').
- estimate_required(bgd,mcv2,2016,measles,'na').
- estimate_required(bgd,mcv2,2017,mr,'na').
- estimate_required(bgd,mcv2,2018,mr,'na').
- estimate_required(bgd,mcv2,2019,mr,'na').
- estimate_required(bgd,mcv2,2020,mr,'na').
- estimate_required(bgd,mcv2,2021,mr,'na').
- estimate_required(bgd,mcv2,2022,mr,'na').
- estimate_required(bgd,pcv3,2015,na,'na').
- estimate_required(bgd,pcv3,2016,na,'na').
- estimate_required(bgd,pcv3,2017,na,'na').
- estimate_required(bgd,pcv3,2018,na,'na').
- estimate_required(bgd,pcv3,2019,na,'na').
- estimate_required(bgd,pcv3,2020,na,'na').
- estimate_required(bgd,pcv3,2021,na,'na').
- estimate_required(bgd,pcv3,2022,na,'na').
- estimate_required(bgd,pol3,1997,na,'na').
- estimate_required(bgd,pol3,1998,na,'na').
- estimate_required(bgd,pol3,1999,na,'na').
- estimate_required(bgd,pol3,2000,na,'na').
- estimate_required(bgd,pol3,2001,na,'na').
- estimate_required(bgd,pol3,2002,na,'na').
- estimate_required(bgd,pol3,2003,na,'na').
- estimate_required(bgd,pol3,2004,na,'na').
- estimate_required(bgd,pol3,2005,na,'na').
- estimate_required(bgd,pol3,2006,na,'na').
- estimate_required(bgd,pol3,2007,na,'na').
- estimate_required(bgd,pol3,2008,na,'na').
- estimate_required(bgd,pol3,2009,na,'na').
- estimate_required(bgd,pol3,2010,na,'na').
- estimate_required(bgd,pol3,2011,na,'na').
- estimate_required(bgd,pol3,2012,na,'na').
- estimate_required(bgd,pol3,2013,na,'na').
- estimate_required(bgd,pol3,2014,na,'na').
- estimate_required(bgd,pol3,2015,na,'na').
- estimate_required(bgd,pol3,2016,na,'na').
- estimate_required(bgd,pol3,2017,na,'na').
- estimate_required(bgd,pol3,2018,na,'na').
- estimate_required(bgd,pol3,2019,na,'na').
- estimate_required(bgd,pol3,2020,na,'na').
- estimate_required(bgd,pol3,2021,na,'na').
- estimate_required(bgd,pol3,2022,na,'na').
- estimate_required(bgd,rcv1,2012,mr,'na').
- estimate_required(bgd,rcv1,2013,mr,'na').
- estimate_required(bgd,rcv1,2014,mr,'na').
- estimate_required(bgd,rcv1,2015,mr,'na').
- estimate_required(bgd,rcv1,2016,mr,'na').
- estimate_required(bgd,rcv1,2017,mr,'na').
- estimate_required(bgd,rcv1,2018,mr,'na').
- estimate_required(bgd,rcv1,2019,mr,'na').
- estimate_required(bgd,rcv1,2020,mr,'na').
- estimate_required(bgd,rcv1,2021,mr,'na').
- estimate_required(bgd,rcv1,2022,mr,'na').
+estimate_required(bgd,bcg,1998,na,'na').
+estimate_required(bgd,bcg,1999,na,'na').
+estimate_required(bgd,bcg,2000,na,'na').
+estimate_required(bgd,bcg,2001,na,'na').
+estimate_required(bgd,bcg,2002,na,'na').
+estimate_required(bgd,bcg,2003,na,'na').
+estimate_required(bgd,bcg,2004,na,'na').
+estimate_required(bgd,bcg,2005,na,'na').
+estimate_required(bgd,bcg,2006,na,'na').
+estimate_required(bgd,bcg,2007,na,'na').
+estimate_required(bgd,bcg,2008,na,'na').
+estimate_required(bgd,bcg,2009,na,'na').
+estimate_required(bgd,bcg,2010,na,'na').
+estimate_required(bgd,bcg,2011,na,'na').
+estimate_required(bgd,bcg,2012,na,'na').
+estimate_required(bgd,bcg,2013,na,'na').
+estimate_required(bgd,bcg,2014,na,'na').
+estimate_required(bgd,bcg,2015,na,'na').
+estimate_required(bgd,bcg,2016,na,'na').
+estimate_required(bgd,bcg,2017,na,'na').
+estimate_required(bgd,bcg,2018,na,'na').
+estimate_required(bgd,bcg,2019,na,'na').
+estimate_required(bgd,bcg,2020,na,'na').
+estimate_required(bgd,bcg,2021,na,'na').
+estimate_required(bgd,bcg,2022,na,'na').
+estimate_required(bgd,dtp1,1997,na,'na').
+estimate_required(bgd,dtp1,1998,na,'na').
+estimate_required(bgd,dtp1,1999,na,'na').
+estimate_required(bgd,dtp1,2000,na,'na').
+estimate_required(bgd,dtp1,2001,na,'na').
+estimate_required(bgd,dtp1,2002,na,'na').
+estimate_required(bgd,dtp1,2003,na,'na').
+estimate_required(bgd,dtp1,2004,na,'na').
+estimate_required(bgd,dtp1,2005,na,'na').
+estimate_required(bgd,dtp1,2006,na,'na').
+estimate_required(bgd,dtp1,2007,na,'na').
+estimate_required(bgd,dtp1,2008,na,'na').
+estimate_required(bgd,dtp1,2009,na,'na').
+estimate_required(bgd,dtp1,2010,na,'na').
+estimate_required(bgd,dtp1,2011,na,'na').
+estimate_required(bgd,dtp1,2012,na,'na').
+estimate_required(bgd,dtp1,2013,na,'na').
+estimate_required(bgd,dtp1,2014,na,'na').
+estimate_required(bgd,dtp1,2015,na,'na').
+estimate_required(bgd,dtp1,2016,na,'na').
+estimate_required(bgd,dtp1,2017,na,'na').
+estimate_required(bgd,dtp1,2018,na,'na').
+estimate_required(bgd,dtp1,2019,na,'na').
+estimate_required(bgd,dtp1,2020,na,'na').
+estimate_required(bgd,dtp1,2021,na,'na').
+estimate_required(bgd,dtp1,2022,na,'na').
+estimate_required(bgd,dtp3,1997,na,'na').
+estimate_required(bgd,dtp3,1998,na,'na').
+estimate_required(bgd,dtp3,1999,na,'na').
+estimate_required(bgd,dtp3,2000,na,'na').
+estimate_required(bgd,dtp3,2001,na,'na').
+estimate_required(bgd,dtp3,2002,na,'na').
+estimate_required(bgd,dtp3,2003,na,'na').
+estimate_required(bgd,dtp3,2004,na,'na').
+estimate_required(bgd,dtp3,2005,na,'na').
+estimate_required(bgd,dtp3,2006,na,'na').
+estimate_required(bgd,dtp3,2007,na,'na').
+estimate_required(bgd,dtp3,2008,na,'na').
+estimate_required(bgd,dtp3,2009,na,'na').
+estimate_required(bgd,dtp3,2010,na,'na').
+estimate_required(bgd,dtp3,2011,na,'na').
+estimate_required(bgd,dtp3,2012,na,'na').
+estimate_required(bgd,dtp3,2013,na,'na').
+estimate_required(bgd,dtp3,2014,na,'na').
+estimate_required(bgd,dtp3,2015,na,'na').
+estimate_required(bgd,dtp3,2016,na,'na').
+estimate_required(bgd,dtp3,2017,na,'na').
+estimate_required(bgd,dtp3,2018,na,'na').
+estimate_required(bgd,dtp3,2019,na,'na').
+estimate_required(bgd,dtp3,2020,na,'na').
+estimate_required(bgd,dtp3,2021,na,'na').
+estimate_required(bgd,dtp3,2022,na,'na').
+estimate_required(bgd,hepb3,2003,hepb,'na').
+estimate_required(bgd,hepb3,2004,hepb,'na').
+estimate_required(bgd,hepb3,2005,hepb,'na').
+estimate_required(bgd,hepb3,2006,hepb,'na').
+estimate_required(bgd,hepb3,2007,hepb,'na').
+estimate_required(bgd,hepb3,2008,hepb,'na').
+estimate_required(bgd,hepb3,2009,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2010,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2011,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2012,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2013,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2014,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2015,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2016,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2017,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2018,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2019,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2020,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2021,dtphepbhib,'na').
+estimate_required(bgd,hepb3,2022,dtphepbhib,'na').
+estimate_required(bgd,hib3,2009,dtphepbhib,'na').
+estimate_required(bgd,hib3,2010,dtphepbhib,'na').
+estimate_required(bgd,hib3,2011,dtphepbhib,'na').
+estimate_required(bgd,hib3,2012,dtphepbhib,'na').
+estimate_required(bgd,hib3,2013,dtphepbhib,'na').
+estimate_required(bgd,hib3,2014,dtphepbhib,'na').
+estimate_required(bgd,hib3,2015,dtphepbhib,'na').
+estimate_required(bgd,hib3,2016,dtphepbhib,'na').
+estimate_required(bgd,hib3,2017,dtphepbhib,'na').
+estimate_required(bgd,hib3,2018,dtphepbhib,'na').
+estimate_required(bgd,hib3,2019,dtphepbhib,'na').
+estimate_required(bgd,hib3,2020,dtphepbhib,'na').
+estimate_required(bgd,hib3,2021,dtphepbhib,'na').
+estimate_required(bgd,hib3,2022,dtphepbhib,'na').
+estimate_required(bgd,ipv1,2015,na,'na').
+estimate_required(bgd,ipv1,2016,na,'na').
+estimate_required(bgd,ipv1,2017,ipv,'na').
+estimate_required(bgd,ipv1,2018,ipv,'na').
+estimate_required(bgd,ipv1,2019,ipv,'na').
+estimate_required(bgd,ipv1,2020,ipv,'na').
+estimate_required(bgd,ipv1,2021,ipv,'na').
+estimate_required(bgd,ipv1,2022,ipv,'na').
+estimate_required(bgd,mcv1,1997,na,'na').
+estimate_required(bgd,mcv1,1998,na,'na').
+estimate_required(bgd,mcv1,1999,na,'na').
+estimate_required(bgd,mcv1,2000,na,'na').
+estimate_required(bgd,mcv1,2001,na,'na').
+estimate_required(bgd,mcv1,2002,na,'na').
+estimate_required(bgd,mcv1,2003,na,'na').
+estimate_required(bgd,mcv1,2004,na,'na').
+estimate_required(bgd,mcv1,2005,na,'na').
+estimate_required(bgd,mcv1,2006,na,'na').
+estimate_required(bgd,mcv1,2007,na,'na').
+estimate_required(bgd,mcv1,2008,na,'na').
+estimate_required(bgd,mcv1,2009,na,'na').
+estimate_required(bgd,mcv1,2010,na,'na').
+estimate_required(bgd,mcv1,2011,na,'na').
+estimate_required(bgd,mcv1,2012,na,'na').
+estimate_required(bgd,mcv1,2013,na,'na').
+estimate_required(bgd,mcv1,2014,na,'na').
+estimate_required(bgd,mcv1,2015,na,'na').
+estimate_required(bgd,mcv1,2016,na,'na').
+estimate_required(bgd,mcv1,2017,na,'na').
+estimate_required(bgd,mcv1,2018,na,'na').
+estimate_required(bgd,mcv1,2019,na,'na').
+estimate_required(bgd,mcv1,2020,na,'na').
+estimate_required(bgd,mcv1,2021,na,'na').
+estimate_required(bgd,mcv1,2022,na,'na').
+estimate_required(bgd,mcv2,2012,mr,'na').
+estimate_required(bgd,mcv2,2013,mr,'na').
+estimate_required(bgd,mcv2,2014,measles,'na').
+estimate_required(bgd,mcv2,2015,measles,'na').
+estimate_required(bgd,mcv2,2016,measles,'na').
+estimate_required(bgd,mcv2,2017,mr,'na').
+estimate_required(bgd,mcv2,2018,mr,'na').
+estimate_required(bgd,mcv2,2019,mr,'na').
+estimate_required(bgd,mcv2,2020,mr,'na').
+estimate_required(bgd,mcv2,2021,mr,'na').
+estimate_required(bgd,mcv2,2022,mr,'na').
+estimate_required(bgd,pcv3,2015,na,'na').
+estimate_required(bgd,pcv3,2016,na,'na').
+estimate_required(bgd,pcv3,2017,na,'na').
+estimate_required(bgd,pcv3,2018,na,'na').
+estimate_required(bgd,pcv3,2019,na,'na').
+estimate_required(bgd,pcv3,2020,na,'na').
+estimate_required(bgd,pcv3,2021,na,'na').
+estimate_required(bgd,pcv3,2022,na,'na').
+estimate_required(bgd,pol3,1997,na,'na').
+estimate_required(bgd,pol3,1998,na,'na').
+estimate_required(bgd,pol3,1999,na,'na').
+estimate_required(bgd,pol3,2000,na,'na').
+estimate_required(bgd,pol3,2001,na,'na').
+estimate_required(bgd,pol3,2002,na,'na').
+estimate_required(bgd,pol3,2003,na,'na').
+estimate_required(bgd,pol3,2004,na,'na').
+estimate_required(bgd,pol3,2005,na,'na').
+estimate_required(bgd,pol3,2006,na,'na').
+estimate_required(bgd,pol3,2007,na,'na').
+estimate_required(bgd,pol3,2008,na,'na').
+estimate_required(bgd,pol3,2009,na,'na').
+estimate_required(bgd,pol3,2010,na,'na').
+estimate_required(bgd,pol3,2011,na,'na').
+estimate_required(bgd,pol3,2012,na,'na').
+estimate_required(bgd,pol3,2013,na,'na').
+estimate_required(bgd,pol3,2014,na,'na').
+estimate_required(bgd,pol3,2015,na,'na').
+estimate_required(bgd,pol3,2016,na,'na').
+estimate_required(bgd,pol3,2017,na,'na').
+estimate_required(bgd,pol3,2018,na,'na').
+estimate_required(bgd,pol3,2019,na,'na').
+estimate_required(bgd,pol3,2020,na,'na').
+estimate_required(bgd,pol3,2021,na,'na').
+estimate_required(bgd,pol3,2022,na,'na').
+estimate_required(bgd,rcv1,2012,mr,'na').
+estimate_required(bgd,rcv1,2013,mr,'na').
+estimate_required(bgd,rcv1,2014,mr,'na').
+estimate_required(bgd,rcv1,2015,mr,'na').
+estimate_required(bgd,rcv1,2016,mr,'na').
+estimate_required(bgd,rcv1,2017,mr,'na').
+estimate_required(bgd,rcv1,2018,mr,'na').
+estimate_required(bgd,rcv1,2019,mr,'na').
+estimate_required(bgd,rcv1,2020,mr,'na').
+estimate_required(bgd,rcv1,2021,mr,'na').
+estimate_required(bgd,rcv1,2022,mr,'na').
 
 admin(bgd,bcg,1999,100).
  admin(bgd,bcg,2000,94).
