@@ -1,6 +1,6 @@
 :- module(wuenic, [ test_wuenic/0 ]).
 
-:- use_module(wuenic_bgd).
+:- use_module(bgd).
 
 test_wuenic :-
   true.
