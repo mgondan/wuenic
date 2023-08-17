@@ -389,19 +389,19 @@ wuenic_I(C,dtp1,Y,Rule,Explanation,Coverage) :-
 wuenic_I(C,dtp1,Y,'RMF:',Explanation,RMFCoverage) :-
 	wuenic_II(C,dtp1,Y,_,_,DTP1Coverage),
 	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
-	wuenic_II(C,dtp3,Y,_,_,DTP3Coverage),
-	DTP3Coverage > DTP1Coverage,
-	rmf(DTP3Coverage,RMFCoverage),
-	my_concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
+	wuenic_II(C,dtp3,Y,_,_,DTP3),
+	DTP3 > DTP1Coverage,
+	RMFCoverage is round(18.258 - 0.6088*DTP3 - 0.0058*DTP3*DTP3),
+	my_concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',DTP3,'. '],Explanation).
 
 % Estimate for DTP1 where DTP1 not reported: RMF
 % -----------------------------------------
 wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
-	wuenic_II(C,dtp3,Y,_,_,DTP3Coverage),
+	wuenic_II(C,dtp3,Y,_,_,DTP3),
 	not(wuenic_II(C,dtp1,Y,_,_,_)),
 	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
-	rmf(DTP3Coverage,RMFCoverage),
-	my_concat_atom(['Estimate based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
+	RMFCoverage is round(18.258 - 0.6088*DTP3 - 0.0058*DTP3*DTP3),
+	my_concat_atom(['Estimate based on DTP3 coverage of ',DTP3,'. '],Explanation).
 
 % ==================
 % Estimate for RCV1 where RCV1 given at MCV1.
@@ -1049,10 +1049,6 @@ between_anchor_points(C,V,Y,PreceedingAnchorYear,PreceedingRule,PreceedingCov,
 	PreceedingAnchorYear < Y,
 	SucceedingAnchorYear > Y,
 	not(anchor_point_between(C,V,PreceedingAnchorYear,SucceedingAnchorYear)).
-
-rmf(DTP3Coverage,RMFCoverage) :-
-	RMFCoverage is round(DTP3Coverage +
-       (-0.0058*(DTP3Coverage * DTP3Coverage)) + (0.3912*DTP3Coverage) + 18.258).
 
 % Interpolate between two years
 interpolate(Early, EarlyCov, Late, LateCov, Year, Coverage) :-
