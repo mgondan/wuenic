@@ -1098,12 +1098,11 @@ calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
 	Coverage is round(ReportedCoverage + Adj).
 
 % Ensure estimates are between 0 and 99.
-% ---------------------------------------
-bound_0_100(X,Y) :- X >= 0, X < 99, Y is round(X).
-bound_0_100(X,Y) :- X < 0, Y is 0.
-bound_0_100(X,Y) :- X >= 99, Y is 99.
+bound_0_100(X, Y) :-
+    Y is max(0, min(99, round(X))).
 
 % Add underlying data to each C, V, Y estimate
+% MG, issue: is this extra iteration really needed?
 collect_data(C, V, Y, PrevRev, Admin, Gov, Reported, Vaccinated,
         Target, UnpdBirths, UnpdSI, SeriesValue, Source, SurveyInfo)
  => legacy_estimate(C, V, Y, PrevRev),
