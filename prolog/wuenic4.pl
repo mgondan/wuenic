@@ -1054,12 +1054,10 @@ rmf(DTP3Coverage,RMFCoverage) :-
 	RMFCoverage is round(DTP3Coverage +
        (-0.0058*(DTP3Coverage * DTP3Coverage)) + (0.3912*DTP3Coverage) + 18.258).
 
-% Provide interpolated value between two points.
-% ----------------------------------------------
-interpolate(EarlyYear,EarlyCoverage,LateYear,LateCoverage,Year,Coverage) :-
-	Coverage is round(EarlyCoverage +
-	           (Year - EarlyYear)*
-			((LateCoverage - EarlyCoverage)/(LateYear - EarlyYear))).
+% Interpolate between two years
+interpolate(Early, EarlyCov, Late, LateCov, Year, Coverage) :-
+    Slope is (LateCov - EarlyCov) / (Late - Early),
+    Coverage is round(EarlyCov + (Year - Early) * Slope).
 
 % Calibrate reported data to anchor points
 % MG, issue: why are values rounded?
