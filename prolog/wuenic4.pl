@@ -969,38 +969,31 @@ reported_later(C,V,Year) :-
   reported(C,V,YearAfter,_,_),
   YearAfter > Year.
 
-% ==================================================
 % Level 0:
-% Reported to WHO and UNICEF is government estimate.
-% If government estimate missing, then reported is
-% administrative data. If both missing, reported is missing.
-% ---------------------------------------------------------
-reported(C,V,Y,gov,Coverage) :-
-	gov(C,V,Y,Coverage),
-	not(workingGroupDecision(C,V,Y,ignoreGov,_,_,_)).
+% Reported to WHO and UNICEF is government estimate. If government
+% estimate missing, then reported is administrative data.
+reported(C, V, Y, Source, Coverage),
+    gov(C, V, Y, Cov),
+    not(workingGroupDecision(C, V, Y, ignoreGov, _, _, _))
+ => Source = gov,
+    Coverage = Cov.
 
-reported(C,V,Y,admin,Coverage) :-
-	gov(C,V,Y,_),
-	workingGroupDecision(C,V,Y,ignoreGov,_,_,_),
-	admin(C,V,Y,Coverage),
-	not(workingGroupDecision(C,V,Y,ignoreAdmin,_,_,_)).
+reported(C, V, Y, Source, Coverage),
+    admin(C, V, Y, Cov),
+    not(workingGroupDecision(C, V, Y, ignoreAdmin, _, _, _))
+ => Source = admin,
+    Coverage = Cov.
 
-reported(C,V,Y,admin,Coverage) :-
-	admin(C,V,Y,Coverage),
-	not(gov(C,V,Y,_)),
-	not(workingGroupDecision(C,V,Y,ignoreAdmin,_,_,_)).
+reported(_C, _V, _Y, _Source, _Coverage)
+ => fail.
 
 % ==========================================
 % Utilities and general auxiliary predicates
 % -------------------------------------------
-% Determine whether a working group decision
-% applies for a given year if working group
-% decision applies over an interval of time.
-% ------------------------------------------
-workingGroupDecision(C,V,Y,Action,Explanation,SurveyID,Coverage) :-
-	wgd(C,V,YBegin,YEnd,Action,Explanation,SurveyID,Coverage,_,_),
-	YBegin =< Y,
-	YEnd >= Y.
+% Working group decision applies for a given year
+workingGroupDecision(C, V, Y, Action, Explanation, Survey, Coverage) :-
+    wgd(C, V, Begin, End, Action, Explanation, Survey, Coverage, _, _),
+    Begin =< Y, Y =< End.
 
 anchor_point_earlier(C,V,AnchorYear) :- anchor_point(C,V,Year,_,_,_), Year < AnchorYear.
 anchor_point_later(C,V,AnchorYear)   :- anchor_point(C,V,Year,_,_,_), Year > AnchorYear.
