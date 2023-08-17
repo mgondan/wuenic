@@ -511,7 +511,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported data. ',ReportedCoverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(anchor_point_before(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate before earliest anchor: reported-extrapolated / interpolated
@@ -524,7 +524,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. 
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(anchor_point_before(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate before earliest anchor: reported-extrapolated / interpolated
@@ -536,7 +536,7 @@ wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by nati
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(anchor_point_before(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate before earliest anchor: calibrated
@@ -547,7 +547,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(anchor_point_before(C,V,AnchorYear)),
 	not(member(AnchorRule,['R: AP'])),
 
 	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
@@ -564,7 +564,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported data.',ReportedCoverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(anchor_point_after(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: reported
@@ -576,7 +576,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported administrative data. ',Repor
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(anchor_point_after(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: reported-extrapolated / interpolated
@@ -589,7 +589,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. 
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(anchor_point_after(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: reported-extrapolated / interpolated
@@ -601,7 +601,7 @@ wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by nati
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(anchor_point_after(C,V,AnchorYear)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: calibrated
@@ -612,7 +612,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(anchor_point_after(C,V,AnchorYear)),
 	not(member(AnchorRule,['R: AP'])),
 
 	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
@@ -995,12 +995,19 @@ workingGroupDecision(C, V, Y, Action, Explanation, Survey, Coverage) :-
     wgd(C, V, Begin, End, Action, Explanation, Survey, Coverage, _, _),
     Begin =< Y, Y =< End.
 
-anchor_point_earlier(C,V,AnchorYear) :- anchor_point(C,V,Year,_,_,_), Year < AnchorYear.
-anchor_point_later(C,V,AnchorYear)   :- anchor_point(C,V,Year,_,_,_), Year > AnchorYear.
-anchor_point_between(C,V,YearBefore,YearAfter) :-
-	anchor_point(C,V,YearBetween,_,_,_),
-	YearBefore < YearBetween,
-	YearAfter  > YearBetween.
+% Anchor points to given year
+% MG, issue: return closest anchor point instead of generate & test
+anchor_point_before(C, V, Before) :-
+    anchor_point(C, V, Y, _, _, _),
+    Y < Before.
+
+anchor_point_after(C, V, After) :-
+    anchor_point(C, V, Y, _, _, _),
+    Y > After.
+
+anchor_point_between(C, V, Before, After) :-
+    anchor_point(C, V, Y, _, _, _),
+    Before < Y, Y < After.
 
 % routines for interpolated points
 % --------------------------------
