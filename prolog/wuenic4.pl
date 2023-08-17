@@ -914,76 +914,80 @@ reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
 %  2. Coverage > 100%
 %  2. Inconsistent temporal changes (sawtooth or sudden change most recent year)
 % =====================================
-% Reason to exclude reported: working group decision
-% ---------------------------------------------------
-reported_reason_to_exclude(C,V,Y,wdg,Explain) :-
-	reported(C,V,Y,_,_),
-	workingGroupDecision(C,V,Y,ignoreReported,Exp,_,_),
-	my_concat_atom(['Reported data excluded. ',Exp],Explain).
+% MG, todo: short version that just checks if excluded
+%
+% Working group decision
+reported_reason_to_exclude(C, V, Y, wdg, Explanation) :-
+    workingGroupDecision(C, V, Y, ignoreReported, Expl, _, _),
+    my_concat_atom(
+	['Reported data excluded. ', Expl], Explanation).
 
-% Reason to exclude reported: Reported coverage > 100%
-% ----------------------------------------------------
-reported_reason_to_exclude(C,V,Y,100,Explanation) :-
-	reported(C,V,Y,_,Coverage),
-	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
-	Coverage > 100,
-	my_concat_atom(['Reported data excluded because ',Coverage,' percent greater than 100 percent. '],Explanation).
+reported_reason_to_exclude(C, V, Y, Reason, Explanation) :-
+    not(workingGroupDecision(C, V, Y, acceptReported, _, _, _)),
+    reported(C, V, Y, _, Coverage),
+    reported_reason_to_exclude(C, V, Y, Coverage, Reason, Explanation).
 
-% Reason to exclude reported: Sawtooth - inconsistent temporal change
-% --------------------------------------------------------------------
-reported_reason_to_exclude(C,V,Y,sawtooth,Explanation) :-
-	reported(C,V,Y,_,Coverage),
-	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
-	YBefore is Y - 1,
-	YAfter  is Y + 1,
-	reported(C,V,YBefore,_,CoverageBefore),
-	reported(C,V,YAfter,_,CoverageAfter),
-	sawtooth_threshold(Threshold),
+% Reported coverage > 100%
+reported_reason_to_exclude(_C, _V, _Y, Coverage, 100, Explanation) :-
+    Coverage > 100,
+    my_concat_atom(
+	['Reported data excluded because ', Coverage,
+	 ' percent greater than 100 percent. '], Explanation).
 
-    % Increase
-	(((Coverage - CoverageBefore) > Threshold,
-	  (Coverage - CoverageAfter)  > Threshold,
-	 my_concat_atom(['Reported data excluded due to an increase from ',CoverageBefore,' percent to ',
-			Coverage,' percent with decrease ',CoverageAfter,' percent. '],Explanation))
-	; % or
+% Sawtooth - inconsistent temporal change
+reported_reason_to_exclude(C, V, Y, Coverage, sawtooth, Explanation) :-
+    Before is Y - 1,
+    reported(C, V, Before, _, CovBefore),
+    After is Y + 1,
+    reported(C, V, After, _, CovAfter),
+    sawtooth_threshold(Threshold),
+    Coverage - CovBefore > Threshold,
+    Coverage - CovAfter  > Threshold,
+    my_concat_atom(
+	['Reported data excluded due to an increase from ', CovBefore,
+	 ' percent to ', Coverage, ' percent with decrease ', CovAfter,
+	 ' percent. '],	Explanation).
 
-	%Decline
-	((CoverageBefore - Coverage)  > Threshold,
-	 (CoverageAfter  - Coverage)  > Threshold,
-	 my_concat_atom(['Reported data excluded due to decline in reported coverage from ',CoverageBefore,' percent to ',
-			Coverage,' percent with increase to ',CoverageAfter,' percent. '],Explanation))).
+reported_reason_to_exclude(C, V, Y, Coverage, sawtooth, Explanation) :-
+    Before is Y - 1,
+    reported(C, V, Before, _, CovBefore),
+    After  is Y + 1,
+    reported(C, V, After, _, CovAfter),
+    sawtooth_threshold(Threshold),
+    CovBefore - Coverage  > Threshold,
+    CovAfter  - Coverage  > Threshold,
+    my_concat_atom(
+	['Reported data excluded due to decline in reported coverage from ',
+	 CovBefore,' percent to ', Coverage, ' percent with increase to ',
+	 CovAfter,' percent. '], Explanation).
 
-% Reason to exclude reported: sudden change in most recently reported data for classic vaccines.
-% ----------------------------------------------------------------------------------------------
-reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
-	reported(C,V,Y,_,Coverage),
-	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
-	not(reported_later(C,V,Y)),
-	not(member(V,['pcv3','rotac'])),
-	YPrevious is Y - 1,
-	reported(C,V,YPrevious,_,CoveragePreviousYear),
-	sawtooth_threshold(Threshold),
-	abs(CoveragePreviousYear - Coverage) > Threshold,
-	my_concat_atom(['Reported data excluded due to sudden change in coverage from ',CoveragePreviousYear,' level to ',
-			Coverage,' percent. '],Explanation).
+% Sudden decline in most recently reported data for new vaccines
+reported_reason_to_exclude(C, V, Y, Coverage, temporalChange, Explanation) :-
+    member(V, [pcv3, rotac]),
+    not(reported_later(C, V, Y)),
+    Before is Y - 1,
+    reported(C, V, Before, _, CovBefore),
+    sawtooth_threshold(Threshold),
+    CovBefore - Coverage > Threshold,
+    my_concat_atom(
+	['Reported data excluded due to decline in reported coverage from ',
+	 CovBefore,' level to ', Coverage,' percent. '], Explanation).
 
-% Reason to exclude reported: sudden decline in most recently reported data for new vaccines.
-% ------------------------------------------------------------------------------------------
-reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
-	reported(C,V,Y,_,Coverage),
-	not(workingGroupDecision(C,V,Y,acceptReported,_,_,_)),
-	not(reported_later(C,V,Y)),
-	member(V,['pcv3','rotac']),
-	YPrevious is Y - 1,
-	reported(C,V,YPrevious,_,CoveragePreviousYear),
-	sawtooth_threshold(Threshold),
-	(CoveragePreviousYear - Coverage) > Threshold,
-	my_concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ',
-			Coverage,' percent. '],Explanation).
+% Sudden change in most recently reported data for classic vaccines
+reported_reason_to_exclude(C, V, Y, Coverage, temporalChange, Explanation) :-
+    not(member(V, [pcv3, rotac])),
+    not(reported_later(C, V, Y)),
+    Before is Y - 1,
+    reported(C, V, Before, _, CovBefore),
+    sawtooth_threshold(Threshold),
+    abs(CovBefore - Coverage) > Threshold,
+    my_concat_atom(
+	['Reported data excluded due to sudden change in coverage from ',
+	 CovBefore,' level to ', Coverage,' percent. '], Explanation).
 
-reported_later(C,V,Year) :-
-  reported(C,V,YearAfter,_,_),
-  YearAfter > Year.
+reported_later(C, V, Year) :-
+    reported(C, V, After, _, _),
+    After > Year.
 
 % Level 0:
 % Reported to WHO and UNICEF is government estimate. If government
