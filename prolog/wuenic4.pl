@@ -647,57 +647,71 @@ explain(ro,extrapolated,'Estimate informed by extrapolation from reported data. 
 %		Working group assigns anchor point value.
 % =================================================
 
-% Anchor point: survey results support reported.
-% ---------------------------------------------
-anchor_point(C,V,Y,'R: AP',Explanation,ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	survey(C,V,Y,Explain,SurveyCoverage),
-	not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
-	survey_supports_reported(ReportedCoverage,SurveyCoverage),
-	explain(ap,Source,Explain,Explanation).
+% Anchor point set to reported value by working group
+anchor_point(C, V, Y, Type, Explanation, Coverage),
+    reported_time_series(C, V, Y, _, Reported),
+    workingGroupDecision(C, V, Y, assignAnchor, Expl, _, Assigned),
+    Reported = Assigned
+ => Type = 'R: AP',
+    Coverage = Assigned,
+    Explanation = Expl.
 
-% Anchor point: survey results challenge reported.
-% -----------------------------------------------
-anchor_point(C,V,Y,'S: AP',Explanation,SurveyCoverage) :-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-	survey(C,V,Y,Explain,SurveyCoverage),
-	not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
-	not(survey_supports_reported(ReportedCoverage,SurveyCoverage)),
-	my_concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',Explain,' '],Explanation).
+% Anchor point value NOT set to reported value by working group
+anchor_point(C, V, Y, Type, Explanation, Coverage),
+    reported_time_series(C, V, Y, _, Reported),
+    workingGroupDecision(C, V, Y, assignAnchor, Expl, _, Assigned),
+    Reported \= Assigned
+ => Type = 'W: AP',
+    Coverage = Assigned,
+    my_concat_atom(
+	['Estimate of ', Assigned, ' percent assigned by working group. ',
+	 Expl], Explanation).
 
-% Anchor point: anchor point value set to reported value
-% by working group.
-% -----------------------------------------------------
-anchor_point(C,V,Y,'R: AP',Explanation,AssignedCoverage) :-
-	reported_time_series(C,V,Y,_,AssignedCoverage),
-	workingGroupDecision(C,V,Y,assignAnchor,Explanation,_,AssignedCoverage).
+% Survey results support reported
+anchor_point(C, V, Y, Type, Explanation, Coverage),
+    reported_time_series(C, V, Y, Source, Reported),
+%   not(workingGroupDecision(C, V, Y, assignAnchor, _, _, _)),
+    survey(C, V, Y, Expl, Survey),
+    survey_reported_threshold(Threshold),
+    abs(Reported - Survey) =< Threshold
+ => Type = 'R: AP',
+    Coverage = Reported,
+    explain(ap, Source, Expl, Explanation).
 
-% Anchor point: anchor point value NOT set to reported value
-% by working group.
-% -----------------------------------------------------
-anchor_point(C,V,Y,'W: AP',Explanation,AssignedCoverage) :-
-	reported_time_series(C,V,Y,_,Coverage),
-	workingGroupDecision(C,V,Y,assignAnchor,WGD_EXP,_,AssignedCoverage),
-	Coverage \= AssignedCoverage,
-	my_concat_atom(['Estimate of ',AssignedCoverage,' percent assigned by working group. ', WGD_EXP], Explanation).
+% Survey results challenge reported
+anchor_point(C, V, Y, Type, Explanation, Coverage),
+%   reported_time_series(C, V, Y, _, Reported),
+%   not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
+    survey(C, V, Y, Expl, Survey)
+%   not(survey_supports_reported(ReportedCoverage,SurveyCoverage))
+ => Type = 'S: AP',
+    Coverage = Survey,
+    my_concat_atom(
+	['Survey evidence does not support reported data. Estimate based on survey results. ',
+	 Expl, ' '], Explanation).
 
-% Determine whether survey supports reported
-% -------------------------------------------
-survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
-  survey_reported_threshold(Threshold),
-  (abs(ReportedCoverage - SurveyCoverage) =< Threshold).
+anchor_point(_C, _V, _Y, _Type, _Explanation, _Coverage)
+ => fail.
 
-explain(ap,gov,Explain,Explanation) :-
-  % DWB 2023-APR concat_atom(['Estimate based on coverage reported by national government supported by survey. ',Explain],Explanation).
-  my_concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
-explain(ap,admin,Explain,Explanation) :-
-  % DWB 2023-APR concat_atom(['Estimate based on administrative data reported by national government supported by survey. ',Explain],Explanation).
-  my_concat_atom(['Estimate informed by reported administrative data supported by survey. ',Explain],Explanation).
-explain(ap,interpolated,Explain,Explanation) :-
-  % DWB 2023-APR concat_atom(['Estimate based on interpolation between data reported by national government supported by survey. ',Explain],Explanation).
-  my_concat_atom(['Estimate informed by interpolation between reported data supported by survey. ',Explain],Explanation).
-explain(ap,extrapolated,Explain,Explanation) :-
-  my_concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
+explain(ap, gov, Expl, Explanation)
+ => my_concat_atom(
+	['Estimate informed by reported data supported by survey. ',
+	 Expl], Explanation).
+
+explain(ap, admin, Expl, Explanation)
+ => my_concat_atom(
+	['Estimate informed by reported administrative data supported by survey. ',
+	 Expl], Explanation).
+
+explain(ap, interpolated, Expl, Explanation)
+ => my_concat_atom(
+	['Estimate informed by interpolation between reported data supported by survey. ',
+	 Expl], Explanation).
+
+explain(ap, extrapolated, Expl, Explanation)
+ => my_concat_atom(
+	['Estimate based on extrapolation from data reported by national government supported by survey. ',
+	 Expl], Explanation).
 
 % ==============================================
 % Level one processing:
