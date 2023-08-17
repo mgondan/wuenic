@@ -178,7 +178,9 @@ estimate :-
 		Estimates),
 
 	open_out_file(OutFile,'wuenic.out',	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
-	output_results(Estimates,OutFile), close(OutFile).
+	output_results(Estimates,OutFile), close(OutFile),
+	crypto_file_hash('wuenic.out', Hash, []),
+	writeln(Hash).
 
 % Final estimate where there are wuenic values
 % --------------------------------------------
@@ -1232,14 +1234,3 @@ output_fields([H|T],Out) :- write(Out,H),write(Out,'\t'),output_fields(T,Out).
 my_concat_atom(List, String) :-
     maplist(term_string, List, Strings),
     atomics_to_string(Strings, String).
-
-
-
-
-
-
-
-
-
-
-
