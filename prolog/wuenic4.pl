@@ -1061,43 +1061,29 @@ interpolate(EarlyYear,EarlyCoverage,LateYear,LateCoverage,Year,Coverage) :-
 	           (Year - EarlyYear)*
 			((LateCoverage - EarlyCoverage)/(LateYear - EarlyYear))).
 
-% Calibrate reported data to anchor point value levels. Reported data at both anchors.
-% -----------------------------------------------------------------------------------
-calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
+% Calibrate reported data to anchor points
+% MG, issue: why are values rounded?
+calibrate(C, V, Prec, Succ, Y, Coverage),
+    reported_time_series(C, V, Prec, _, PrecRep),
+    reported_time_series(C, V, Succ, _, SuccRep)
+ => anchor_point(C, V, Prec, _, _, PrecCov),
+    anchor_point(C, V, Succ, _, _, SuccCov),
+    reported_time_series(C, V, Y, _, Reported),
+    interpolate(Prec, PrecRep, Succ, SuccRep, Y, RepInterp),
+    interpolate(Prec, PrecCov, Succ, SuccCov, Y, AnchInterp),
+    Adj is AnchInterp - RepInterp,
+    Coverage is round(Reported + Adj).
 
-	anchor_point(C,V,PreceedingAnchorYear,_,_,PreceedingCoverage),
-	anchor_point(C,V,SucceedingAnchorYear,_,_,SucceedingCoverage),
-
-	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),
-	reported_time_series(C,V,SucceedingAnchorYear,_,SucceedingReportedCoverage),
-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-
-	interpolate(PreceedingAnchorYear,PreceedingReportedCoverage,
-	            SucceedingAnchorYear,SucceedingReportedCoverage,
-	            Y,ReportedInterpolated),
-
-	interpolate(PreceedingAnchorYear,PreceedingCoverage,
-	            SucceedingAnchorYear,SucceedingCoverage,
-	            Y,AnchorInterpolated),
-
-	Adj is AnchorInterpolated - ReportedInterpolated,
-	Coverage is round(ReportedCoverage + Adj).
-
-% Calibrate reported to preceeding point. Reported data only at preceeding anchor.
-% ----------------------------------------------------------------------------------
-calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
-	anchor_point(C,V,PreceedingAnchorYear,_,_,PreceedingCoverage),
-	anchor_point(C,V,SucceedingAnchorYear,_,_,_),
-
-	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),
-	not(reported_time_series(C,V,SucceedingAnchorYear,_,_)),
-	Adj is PreceedingCoverage - PreceedingReportedCoverage,
-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-	Coverage is round(ReportedCoverage + Adj).
+% Reported data only at preceeding anchor
+calibrate(C, V, Prec, _, Y, Coverage)
+ => reported_time_series(C, V, Prec, _, PrecRep),
+    anchor_point(C, V, Prec, _, _, PrecCov),
+    Adj is PrecCov - PrecRep,
+    reported_time_series(C, V, Y, _, Reported),
+    Coverage is round(Reported + Adj).
 
 % Ensure estimates are between 0 and 99.
+% MG, issue: why are values rounded?
 bound_0_100(X, Y) :-
     Y is max(0, min(99, round(X))).
 
