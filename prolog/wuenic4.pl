@@ -273,10 +273,12 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     setof(Evidence, challenge(C, V, Y, Evidence), List),
     my_concat_atom(['Estimate challenged by: ', List], Support).
 
-assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
-    no_data(C, V, Y, Rule, Coverage, S)
- => Support = S,
-    GoC = '1'.
+assign_GoC(_C, _V, _Y, _Rule, _Coverage, Support, GoC)
+%    not(goc_reported_condition(C,V,Y,_)),
+%    not(goc_survey_condition(C,V,Y,_)),
+%    not(goc_denominator_condition(C,V,Y,_))
+ => GoC = '1',
+    Support = 'GoC=No accepted empirical data'.
 
 goc_reported_condition(C, V, Y, Support) :-
     reported(C, V, Y, _, _),
