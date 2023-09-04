@@ -423,7 +423,7 @@ wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
 	estimate_required(C,V,Y,_,_),
 	reported_time_series(C,V,Y,Source,Coverage),
 	not(anchor_point(C,V,_,_,_,_)),
-	explain(Source, Explain).
+	explain_ro(Source, Explain).
 
 % Estimate at anchor points.
 % --------------------------
@@ -486,139 +486,68 @@ wuenic_II(C,V,Y,'W-I:',Explanation,Coverage) :-
 	my_concat_atom(['Estimate informed by interpolation between ',YrBefore,' and ',YrAfter,' levels. ',WGD_E],Explanation).
 
 % Estimate before earliest anchor: reported
-% ------------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on reported data. ',ReportedCoverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by reported data. ',ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	member(Source,['admin','gov']),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y < AnchorYear,
-	not(anchor_point_before(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
-
 % Estimate before earliest anchor: reported-extrapolated / interpolated
-% ------------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on interpolation between data reported by national government. ',ReportedCoverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. ',ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	member(Source,['interpolated']),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y < AnchorYear,
-	not(anchor_point_before(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
-
-% Estimate before earliest anchor: reported-extrapolated / interpolated
-% ------------------------------------------
-wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by national government. ',ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	member(Source,['extrapolated']),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y < AnchorYear,
-	not(anchor_point_before(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
+% Estimate after latest anchor: reported
+% Estimate after latest anchor: reported-extrapolated / interpolated
+wuenic_II(C, V, Y, 'R:', Explanation, Coverage) :-
+    reported_time_series(C, V, Y, Source, Coverage),
+    not(anchor_point(C, V, Y, _, _, _)),
+    anchor_point(C, V, AnchorYear, 'R: AP', _, _),
+    (	Y > AnchorYear, not(anchor_point_after(C, V, AnchorYear))
+    ;	Y < AnchorYear, not(anchor_point_before(C, V, AnchorYear))
+    ),
+    (	Source = gov
+    ->	Explanation = 'Estimate informed by reported data.'
+    ;	Source = admin
+    ->	Explanation = 'Estimate informed by reported administrative data. '
+    ;	Source = interpolated
+    ->	Explanation = 'Estimate informed by interpolation between reported data. '
+    ;	Source = extrapolated
+    ->	Explanation = 'Estimate based on extrapolation from data reported by national government. ').
 
 % Estimate before earliest anchor: calibrated
-% ---------------------------------------------
-wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
-	Y < AnchorYear,
-	not(anchor_point_before(C,V,AnchorYear)),
-	not(member(AnchorRule,['R: AP'])),
-
-	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
-	Adj is AnchorCoverage - ReportedCoverageAtAnchor,
-	Coverage is round(ReportedCoverage + Adj),
-	my_concat_atom(['Reported data calibrated to ',AnchorYear,' levels. '],Explanation).
-
-% Estimate after latest anchor: reported
-% --------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on coverage reported by national government.',ReportedCoverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by reported data.',ReportedCoverage) :-
-	reported_time_series(C,V,Y,gov,ReportedCoverage),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y > AnchorYear,
-	not(anchor_point_after(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
-
-% Estimate after latest anchor: reported
-% --------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on reported administrative data. ',ReportedCoverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by reported administrative data. ',ReportedCoverage) :-
-	reported_time_series(C,V,Y,admin,ReportedCoverage),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y > AnchorYear,
-	not(anchor_point_after(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
-
-% Estimate after latest anchor: reported-extrapolated / interpolated
-% ------------------------------------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on interpolation between data reported by national government. ',ReportedCoverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. ',ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	member(Source,['interpolated']),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y > AnchorYear,
-	not(anchor_point_after(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
-
-% Estimate after latest anchor: reported-extrapolated / interpolated
-% ------------------------------------------------------------------
-wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by national government. ',ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	member(Source,['extrapolated']),
-	not(anchor_point(C,V,Y,_,_,_)),
-
-	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
-	Y > AnchorYear,
-	not(anchor_point_after(C,V,AnchorYear)),
-	member(AnchorRule,['R: AP']).
-
 % Estimate after latest anchor: calibrated
-% ----------------------------------------
-wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-	not(anchor_point(C,V,Y,_,_,_)),
+wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
+    reported_time_series(C, V, Y, _, ReportedCoverage),
+    not(anchor_point(C, V, Y, _, _, _)),
+    anchor_point(C, V, AnchorYear, AnchorRule, _, AnchorCoverage),
+    AnchorRule \= 'R: AP',
+    Y < AnchorYear,
+    not(anchor_point_before(C, V, AnchorYear)),
+    reported_time_series(C, V, AnchorYear, _, ReportedCoverageAtAnchor),
+    Adj is AnchorCoverage - ReportedCoverageAtAnchor,
+    Coverage is round(ReportedCoverage + Adj),
+    my_concat_atom(
+	['Reported data calibrated to ', AnchorYear, ' levels. '],
+	Explanation).
 
-	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
-	Y > AnchorYear,
-	not(anchor_point_after(C,V,AnchorYear)),
-	not(member(AnchorRule,['R: AP'])),
-
-	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
-	%not(reported_reason_to_exclude(C,V,Y,_,_)),
-	Adj is AnchorCoverage - ReportedCoverageAtAnchor,
-	Coverage is round(ReportedCoverage + Adj),
-	my_concat_atom(['Reported data calibrated to ',AnchorYear,' levels.'],Explanation).
+wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
+    reported_time_series(C, V, Y, _, ReportedCoverage),
+    not(anchor_point(C, V, Y, _, _, _)),
+    anchor_point(C, V, AnchorYear, AnchorRule, _, AnchorCoverage),
+    AnchorRule \= 'R: AP',
+    Y > AnchorYear, not(anchor_point_after(C, V, AnchorYear)),
+    reported_time_series(C, V, AnchorYear, _, ReportedCoverageAtAnchor),
+    Adj is AnchorCoverage - ReportedCoverageAtAnchor,
+    Coverage is round(ReportedCoverage + Adj),
+    my_concat_atom(
+	['Reported data calibrated to ', AnchorYear, ' levels.'],
+	Explanation).
 
 both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
   member(RuleBefore,['R: AP']),
   member(RuleAfter,['R: AP']).
 
-explain(gov,
+explain_ro(gov,
 	'Estimate informed by reported data. ').
 
-explain(admin,
+explain_ro(admin,
 	'Estimate informed by reported administrative data. ').
 
-explain(interpolated,
+explain_ro(interpolated,
 	'Estimate informed by interpolation between reported data. ').
 
-explain(extrapolated,
+explain_ro(extrapolated,
 	'Estimate informed by extrapolation from reported data. ').
 
 % =====================
