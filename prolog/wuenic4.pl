@@ -200,26 +200,26 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
 
-confidence(C, rcv1, Y, Rule, Coverage, Explanation, GC),
+confidence(C, rcv1, Y, _Rule, _Coverage, Explanation, GC),
     estimate_required(C, rcv1, Y, _, mcv2)
- => assign_GoC(C, mcv2, Y, Rule, Coverage, Explanation, GC).
+ => assign_GoC(C, mcv2, Y, Explanation, GC).
 
 
-confidence(C, rcv1, Y, Rule, Coverage, Explanation, GC)
- => assign_GoC(C, mcv1, Y, Rule, Coverage, Explanation, GC).
+confidence(C, rcv1, Y, _Rule, _Coverage, Explanation, GC)
+ => assign_GoC(C, mcv1, Y, Explanation, GC).
 
-confidence(C, V, Y, Rule, Coverage, Explanation, GC)
- => assign_GoC(C, V, Y, Rule, Coverage, Explanation, GC).
+confidence(C, V, Y, _Rule, _Coverage, Explanation, GC)
+ => assign_GoC(C, V, Y, Explanation, GC).
 
 % GoC = 1 is low confidence (1 star)
 % GoC = 3 is high confidence (3 stars)
-assign_GoC(C, V, Y, _Rule, _, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     workingGroupDecision(C, V, Y, assignGoC, Explanation, _, G)
  => GoC = G,
     my_concat_atom(['GoC=Assigned by working group. ', Explanation], Support).
 
 % Three stars: supported by reported data, survey and denominator
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+')
@@ -227,21 +227,21 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     Support = 'GoC=R+ S+ D+'.
 
 % Two stars: supported by two data sources, no challenge
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, 'S+'),
     not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=R+ S+'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+'),
     not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=S+ D+'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     goc_denominator_condition(C, V, Y, 'D+'),
     not(challenge(C, V, Y, _))
@@ -249,31 +249,31 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     Support = 'GoC=R+ D+'.
 
 % Supported by single source, no challenge
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=R+'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_survey_condition(C, V, Y, 'S+'),
     not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=S+'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     goc_denominator_condition(C, V, Y, 'D+'),
     not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=D+'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+assign_GoC(C, V, Y, Support, GoC),
     challenge(C, V, Y, _)
  => GoC = '1',
     setof(Evidence, challenge(C, V, Y, Evidence), List),
     my_concat_atom(['Estimate challenged by: ', List], Support).
 
-assign_GoC(_C, _V, _Y, _Rule, _Coverage, Support, GoC)
+assign_GoC(_C, _V, _Y, Support, GoC)
 %    not(goc_reported_condition(C,V,Y,_)),
 %    not(goc_survey_condition(C,V,Y,_)),
 %    not(goc_denominator_condition(C,V,Y,_))
