@@ -218,8 +218,8 @@ assign_GoC(C, V, Y, _Rule, _, Support, GoC),
  => GoC = G,
     my_concat_atom(['GoC=Assigned by working group. ', Explanation], Support).
 
-assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
-    three_stars(C, V, Y, Rule, Coverage, S)
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    three_stars(C, V, Y, S)
  => Support = S,
     GoC = '3'.
 
@@ -239,13 +239,11 @@ assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
  => Support = S,
     GoC = '1'.
 
-	% Supported by reported data, survey and denominator
-	% --------------------------------------------------
-        % MG, issue: three_stars does not return Coverage
-	three_stars(C,V,Y,Rule,_Coverage,'GoC=R+ S+ D+') :-
-		goc_reported_condition(C,V,Y,Rule,'R+'),
-		goc_survey_condition(C,V,Y,Rule,'S+'),
-		goc_denominator_condition(C,V,Y,'D+').
+% Supported by reported data, survey and denominator
+three_stars(C, V, Y, 'GoC=R+ S+ D+') :-
+    goc_reported_condition(C, V, Y, _, 'R+'),
+    goc_survey_condition(C, V, Y, _, 'S+'),
+    goc_denominator_condition(C, V, Y, 'D+').
 
 		% MG, issue: Rule = R? (here and below)
                 goc_reported_condition(C,V,Y,_Rule,'R+') :-
@@ -332,7 +330,7 @@ assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
 	two_stars(C,V,Y,Rule,Support) :-
 		(two_sources(C,V,Y,Rule,Support);
 		one_source(C,V,Y,Rule,Support)),
-		not(three_stars(C,V,Y,_,_,_)),
+		not(three_stars(C, V, Y, _)),
 		not(challenge(C,V,Y,_,_,_)).
 
 	% Supported by two data sources, no challenge
