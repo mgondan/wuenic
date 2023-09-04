@@ -531,7 +531,7 @@ wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
     Adj is AnchorCoverage - ReportedCoverageAtAnchor,
     Coverage is round(ReportedCoverage + Adj),
     my_concat_atom(
-	['Reported data calibrated to ', AnchorYear, ' levels.'],
+	['Reported data calibrated to ', AnchorYear, ' levels. '],
 	Explanation).
 
 both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
