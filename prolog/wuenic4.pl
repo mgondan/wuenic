@@ -211,18 +211,33 @@ confidence(C, rcv1, Y, Rule, Coverage, Explanation, GC)
 confidence(C, V, Y, Rule, Coverage, Explanation, GC)
  => assign_GoC(C, V, Y, Rule, Coverage, Explanation, GC).
 
-	% GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars) - modified 4 July 2016 TB
-	% --------------------------------------------------------------------------------------------------
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'3') :- three_stars(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,Rule,_Coverage,Support,'2') :- two_stars(C,V,Y,Rule,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- challenge(C,V,Y,Rule,Coverage,_),
-												   setof(Evidence,challenge(C,V,Y,Rule,Coverage,Evidence),List), % MG: changed Coverge to Coverage
-												   my_concat_atom(['Estimate challenged by: ',List],Support),
-												   not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
+% GoC = 1 is low confidence (1 star)
+% GoC = 3 is high confidence (3 stars)
+assign_GoC(C, V, Y, _Rule, _, Support, GoC),
+    workingGroupDecision(C, V, Y, assignGoC, Explanation, _, G)
+ => GoC = G,
+    my_concat_atom(['GoC=Assigned by working group. ', Explanation], Support).
 
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- no_data(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,_Rule,_,Support,GC) :- workingGroupDecision(C,V,Y,assignGoC,Explanation,_,GC),
-												   my_concat_atom(['GoC=Assigned by working group. ',Explanation],Support).
+assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
+    three_stars(C, V, Y, Rule, Coverage, S)
+ => Support = S,
+    GoC = '3'.
+
+assign_GoC(C, V, Y, Rule, _Coverage, Support, GoC),
+    two_stars(C, V, Y, Rule, S)
+ => Support = S,
+    GoC = '2'.
+
+assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
+    challenge(C, V, Y, Rule, Coverage, _)
+ => GoC = '1',
+    setof(Evidence, challenge(C, V, Y, Rule, Coverage, Evidence), List),
+    my_concat_atom(['Estimate challenged by: ', List], Support).
+
+assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
+    no_data(C, V, Y, Rule, Coverage, S)
+ => Support = S,
+    GoC = '1'.
 
 	% Supported by reported data, survey and denominator
 	% --------------------------------------------------
