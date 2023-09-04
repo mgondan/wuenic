@@ -295,35 +295,37 @@ challenging_survey_in_scope(C, V, Y) :-
 
 goc_denominator_condition(C, V, Y, Support) :-
     goc_unpd_recal(C, V, Y),
-    recal_unpd(C, V, Y, Recal),
+    recal_unpd(C, V, Y, Recalc),
     confidence_UNPD_threshold(Threshold),
     wuenic_I(C, V, Y, _Rule, _Explain, Coverage),
-    (	abs(Coverage - Recal) < Threshold
+    (	abs(Coverage - Recalc) < Threshold
     ->	Support = 'D+'
     ;	Support = 'D-'
     ).
 
-			% Ensure unpd data exist.
-			% ------------------------
-			goc_unpd_recal(C,V,Y) :- vaccinated(C,V,Y,_), births_UNPD(C,Y,_), si_UNPD(C,Y,_).
+% Ensure unpd data exist.
+goc_unpd_recal(C, V, Y) :-
+    vaccinated(C, V, Y, _),
+    births_UNPD(C, Y, _),
+    si_UNPD(C, Y, _).
 
-			% Recalculate coverage using reported number of children vaccinated
-			% and births and surviving infants from UNPD estimates.
-			% Births used for bcg and hepb birth dose, surviving infants
-			% for remaining vaccines.
-			% ------------------------
-			recal_unpd(C,V,Y,CovRec) :-
-				member(V,['bcg','hepbb']),
-				vaccinated(C,V,Y,Vaccinated),
-				births_UNPD(C,Y,Births),
-				CovRec is Vaccinated / Births * 100.
-				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / Births.
-			recal_unpd(C,V,Y,CovRec) :-
-				member(V,['dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepb3','hib3','rotac','pcv3','yfv']),
-				vaccinated(C,V,Y,Vaccinated),
-				si_UNPD(C,Y,SI),
-				CovRec is Vaccinated / SI * 100.
-				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / SI.
+% Recalculate coverage using reported number of children vaccinated
+% and births and surviving infants from UNPD estimates.
+% Births used for bcg and hepb birth dose, surviving infants
+% for remaining vaccines.
+recal_unpd(C, V, Y, Coverage),
+    member(V, [bcg, hepbb])
+ => vaccinated(C, V, Y, Vaccinated),
+    births_UNPD(C, Y, Births),
+    Coverage is Vaccinated / Births * 100. % Todo: remove 100
+
+recal_unpd(C, V, Y, Coverage)
+%    member(V,
+%      [dtp1, dtp3, pol3, ipv1, mcv1, mcv2, rcv1, hepb3, hib3, rotac,
+%       pcv3, yfv]),
+ => vaccinated(C, V, Y, Vaccinated),
+    si_UNPD(C, Y, SI),
+    Coverage is Vaccinated / SI * 100.
 
 two_stars(C, V, Y, Support) :-
     (   two_sources(C, V, Y, _, Support)
