@@ -423,7 +423,7 @@ wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
 	estimate_required(C,V,Y,_,_),
 	reported_time_series(C,V,Y,Source,Coverage),
 	not(anchor_point(C,V,_,_,_,_)),
-	explain(ro,Source,Explain).
+	explain(Source, Explain).
 
 % Estimate at anchor points.
 % --------------------------
@@ -609,14 +609,17 @@ both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
   member(RuleBefore,['R: AP']),
   member(RuleAfter,['R: AP']).
 
-% DWB 2023-APR	explain(ro,gov,'Estimate based on coverage reported by national government. ').
-explain(ro,gov,'Estimate informed by reported data. ').
-% DWB 2023-APR	explain(ro,admin,'Estimate based on reported administrative estimate. ').
-explain(ro,admin,'Estimate informed by reported administrative data. ').
-% DWB 2023-APR	explain(ro,interpolated,'Estimate based on interpolation between reported values. ').
-explain(ro,interpolated,'Estimate informed by interpolation between reported data. ').
-% DWB 2023-APR	explain(ro,extrapolated,'Estimate based on extrapolation from data reported by national government. ').
-explain(ro,extrapolated,'Estimate informed by extrapolation from reported data. ').
+explain(gov,
+	'Estimate informed by reported data. ').
+
+explain(admin,
+	'Estimate informed by reported administrative data. ').
+
+explain(interpolated,
+	'Estimate informed by interpolation between reported data. ').
+
+explain(extrapolated,
+	'Estimate informed by extrapolation from reported data. ').
 
 % =====================
 % Level two processing:
