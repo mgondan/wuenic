@@ -218,9 +218,12 @@ assign_GoC(C, V, Y, _Rule, _, Support, GoC),
  => GoC = G,
     my_concat_atom(['GoC=Assigned by working group. ', Explanation], Support).
 
+% Supported by reported data, survey and denominator
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
-    three_stars(C, V, Y, S)
- => Support = S,
+    goc_reported_condition(C, V, Y, _, 'R+'),
+    goc_survey_condition(C, V, Y, _, 'S+'),
+    goc_denominator_condition(C, V, Y, 'D+')
+ => Support = 'GoC=R+ S+ D+',
     GoC = '3'.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
@@ -238,12 +241,6 @@ assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
     no_data(C, V, Y, Rule, Coverage, S)
  => Support = S,
     GoC = '1'.
-
-% Supported by reported data, survey and denominator
-three_stars(C, V, Y, 'GoC=R+ S+ D+') :-
-    goc_reported_condition(C, V, Y, _, 'R+'),
-    goc_survey_condition(C, V, Y, _, 'S+'),
-    goc_denominator_condition(C, V, Y, 'D+').
 
 		% MG, issue: Rule = R? (here and below)
                 goc_reported_condition(C,V,Y,_Rule,'R+') :-
@@ -331,7 +328,9 @@ two_stars(C, V, Y, Support) :-
     (   two_sources(C, V, Y, _, Support)
     ;	one_source(C, V, Y, _, Support)
     ),
-    not(three_stars(C, V, Y, _)),
+    not((goc_reported_condition(C, V, Y, _, 'R+'),
+	goc_survey_condition(C, V, Y, _, 'S+'),
+	goc_denominator_condition(C, V, Y, 'D+'))),
     not(challenge(C, V, Y, _, _, _)).
 
 	% Supported by two data sources, no challenge
