@@ -230,47 +230,47 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, 'S+'),
-    not(challenge(C, V, Y, _, _, _))
+    not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=R+ S+'.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+'),
-    not(challenge(C, V, Y, _, _, _))
+    not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=S+ D+'.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     goc_denominator_condition(C, V, Y, 'D+'),
-    not(challenge(C, V, Y, _, _, _))
+    not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=R+ D+'.
 
 % Supported by single source, no challenge
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
-    not(challenge(C, V, Y, _, _, _))
+    not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=R+'.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_survey_condition(C, V, Y, 'S+'),
-    not(challenge(C, V, Y, _, _, _))
+    not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=S+'.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_denominator_condition(C, V, Y, 'D+'),
-    not(challenge(C, V, Y, _, _, _))
+    not(challenge(C, V, Y, _))
  => GoC = '2',
     Support = 'GoC=D+'.
 
-assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
-    challenge(C, V, Y, Rule, Coverage, _)
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    challenge(C, V, Y, _)
  => GoC = '1',
-    setof(Evidence, challenge(C, V, Y, Rule, Coverage, Evidence), List),
+    setof(Evidence, challenge(C, V, Y, Evidence), List),
     my_concat_atom(['Estimate challenged by: ', List], Support).
 
 assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
@@ -363,12 +363,15 @@ recal_unpd(C, V, Y, Coverage)
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
 
-	% Empirical evidence challenges estimate.
-	% --------------------------------------
-	challenge(C,V,Y,_Rule,_Coverage,Condition) :-
-		(goc_reported_condition(C,V,Y,'R-'),Condition = 'R-');
-		(goc_survey_condition(C,V,Y,'S-'),Condition = 'S-');
-		(goc_denominator_condition(C,V,Y,'D-'),Condition = 'D-').
+% Empirical evidence challenges estimate
+challenge(C, V, Y, 'R-') :-
+    goc_reported_condition(C, V, Y, 'R-').
+
+challenge(C, V, Y, 'S-') :-
+    goc_survey_condition(C, V, Y, 'S-').
+
+challenge(C, V, Y, 'D-') :-
+    goc_denominator_condition(C, V, Y, 'D-').
 
 	% No empirical supporting evidence.
 	% --------------------------------
