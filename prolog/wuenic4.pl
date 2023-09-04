@@ -248,11 +248,24 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
  => GoC = '2',
     Support = 'GoC=R+ D+'.
 
+% Supported by single source, no challenge
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
-    one_source(C, V, Y, _, S),
+    goc_reported_condition(C, V, Y, 'R+'),
     not(challenge(C, V, Y, _, _, _))
  => GoC = '2',
-    Support = S.
+    Support = 'GoC=R+'.
+
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    goc_survey_condition(C, V, Y, 'S+'),
+    not(challenge(C, V, Y, _, _, _))
+ => GoC = '2',
+    Support = 'GoC=S+'.
+
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    goc_denominator_condition(C, V, Y, 'D+'),
+    not(challenge(C, V, Y, _, _, _))
+ => GoC = '2',
+    Support = 'GoC=D+'.
 
 assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
     challenge(C, V, Y, Rule, Coverage, _)
@@ -349,18 +362,6 @@ recal_unpd(C, V, Y, Coverage)
  => vaccinated(C, V, Y, Vaccinated),
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
-
-	% Supported by single source, no challenge
-	% -------------------------------------
-	one_source(C,V,Y,_Rule,'GoC=R+') :-
-%		not(two_sources(C,V,Y,_,_)),
-		goc_reported_condition(C,V,Y,'R+').
-	one_source(C,V,Y,_Rule,'GoC=S+') :-
-%		not(two_sources(C,V,Y,_,_)),
-		goc_survey_condition(C,V,Y,'S+').
-	one_source(C,V,Y,_Rule,'GoC=D+') :-
-%		not(two_sources(C,V,Y,_,_)),
-		goc_denominator_condition(C,V,Y,'D+').
 
 	% Empirical evidence challenges estimate.
 	% --------------------------------------
