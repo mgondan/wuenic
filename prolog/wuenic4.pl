@@ -293,18 +293,15 @@ challenging_survey_in_scope(C, V, Y) :-
     wuenic_I(C, V, Y, _, _Explanation, Coverage),
     abs(Coverage - Survey) > Threshold.
 
-		goc_denominator_condition(C,V,Y,'D+') :-
-			goc_unpd_recal(C,V,Y),
-			recal_unpd(C,V,Y,CovRec),
-			confidence_UNPD_threshold(Threshold),
-			wuenic_I(C,V,Y,_Rule,_Explain,Coverage),
-			abs(Coverage - CovRec) < Threshold.
-		goc_denominator_condition(C,V,Y,'D-') :-
-			goc_unpd_recal(C,V,Y),
-			recal_unpd(C,V,Y,CovRec),
-			confidence_UNPD_threshold(Threshold),
-			wuenic_I(C,V,Y,_Rule,_Explain,Coverage),
-			abs(Coverage - CovRec) >= Threshold.
+goc_denominator_condition(C, V, Y, Support) :-
+    goc_unpd_recal(C, V, Y),
+    recal_unpd(C, V, Y, Recal),
+    confidence_UNPD_threshold(Threshold),
+    wuenic_I(C, V, Y, _Rule, _Explain, Coverage),
+    (	abs(Coverage - Recal) < Threshold
+    ->	Support = 'D+'
+    ;	Support = 'D-'
+    ).
 
 			% Ensure unpd data exist.
 			% ------------------------
