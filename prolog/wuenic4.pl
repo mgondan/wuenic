@@ -375,13 +375,6 @@ challenge(C, V, Y, 'S-') :-
 challenge(C, V, Y, 'D-') :-
     goc_denominator_condition(C, V, Y, 'D-').
 
-	% No empirical supporting evidence.
-	% --------------------------------
-	no_data(C,V,Y,_Rule,_Coverage,'GoC=No accepted empirical data') :-
-		not(goc_reported_condition(C,V,Y,_)),
-		not(goc_survey_condition(C,V,Y,_)),
-		not(goc_denominator_condition(C,V,Y,_)).
-
 	change_from_previous_revision(C,V,Y,Coverage,'') :-
 		legacy(C,V,Y,PreviousCoverage),
 		PreviousCoverage = Coverage.
