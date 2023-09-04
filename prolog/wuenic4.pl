@@ -220,7 +220,7 @@ assign_GoC(C, V, Y, _Rule, _, Support, GoC),
 
 % Supported by reported data, survey and denominator
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
-    goc_reported_condition(C, V, Y, _, 'R+'),
+    goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, _, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+')
  => Support = 'GoC=R+ S+ D+',
@@ -242,16 +242,13 @@ assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
  => Support = S,
     GoC = '1'.
 
-		% MG, issue: Rule = R? (here and below)
-                goc_reported_condition(C,V,Y,_Rule,'R+') :-
-			reported(C,V,Y,_,_),
-			wuenic_I(C,V,Y,R,_,_),
-			member(R,['R:','R: AP']).
-
-		goc_reported_condition(C,V,Y,_Rule,'R-') :-
-			reported(C,V,Y,_,_),
-			wuenic_I(C,V,Y,R,_,_),
-			not(member(R,['R:','R: AP'])).
+goc_reported_condition(C, V, Y, Support) :-
+    reported(C, V, Y, _, _),
+    wuenic_I(C, V, Y, R, _, _),
+    (	memberchk(R, ['R:', 'R: AP'])
+    ->	Support = 'R+'
+    ;	Support = 'R-'
+    ).
 
 		goc_survey_condition(C,V,Y,Rule,'S+') :-
 			supporting_survey_in_scope(C,V,Y,Rule),
@@ -328,7 +325,7 @@ two_stars(C, V, Y, Support) :-
     (   two_sources(C, V, Y, _, Support)
     ;	one_source(C, V, Y, _, Support)
     ),
-    not((goc_reported_condition(C, V, Y, _, 'R+'),
+    not((goc_reported_condition(C, V, Y, 'R+'),
 	goc_survey_condition(C, V, Y, _, 'S+'),
 	goc_denominator_condition(C, V, Y, 'D+'))),
     not(challenge(C, V, Y, _, _, _)).
@@ -336,20 +333,20 @@ two_stars(C, V, Y, Support) :-
 	% Supported by two data sources, no challenge
 	% --------------------------------------------
 	two_sources(C,V,Y,Rule,'GoC=R+ S+') :-
-		goc_reported_condition(C,V,Y,Rule,'R+'),
+		goc_reported_condition(C,V,Y,'R+'),
 		goc_survey_condition(C,V,Y,Rule,'S+').
 	two_sources(C,V,Y,Rule,'GoC=S+ D+') :-
 		goc_survey_condition(C,V,Y,Rule,'S+'),
 		goc_denominator_condition(C,V,Y,'D+').
-	two_sources(C,V,Y,Rule,'GoC=R+ D+') :-
-		goc_reported_condition(C,V,Y,Rule,'R+'),
+	two_sources(C,V,Y,_Rule,'GoC=R+ D+') :-
+		goc_reported_condition(C,V,Y,'R+'),
 		goc_denominator_condition(C,V,Y,'D+').
 
 	% Supported by single source, no challenge
 	% -------------------------------------
-	one_source(C,V,Y,Rule,'GoC=R+') :-
+	one_source(C,V,Y,_Rule,'GoC=R+') :-
 		not(two_sources(C,V,Y,_,_)),
-		goc_reported_condition(C,V,Y,Rule,'R+').
+		goc_reported_condition(C,V,Y,'R+').
 	one_source(C,V,Y,Rule,'GoC=S+') :-
 		not(two_sources(C,V,Y,_,_)),
 		goc_survey_condition(C,V,Y,Rule,'S+').
@@ -360,14 +357,14 @@ two_stars(C, V, Y, Support) :-
 	% Empirical evidence challenges estimate.
 	% --------------------------------------
 	challenge(C,V,Y,Rule,_Coverage,Condition) :-
-		(goc_reported_condition(C,V,Y,Rule,'R-'),Condition = 'R-');
+		(goc_reported_condition(C,V,Y,'R-'),Condition = 'R-');
 		(goc_survey_condition(C,V,Y,Rule,'S-'),Condition = 'S-');
 		(goc_denominator_condition(C,V,Y,'D-'),Condition = 'D-').
 
 	% No empirical supporting evidence.
 	% --------------------------------
 	no_data(C,V,Y,_Rule,_Coverage,'GoC=No accepted empirical data') :-
-		not(goc_reported_condition(C,V,Y,_,_)),
+		not(goc_reported_condition(C,V,Y,_)),
 		not(goc_survey_condition(C,V,Y,_,_)),
 		not(goc_denominator_condition(C,V,Y,_)).
 
