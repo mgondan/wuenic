@@ -325,7 +325,9 @@ challenging_survey_in_scope(C, V, Y) :-
     abs(Coverage - Survey) > Threshold.
 
 goc_denominator_condition(C, V, Y, Support) :-
-    goc_unpd_recal(C, V, Y),
+    vaccinated(C, V, Y, _),
+    births_UNPD(C, Y, _),
+    si_UNPD(C, Y, _),
     recal_unpd(C, V, Y, Recalc),
     confidence_UNPD_threshold(Threshold),
     wuenic_I(C, V, Y, _Rule, _Explain, Coverage),
@@ -333,12 +335,6 @@ goc_denominator_condition(C, V, Y, Support) :-
     ->	Support = 'D+'
     ;	Support = 'D-'
     ).
-
-% Ensure unpd data exist.
-goc_unpd_recal(C, V, Y) :-
-    vaccinated(C, V, Y, _),
-    births_UNPD(C, Y, _),
-    si_UNPD(C, Y, _).
 
 % Recalculate coverage using reported number of children vaccinated
 % and births and surviving infants from UNPD estimates.
