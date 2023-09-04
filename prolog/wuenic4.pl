@@ -189,7 +189,7 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 	wuenic_I(C,V,Y,Rule,Explain,Cov),
 	bound_0_100(Cov,Coverage),
 
-	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC),
+	confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 	%assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 
 	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,SeriesValue,Source,SurveyInfo),
@@ -200,17 +200,16 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
 
-	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC) :-
-		not(member(V,['rcv1'])),
-		assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC).
+confidence(C, rcv1, Y, Rule, Coverage, Explanation, GC),
+    estimate_required(C, rcv1, Y, _, mcv2)
+ => assign_GoC(C, mcv2, Y, Rule, Coverage, Explanation, GC).
 
-	assign_Grade_of_Confidence(C,rcv1,Y,Rule,Coverage,GoCExplanation,GC) :-
-		estimate_required(C,rcv1,Y,_,na),
-		assign_GoC(C,mcv1,Y,Rule,Coverage,GoCExplanation,GC).
 
-	assign_Grade_of_Confidence(C,rcv1,Y,Rule,Coverage,GoCExplanation,GC) :-
-		estimate_required(C,rcv1,Y,_,mcv2),
-		assign_GoC(C,mcv2,Y,Rule,Coverage,GoCExplanation,GC).
+confidence(C, rcv1, Y, Rule, Coverage, Explanation, GC)
+ => assign_GoC(C, mcv1, Y, Rule, Coverage, Explanation, GC).
+
+confidence(C, V, Y, Rule, Coverage, Explanation, GC)
+ => assign_GoC(C, V, Y, Rule, Coverage, Explanation, GC).
 
 	% GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars) - modified 4 July 2016 TB
 	% --------------------------------------------------------------------------------------------------
@@ -870,11 +869,7 @@ reported_time_series(C,V,Y,Source,Coverage) :-
 reported_time_series(C,V,Y,interpolated,Coverage) :-
 		estimate_required(C,V,Y,_,_),
 		reported(C,V,Y,_,_),
-
-		findall(Reason,reported_reason_to_exclude(C,V,Y,_,Reason),ReasonsToExclude),
-		length(ReasonsToExclude,NReasons),
-		NReasons >= 1,
-
+		once(reported_reason_to_exclude(C,V,Y,_,_Reason)),
 		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
 		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
 
@@ -883,7 +878,6 @@ reported_time_series(C,V,Y,interpolated,Coverage) :-
 reported_time_series(C,V,Y,interpolated,Coverage) :-
 		estimate_required(C,V,Y,_,_),
 		not(reported(C,V,Y,_,_)),
-
 		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
 		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
 
@@ -892,11 +886,7 @@ reported_time_series(C,V,Y,interpolated,Coverage) :-
 reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
 		estimate_required(C,V,Y,_,_),
 		reported(C,V,Y,_,_),
-
-		findall(Reason,reported_reason_to_exclude(C,V,Y,_,Reason),ReasonsToExclude),
-		length(ReasonsToExclude,NReasons),
-		NReasons >= 1,
-
+		once(reported_reason_to_exclude(C,V,Y,_,_Reason)),
 		not(year_between_reported(C,V,Y,_,_,_,_)),
 		nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
 
