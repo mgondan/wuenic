@@ -255,7 +255,7 @@ goc_survey_condition(C, V, Y, Support),
  => Support = 'S-'.
 
 goc_survey_condition(C, V, Y, Support),
-    supporting_survey_in_scope(C, V, Y, _)
+    supporting_survey_in_scope(C, V, Y)
  => Support = 'S+'.
 
 goc_survey_condition(_C, _V, _Y, _Support)
@@ -269,14 +269,14 @@ goc_survey_condition(_C, _V, _Y, _Support)
 % rewrite rule to look at relationship between estimate rule and
 % surveys in scope rule rather than difference in COV and SurveyCoverage
 %
-			supporting_survey_in_scope(C,V,Y,_) :-
-				estimate_required(C,V,SurveyYear,_,_),
-				survey(C,V,SurveyYear,_,SurveyCoverage),
-				confidence_survey_scope(Scope),
-				abs(Y - SurveyYear) =< Scope,
-				confidence_survey_threshold(Threshold),
-				wuenic_I(C,V,Y,_,_Explanation,Cov),
-				abs(Cov - SurveyCoverage) =< Threshold.
+supporting_survey_in_scope(C, V, Y) :-
+    estimate_required(C, V, Year, _, _),
+    survey(C, V, Year, _, Survey),
+    confidence_survey_scope(Scope),
+    abs(Y - Year) =< Scope,
+    confidence_survey_threshold(Threshold),
+    wuenic_I(C, V, Y, _, _Explanation, Coverage),
+    abs(Coverage - Survey) =< Threshold.
 
 % rewrite to look for surveys that challenge surveys.
 % Modified 2017-05-05 Burton
