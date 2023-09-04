@@ -414,76 +414,57 @@ wuenic_I(C, V, Y, Rule, Explanation, Coverage)
 % First rubella given with second measles dose
 firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 
-%   Preliminary estimates.
-% ==============================================
+% Estimate at anchor points
+wuenic_II(C,V,Y,Rule,Explanation,Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    anchor_point(C, V, Y, Rule, Explanation, Coverage).
 
 % No anchor points for any year. Reported data only.
-% ------------------------------------------------
-wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
-	estimate_required(C,V,Y,_,_),
-	reported_time_series(C,V,Y,Source,Coverage),
-	not(anchor_point(C,V,_,_,_,_)),
-	explain_ro(Source, Explain).
-
-% Estimate at anchor points.
-% --------------------------
-wuenic_II(C,V,Y,Rule,Explanation,Coverage) :-
-	estimate_required(C,V,Y,_,_),
-	anchor_point(C,V,Y,Rule,Explanation,Coverage).
-
-% Estimate between anchor points: between two reported anchors, gov data.
-% ----------------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on coverage reported by national government. ',Coverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by reported data. ',Coverage) :-
-	reported_time_series(C,V,Y,Source,Coverage),
-	member(Source,['gov']),
-	between_anchor_points(C,V,Y,_,RuleBefore,_,_,RuleAfter,_),
-	both_anchors_resolved_to_reported(RuleBefore,RuleAfter),
-	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
-	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)).
-
-% Estimate between anchor points: between two reported anchors, admin data.
-% -------------------------------------------------------------------------
-% DWB 2023-APR wuenic_II(C,V,Y,'R:','Estimate based on reported administrative data. ',Coverage) :-
-wuenic_II(C,V,Y,'R:','Estimate informed by reported administrative data. ',Coverage) :-
-	reported_time_series(C,V,Y,Source,Coverage),
-	member(Source,['admin']),
-	between_anchor_points(C,V,Y,_,RuleBefore,_,_,RuleAfter,_),
-	both_anchors_resolved_to_reported(RuleBefore,RuleAfter),
-	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
-	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)).
-
-% Estimate between anchor points: between two reported anchors, interpolation.
-% -----------------------------------------------------------------------------
-wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
-	reported_time_series(C,V,Y,Source,Coverage),
-	member(Source,['interpolated']),
-	between_anchor_points(C,V,Y,_YrBefore,RuleBefore,_,_YrAfter,RuleAfter,_),
-	both_anchors_resolved_to_reported(RuleBefore,RuleAfter),
-	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
-	not(workingGroupDecision(C,V,Y,calibrate,_,_,_)),
-	% DWB 2023-APR concat_atom(['Estimate based on interpolation between coverage reported by national government. '],Explain).
-	my_concat_atom(['Estimate informed by interpolation between reported data. '],Explain).
-
-% Estimate between anchor points: calibrated
-% ------------------------------------------
-wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
-	reported_time_series(C,V,Y,_,_ReportedCoverage), % MG: _ReportedCoverage because the line seems to be a guard
-	between_anchor_points(C,V,Y,YrBefore,RuleBefore,_,YrAfter,RuleAfter,_),
-	not(both_anchors_resolved_to_reported(RuleBefore,RuleAfter)),
-	not(workingGroupDecision(C,V,Y,interpolate,_,_,_)),
-	calibrate(C,V,YrBefore,YrAfter,Y,Coverage),
-	my_concat_atom(['Reported data calibrated to ',YrBefore,' and ',YrAfter,' levels. '],Explanation).
+wuenic_II(C, V, Y, 'R:', Explain, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported_time_series(C, V, Y, Source, Coverage),
+    not(anchor_point(C, V, _, _, _, _)),
+    explain_ro(Source, Explain).
 
 % Estimate between anchor points: interpolation forced by working group.
-% ---------------------------------------------------------------------
-wuenic_II(C,V,Y,'W-I:',Explanation,Coverage) :-
-	between_anchor_points(C,V,Y,YrBefore,_,CoverageBefore,
-							   YrAfter,_,CoverageAfter),
-	workingGroupDecision(C,V,Y,interpolate,WGD_E,_,_),
-	interpolate(YrBefore,CoverageBefore,YrAfter,CoverageAfter,Y,Coverage),
-	% DWB 2023-APR concat_atom(['Estimate based on interpolation between ',YrBefore,' and ',YrAfter,' levels. ',WGD_E],Explanation).
-	my_concat_atom(['Estimate informed by interpolation between ',YrBefore,' and ',YrAfter,' levels. ',WGD_E],Explanation).
+wuenic_II(C, V, Y, 'W-I:', Explanation, Coverage) :-
+    workingGroupDecision(C, V, Y, interpolate, WGD, _, _),
+    between_anchor_points(C, V, Y, Before, _, CovBefore, After,_,CovAfter),
+    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage),
+    my_concat_atom(
+	['Estimate informed by interpolation between ', Before,
+	 ' and ', After,' levels. ', WGD], Explanation).
+
+% Estimate between anchor points: between two reported anchors, gov data.
+% Estimate between anchor points: between two reported anchors, admin data.
+% Estimate between anchor points: between two reported anchors, interpolation.
+wuenic_II(C, V, Y, 'R:', Explanation, Coverage) :-
+    reported_time_series(C, V, Y, Source, Coverage),
+    memberchk(Source, [gov, admin, interpolated]),
+    between_anchor_points(C, V, Y, _, RuleBefore, _, _, RuleAfter, _),
+    both_anchors_resolved_to_reported(RuleBefore, RuleAfter),
+    not(workingGroupDecision(C, V, Y, interpolate, _, _, _)),
+    not(workingGroupDecision(C, V, Y, calibrate, _, _, _)),
+    (   Source = gov
+    ->  Explanation = 'Estimate informed by reported data. '
+    ;	Source = admin
+    ->  Explanation = 'Estimate informed by reported administrative data. '
+    ;   Source = interpolated
+    ->	my_concat_atom(
+	    ['Estimate informed by interpolation between reported data. '],
+	    Explanation)
+    ).
+
+% Estimate between anchor points: calibrated
+wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
+    reported_time_series(C, V, Y, _, _ReportedCoverage),
+    between_anchor_points(C, V, Y, Before, RuleBefore, _, After, RuleAfter, _),
+    not(both_anchors_resolved_to_reported(RuleBefore, RuleAfter)),
+    not(workingGroupDecision(C, V, Y, interpolate, _, _, _)),
+    calibrate(C, V, Before, After, Y, Coverage),
+    my_concat_atom(
+	['Reported data calibrated to ', Before, ' and ', After,' levels. '],
+	Explanation).
 
 % Estimate before earliest anchor: reported
 % Estimate before earliest anchor: reported-extrapolated / interpolated
@@ -512,21 +493,9 @@ wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
     not(anchor_point(C, V, Y, _, _, _)),
     anchor_point(C, V, AnchorYear, AnchorRule, _, AnchorCoverage),
     AnchorRule \= 'R: AP',
-    Y < AnchorYear,
-    not(anchor_point_before(C, V, AnchorYear)),
-    reported_time_series(C, V, AnchorYear, _, ReportedCoverageAtAnchor),
-    Adj is AnchorCoverage - ReportedCoverageAtAnchor,
-    Coverage is round(ReportedCoverage + Adj),
-    my_concat_atom(
-	['Reported data calibrated to ', AnchorYear, ' levels. '],
-	Explanation).
-
-wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
-    reported_time_series(C, V, Y, _, ReportedCoverage),
-    not(anchor_point(C, V, Y, _, _, _)),
-    anchor_point(C, V, AnchorYear, AnchorRule, _, AnchorCoverage),
-    AnchorRule \= 'R: AP',
-    Y > AnchorYear, not(anchor_point_after(C, V, AnchorYear)),
+    (	Y > AnchorYear, not(anchor_point_after(C, V, AnchorYear))
+    ;	Y < AnchorYear, not(anchor_point_before(C, V, AnchorYear))
+    ),
     reported_time_series(C, V, AnchorYear, _, ReportedCoverageAtAnchor),
     Adj is AnchorCoverage - ReportedCoverageAtAnchor,
     Coverage is round(ReportedCoverage + Adj),
