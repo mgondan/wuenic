@@ -223,8 +223,8 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
  => Support = S,
     GoC = '3'.
 
-assign_GoC(C, V, Y, Rule, _Coverage, Support, GoC),
-    two_stars(C, V, Y, Rule, S)
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    two_stars(C, V, Y, S)
  => Support = S,
     GoC = '2'.
 
@@ -327,11 +327,12 @@ three_stars(C, V, Y, 'GoC=R+ S+ D+') :-
 				CovRec is Vaccinated / SI * 100.
 				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / SI.
 
-	two_stars(C,V,Y,Rule,Support) :-
-		(two_sources(C,V,Y,Rule,Support);
-		one_source(C,V,Y,Rule,Support)),
-		not(three_stars(C, V, Y, _)),
-		not(challenge(C,V,Y,_,_,_)).
+two_stars(C, V, Y, Support) :-
+    (   two_sources(C, V, Y, _, Support)
+    ;	one_source(C, V, Y, _, Support)
+    ),
+    not(three_stars(C, V, Y, _)),
+    not(challenge(C, V, Y, _, _, _)).
 
 	% Supported by two data sources, no challenge
 	% --------------------------------------------
