@@ -368,17 +368,16 @@ challenge(C, V, Y, 'S-') :-
 challenge(C, V, Y, 'D-') :-
     goc_denominator_condition(C, V, Y, 'D-').
 
-	change_from_previous_revision(C,V,Y,Coverage,'') :-
-		legacy(C,V,Y,PreviousCoverage),
-		PreviousCoverage = Coverage.
+change_from_previous_revision(C, V, Y, Coverage, Change),
+    legacy(C, V, Y, Previous),
+    Previous \= Coverage
+ => my_concat_atom(
+	['Estimate of ', Coverage,
+	 ' percent changed from previous revision value of ',
+	 Previous, ' percent. '], Change).
 
-	change_from_previous_revision(C,V,Y,Coverage,Change) :-
-		legacy(C,V,Y,PreviousCoverage),
-		not(PreviousCoverage = Coverage),
-		my_concat_atom(['Estimate of ',Coverage,' percent changed from previous revision value of ',PreviousCoverage,' percent. '],Change).
-
-	change_from_previous_revision(C,V,Y,_,'') :-
-		not(legacy(C,V,Y,_)).
+change_from_previous_revision(_C, _V, _Y, _, Change)
+ => Change = ''.
 
 % Estimate for non-DTP1 & RCV1 vaccines.
 % ---------------------------------------
