@@ -218,18 +218,26 @@ assign_GoC(C, V, Y, _Rule, _, Support, GoC),
  => GoC = G,
     my_concat_atom(['GoC=Assigned by working group. ', Explanation], Support).
 
-% Supported by reported data, survey and denominator
+% Three stars: supported by reported data, survey and denominator
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+')
- => Support = 'GoC=R+ S+ D+',
-    GoC = '3'.
+ => GoC = '3',
+    Support = 'GoC=R+ S+ D+'.
+
+% Two stars
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    two_sources(C, V, Y, _, S),
+    not(challenge(C, V, Y, _, _, _))
+ => GoC = '2',
+    Support = S.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
-    two_stars(C, V, Y, S)
- => Support = S,
-    GoC = '2'.
+    one_source(C, V, Y, _, S),
+    not(challenge(C, V, Y, _, _, _))
+ => GoC = '2',
+    Support = S.
 
 assign_GoC(C, V, Y, Rule, Coverage, Support, GoC),
     challenge(C, V, Y, Rule, Coverage, _)
@@ -326,15 +334,6 @@ recal_unpd(C, V, Y, Coverage)
  => vaccinated(C, V, Y, Vaccinated),
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
-
-two_stars(C, V, Y, Support) :-
-    (   two_sources(C, V, Y, _, Support)
-    ;	one_source(C, V, Y, _, Support)
-    ),
-    not((goc_reported_condition(C, V, Y, 'R+'),
-	goc_survey_condition(C, V, Y, 'S+'),
-	goc_denominator_condition(C, V, Y, 'D+'))),
-    not(challenge(C, V, Y, _, _, _)).
 
 	% Supported by two data sources, no challenge
 	% --------------------------------------------
