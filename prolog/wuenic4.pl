@@ -74,13 +74,6 @@ WHO and UNICEF working group memebers as of 1 January 2010 - 30 April 2012:
         Dr Robert KOWALSKI, Imperial College London (r.kowalski@imperial.ac.uk)
  */
 
-% use xsb tabling feature to increases inference time.
-% ---------------------------------------------------
-:- table anchor_point/6.
-:- table survey/5.
-:- table reported/5.
-:- table wuenic_I/6.
-
 :- op(500,xfy,:).
 
 % sawtooth_threshold : difference in increase/decrease between Y+/-1 and Y in reported data
@@ -375,65 +368,50 @@ change_from_previous_revision(C, V, Y, Coverage, Change),
 change_from_previous_revision(_C, _V, _Y, _, Change)
  => Change = ''.
 
-% Estimate for non-DTP1 & RCV1 vaccines.
-% ---------------------------------------
-wuenic_I(C,V,Y,Rule,Explanation,Coverage) :-
-	wuenic_II(C,V,Y,Rule,Explanation,Coverage),
-	not(workingGroupDecision(C,V,Y,assignWUENIC,_,_,_)),
-	not(member(V,['dtp1','rcv1'])).
-
-% Estimate for DTP1 where DTP3 estimate <= DTP1 estimate.
-% --------------------------------------------------------
-wuenic_I(C,dtp1,Y,Rule,Explanation,Coverage) :-
-	wuenic_II(C,dtp1,Y,Rule,Explanation,Coverage),
-	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
-	wuenic_II(C,dtp3,Y,_,_,DTP3Coverage),
-	DTP3Coverage =< Coverage.
+% Estimate assigned by working group.
+wuenic_I(C, V, Y, Rule, Explanation, Coverage),
+    workingGroupDecision(C, V, Y, assignWUENIC, Expl, _, Cov)
+ => Rule = 'W:',
+    Explanation = Expl,
+    Coverage = Cov.
 
 % Estimate for DTP1 where DTP3 > DTP1: RMF
-% -----------------------------------------
-wuenic_I(C,dtp1,Y,'RMF:',Explanation,RMFCoverage) :-
-	wuenic_II(C,dtp1,Y,_,_,DTP1Coverage),
-	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
-	wuenic_II(C,dtp3,Y,_,_,DTP3),
-	DTP3 > DTP1Coverage,
-	RMFCoverage is round(18.258 - 0.6088*DTP3 - 0.0058*DTP3*DTP3),
-	my_concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',DTP3,'. '],Explanation).
+wuenic_I(C, dtp1, Y, Rule, Explanation, Coverage),
+    wuenic_II(C, dtp1, Y, _, _, DTP1),
+    wuenic_II(C, dtp3, Y, _, _, DTP3),
+    DTP3 > DTP1
+ => Rule = 'RMF:',
+    Coverage is round(18.258 - 0.6088*DTP3 - 0.0058*DTP3*DTP3),
+    my_concat_atom(
+	['DTP1 coverage estimated based on DTP3 coverage of ',
+	 DTP3, '. '], Explanation).
 
 % Estimate for DTP1 where DTP1 not reported: RMF
-% -----------------------------------------
-wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
-	wuenic_II(C,dtp3,Y,_,_,DTP3),
-	not(wuenic_II(C,dtp1,Y,_,_,_)),
-	not(workingGroupDecision(C,dtp1,Y,assignWUENIC,_,_,_)),
-	RMFCoverage is round(18.258 - 0.6088*DTP3 - 0.0058*DTP3*DTP3),
-	my_concat_atom(['Estimate based on DTP3 coverage of ',DTP3,'. '],Explanation).
+wuenic_I(C, dtp1, Y, Rule, Explanation, Coverage),
+    not(wuenic_II(C, dtp1, Y, _, _, _)),
+    wuenic_II(C, dtp3, Y, _, _, DTP3)
+ => Rule = 'RMF', % todo: 'RMF:'?
+    Coverage is round(18.258 - 0.6088*DTP3 - 0.0058*DTP3*DTP3),
+    my_concat_atom(
+	['Estimate based on DTP3 coverage of ', DTP3, '. '],
+	Explanation).
 
-% ==================
-% Estimate for RCV1 where RCV1 given at MCV1.
-% -------------------------------------------
-wuenic_I(C,rcv1,Y,Rule,'Estimate based on estimated MCV1. ',Coverage) :-
-	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
-	wuenic_II(C,mcv1,Y,Rule,_Explanation,Coverage),
-	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
-	not(firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose)).
+% Estimate for RCV1 where RCV1 given at MCV1 or MCV2
+wuenic_I(C, rcv1, Y, Rule, Explanation, Coverage),
+    estimate_required(C, rcv1, Y, _, FirstRubellaDose),
+    wuenic_II(C, mcv1, Y, R, _Explanation, Cov)
+ => Rule = R,
+    (   firstRubellaAtSecondMCV(C, rcv1, Y, FirstRubellaDose)
+    ->  Explanation = 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate'
+    ;   Explanation = 'Estimate based on estimated MCV1. '
+    ),
+    Coverage = Cov.
 
-% Estimate for RCV1 where RCV1 given at MCV2.
-% -------------------------------------------
-wuenic_I(C,rcv1,Y,Rule,'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate',Coverage) :-
-	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
-	wuenic_II(C,mcv2,Y,Rule,_Explanation,Coverage),
-	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
-	firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose).
-
-% ===============
-% Estimate assigned by working group.
-% -----------------------------------
-wuenic_I(C,V,Y,'W:',Explanation,Coverage) :-
-	workingGroupDecision(C,V,Y,assignWUENIC,Explanation,_,Coverage).
+% Estimate for non-DTP1 & RCV1 vaccines
+wuenic_I(C, V, Y, Rule, Explanation, Coverage)
+ => wuenic_II(C, V, Y, Rule, Explanation, Coverage).
 
 % First rubella given with second measles dose
-% ---------------------------------------------
 firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 
 %   Preliminary estimates.
