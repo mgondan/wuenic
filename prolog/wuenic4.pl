@@ -226,12 +226,27 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
  => GoC = '3',
     Support = 'GoC=R+ S+ D+'.
 
-% Two stars
+% Two stars: supported by two data sources, no challenge
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
-    two_sources(C, V, Y, _, S),
+    goc_reported_condition(C, V, Y, 'R+'),
+    goc_survey_condition(C, V, Y, 'S+'),
     not(challenge(C, V, Y, _, _, _))
  => GoC = '2',
-    Support = S.
+    Support = 'GoC=R+ S+'.
+
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    goc_survey_condition(C, V, Y, 'S+'),
+    goc_denominator_condition(C, V, Y, 'D+'),
+    not(challenge(C, V, Y, _, _, _))
+ => GoC = '2',
+    Support = 'GoC=S+ D+'.
+
+assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
+    goc_reported_condition(C, V, Y, 'R+'),
+    goc_denominator_condition(C, V, Y, 'D+'),
+    not(challenge(C, V, Y, _, _, _))
+ => GoC = '2',
+    Support = 'GoC=R+ D+'.
 
 assign_GoC(C, V, Y, _Rule, _Coverage, Support, GoC),
     one_source(C, V, Y, _, S),
@@ -335,28 +350,16 @@ recal_unpd(C, V, Y, Coverage)
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
 
-	% Supported by two data sources, no challenge
-	% --------------------------------------------
-	two_sources(C,V,Y,_Rule,'GoC=R+ S+') :-
-		goc_reported_condition(C,V,Y,'R+'),
-		goc_survey_condition(C,V,Y,'S+').
-	two_sources(C,V,Y,_Rule,'GoC=S+ D+') :-
-		goc_survey_condition(C,V,Y,'S+'),
-		goc_denominator_condition(C,V,Y,'D+').
-	two_sources(C,V,Y,_Rule,'GoC=R+ D+') :-
-		goc_reported_condition(C,V,Y,'R+'),
-		goc_denominator_condition(C,V,Y,'D+').
-
 	% Supported by single source, no challenge
 	% -------------------------------------
 	one_source(C,V,Y,_Rule,'GoC=R+') :-
-		not(two_sources(C,V,Y,_,_)),
+%		not(two_sources(C,V,Y,_,_)),
 		goc_reported_condition(C,V,Y,'R+').
 	one_source(C,V,Y,_Rule,'GoC=S+') :-
-		not(two_sources(C,V,Y,_,_)),
+%		not(two_sources(C,V,Y,_,_)),
 		goc_survey_condition(C,V,Y,'S+').
 	one_source(C,V,Y,_Rule,'GoC=D+') :-
-		not(two_sources(C,V,Y,_,_)),
+%		not(two_sources(C,V,Y,_,_)),
 		goc_denominator_condition(C,V,Y,'D+').
 
 	% Empirical evidence challenges estimate.
