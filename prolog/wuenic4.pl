@@ -597,8 +597,6 @@ anchor_point(_C, _V, _Y, _Type, _Explanation, _Coverage)
  => fail.
 
 % ==============================================
-% Level one processing:
-%
 %   Review data reported by national authorities
 %   and survey results. Reported and survey data
 %   are accepted, ignored, or modified. Modified
@@ -607,15 +605,14 @@ anchor_point(_C, _V, _Y, _Type, _Explanation, _Coverage)
 
 % Final survey information. If multiple survey in the
 % same year, accepted and modified results are averaged.
-% ----------------------------------
-survey(C,V,Y,Explanation,Coverage) :-
-%	bagof(Cov,survey_accepted(C,V,Y,_,_,Cov),CoverageList),
-	bagof(Cov,Dist^SID^survey_accepted(C,V,Y,SID,Dist,Cov),CoverageList),
-
-	length(CoverageList,N),
-	sum_list(CoverageList,SumCov),
-	Coverage is round(SumCov / N),
-	my_concat_atom(['Survey evidence of ',Coverage,' percent based on ',N, ' survey(s). '],Explanation).
+survey(C, V, Y, Explanation, Coverage)
+ => bagof(Cov, Dist^Id^survey_accepted(C, V, Y, Id, Dist, Cov), Surveys),
+    length(Surveys, N),
+    sum_list(Surveys, Sum),
+    Coverage is round(Sum / N),
+    my_concat_atom(
+	['Survey evidence of ', Coverage, ' percent based on ', N,
+	 ' survey(s). '], Explanation).
 
 % Unmodified survey results accpeted.
 % -----------------------------------
