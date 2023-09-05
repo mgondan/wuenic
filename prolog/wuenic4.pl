@@ -624,61 +624,61 @@ survey_accepted(C, V, Y, Coverage) :-
     ;	Coverage = Cov
     ).
 
-% Survey results modified for recall bias.
-% ---------------------------------------
-survey_results_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
-	recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage).
+% Survey results modified for recall bias
+survey_results_modified(C, V, Y, Id, Explanation, Modified) :-
+    recall_bias_modified(C, V, Y, Id, Explanation, Modified).
 
 % Adjust third dose for recall bias. Apply dropout observed
 % between 1st and 3 dose documenented by card to history doses.
 % Recalculate "card or history" based on adjustment to history.
-% -------------------------------------------------------------
-recall_bias_modified(C,V,Y,SurveyID,Explanation,ModifiedCoverage) :-
-	member(V,['dtp3','pol3','hib3','hepb3','pcv3']),
+recall_bias_modified(C, V, Y, Id, Explanation, Modified) :-
+    member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
 
-	% Associate third dose with first dose.
-	vaccine(V,FirstDose),
+    % Associate third dose with first dose.
+    vaccine(V, FirstDose),
 
-	% Third dose, card only
-	survey_results(C,V,Y,SurveyID,DescriptionCard3Dose,C3Cov),
-	member(confirm:MethodCard3Dose,DescriptionCard3Dose), member(MethodCard3Dose,['card']),
-	member(age:AgeCohortCard3Dose,DescriptionCard3Dose),
-	member(AgeCohortCard3Dose,['12-23 m','18-29 m','15-26 m', '24-35 m']),
+    % Third dose, card only
+    survey_results(C, V, Y, Id, DescriptionCard3Dose, C3Cov),
+    member(confirm:card, DescriptionCard3Dose),
+    member(age:AgeCohortCard3Dose, DescriptionCard3Dose),
+    member(AgeCohortCard3Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
-	% First dose, card or history
-	survey_results(C,FirstDose,Y,SurveyID,DescriptionCoH1Dose,CoH1Cov),
-	member(confirm:MethodCoH1Dose,DescriptionCoH1Dose), member(MethodCoH1Dose,['card or history']),
-	member(age:AgeCohortCoH1,DescriptionCoH1Dose),
-	member(AgeCohortCoH1,['12-23 m','18-29 m','15-26 m','24-35 m']),
+    % First dose, card or history
+    survey_results(C, FirstDose, Y, Id, DescriptionCoH1Dose, CoH1Cov),
+    member(confirm:'card or history', DescriptionCoH1Dose),
+    member(age:AgeCohortCoH1, DescriptionCoH1Dose),
+    member(AgeCohortCoH1, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
-	% First dose, card only
-	survey_results(C,FirstDose,Y,SurveyID,DescriptionCard1Dose,C1Cov), C1Cov > 0,
-	member(confirm:MethodCard1Dose,DescriptionCard1Dose), member(MethodCard1Dose,['card']),
-	member(age:AgeCohortCard1Dose,DescriptionCard1Dose),
-	member(AgeCohortCard1Dose,['12-23 m','18-29 m','15-26 m','24-35 m']),
+    % First dose, card only
+    survey_results(C, FirstDose, Y, Id, DescriptionCard1Dose, C1Cov),
+    C1Cov > 0,
+    member(confirm:card, DescriptionCard1Dose),
+    member(age:AgeCohortCard1Dose, DescriptionCard1Dose),
+    member(AgeCohortCard1Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
-	Adj is C3Cov / C1Cov,
-	ThirdHistoryAdj is ((CoH1Cov - C1Cov)*Adj),
-	CovAdjustedRecall is C3Cov + ThirdHistoryAdj,
+    Adj is C3Cov / C1Cov,
+    ThirdHistoryAdj is ((CoH1Cov - C1Cov) * Adj),
+    CovAdjustedRecall is C3Cov + ThirdHistoryAdj,
+    bound_0_100(CovAdjustedRecall, Modified),
 
-	bound_0_100(CovAdjustedRecall,ModifiedCoverage),
+    survey_results_for_analysis(C, V, Y, Id, _, Coverage),
+    Coverage \= Modified,
 
-	survey_results_for_analysis(C,V,Y,SurveyID,_,Coverage),
+    SurveyCoverage is round(Coverage),
+    CH1 is round(CoH1Cov),
+    C1 is round(C1Cov),
+    C3 is round(C3Cov),
 
-	Coverage \= ModifiedCoverage,
+    survey_results_for_analysis(C, V, Y, Id, Description, _),
+    member(title:Survey, Description),
 
-	SurveyCoverage is round(Coverage),
-	CH1 is round(CoH1Cov),
-	C1 is round(C1Cov),
-	C3 is round(C3Cov),
-
-	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
-	member(title:Survey,Description),
-
-	my_concat_atom([Survey,' card or history results of ',SurveyCoverage,' percent modifed for recall bias to ',
-			ModifiedCoverage,' percent based on 1st dose card or history coverage of ',
-			CH1,' percent, 1st dose card only coverage of ',C1,' percent and 3rd dose card only coverage of ',
-			C3,' percent. '],Explanation).
+    my_concat_atom(
+	[Survey, ' card or history results of ', SurveyCoverage,
+	 ' percent modifed for recall bias to ', Modified,
+	 ' percent based on 1st dose card or history coverage of ',
+	 CH1, ' percent, 1st dose card only coverage of ',
+	 C1, ' percent and 3rd dose card only coverage of ',
+	 C3, ' percent. '], Explanation).
 
 % -------------------------------------------------
 % Survey results accepted if no reason to exclude.
