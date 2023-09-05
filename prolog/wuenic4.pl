@@ -122,7 +122,8 @@ estimate :-
 	% Unify country code, country name and date for output.
 	% ----------------------------------------------------
 	country(CountryCode,CountryName),
-	date(Date),
+	% date(Date),
+	Date = date(2023, 9, 5),
 
 	% Collect the set of all final estimates in list Estimate.
       % -------------------------------------------------------
