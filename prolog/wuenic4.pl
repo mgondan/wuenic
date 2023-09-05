@@ -429,7 +429,15 @@ wuenic_II(C, V, Y, Rule, Explanation, Coverage),
     not(anchor_point(C, V, _, _, _, _))
  => Rule = 'R:',
     reported_time_series(C, V, Y, Source, Coverage),
-    explain_ro(Source, Explanation).
+    (	Source = gov
+    ->	Explanation = 'Estimate informed by reported data. '
+    ;	Source = admin
+    ->	Explanation = 'Estimate informed by reported administrative data. '
+    ;	Source = interpolated
+    ->	Explanation = 'Estimate informed by interpolation between reported data. '
+    ;	Source = extrapolated
+    ->	Explanation = 'Estimate informed by extrapolation from reported data. '
+    ).
 
 % Estimate between anchor points: interpolation forced by working group.
 wuenic_II(C, V, Y, Rule, Explanation, Coverage),
@@ -512,18 +520,6 @@ wuenic_II(C, V, Y, Rule, Explanation, Coverage),
 
 wuenic_II(_C, _V, _Y, _Rule, _Explanation, _Coverage)
  => fail. % MG/todo: Unsure if this rule is needed.
-
-explain_ro(gov,
-	'Estimate informed by reported data. ').
-
-explain_ro(admin,
-	'Estimate informed by reported administrative data. ').
-
-explain_ro(interpolated,
-	'Estimate informed by interpolation between reported data. ').
-
-explain_ro(extrapolated,
-	'Estimate informed by extrapolation from reported data. ').
 
 % =====================
 % Level two processing:
