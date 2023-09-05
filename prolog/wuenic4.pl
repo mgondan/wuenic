@@ -686,36 +686,38 @@ recall_bias_modified(C, V, Y, Id, Explanation, Modified) :-
 % Reasons to exclude a survey include:
 %    Sample size < 300,
 %    The working group decides to exclude the survey.
+survey_reason_to_exclude(C, V, Y, Id, Explanation),
+    workingGroupDecision(C, V, Y, acceptSurvey, Explanation, Id, _)
+ => fail.
 
 % Reason to exclude survey: sample size < 300.
-survey_reason_to_exclude(C, V, Y, SurveyID, Explanation),
-    survey_results_for_analysis(C, V, Y, SurveyID, Description, _),
+survey_reason_to_exclude(C, V, Y, Id, Explanation),
+    survey_results_for_analysis(C, V, Y, Id, Description, _),
     member(ss:SampleSize, Description),
-    SampleSize < 300,
-    not(workingGroupDecision(C, V, Y, acceptSurvey, Explanation, SurveyID, _))
+    SampleSize < 300
  => my_concat_atom(
 	['Survey results ignored. Sample size ', SampleSize,
 	 ' less than 300. '], Explanation).
 
 % Reason to exclude survey: working group decision to exclude survey
 % identified by survey id.
-survey_reason_to_exclude(C, V, Y, SurveyID, Explain),
-    survey_results_for_analysis(C, V, Y, SurveyID, Description, _),
-    workingGroupDecision(C, V, Y, ignoreSurvey, Explanation, SurveyID, _)
+survey_reason_to_exclude(C, V, Y, Id, Explanation),
+    workingGroupDecision(C, V, Y, ignoreSurvey, Expl, Id, _),
+    survey_results_for_analysis(C, V, Y, Id, Description, _) % MG, todo: -> body?
  => member(title:Survey, Description),
     my_concat_atom(
-	[Survey, ' results ignored by working group. ', Explanation],
-	Explain).
+	[Survey, ' results ignored by working group. ', Expl],
+	Explanation).
 
 % Reason to exclude survey: working group decision to delate all
 % surveys identified by country, vaccine, year.
-survey_reason_to_exclude(C, V, Y, SurveyID, Explain),
-    survey_results_for_analysis(C, V, Y, SurveyID, Description, _),
-    workingGroupDecision(C, V, Y, ignoreSurvey, Explanation, na, _)
+survey_reason_to_exclude(C, V, Y, Id, Explanation),
+    workingGroupDecision(C, V, Y, ignoreSurvey, Expl, na, _),
+    survey_results_for_analysis(C, V, Y, Id, Description, _) % MG, todo: -> body?
  => member(title:Survey, Description),
     my_concat_atom(
-	[Survey, ' results ignored by working group. ', Explanation],
-	Explain).
+	[Survey, ' results ignored by working group. ', Expl],
+	Explanation).
 
 survey_reason_to_exclude(_C, _V, _Y, _SurveyID, _Explain)
  => fail.
