@@ -606,7 +606,7 @@ anchor_point(_C, _V, _Y, _Type, _Explanation, _Coverage)
 % Final survey information. If multiple survey in the
 % same year, accepted and modified results are averaged.
 survey(C, V, Y, Explanation, Coverage)
- => bagof(Cov, Dist^Id^survey_accepted(C, V, Y, Id, Dist, Cov), Surveys),
+ => bagof(Cov, survey_accepted(C, V, Y, Cov), Surveys),
     length(Surveys, N),
     sum_list(Surveys, Sum),
     Coverage is round(Sum / N),
@@ -614,19 +614,15 @@ survey(C, V, Y, Explanation, Coverage)
 	['Survey evidence of ', Coverage, ' percent based on ', N,
 	 ' survey(s). '], Explanation).
 
-% Unmodified survey results accpeted.
-% -----------------------------------
-survey_accepted(C,V,Y,SurveyID,_,Coverage) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,_,Coverage),
-	not(survey_results_modified(C,V,Y,SurveyID,_,_)),
-	not(survey_reason_to_exclude(C,V,Y,SurveyID,_)).
-
-% Modified survey results accepted.
-% ---------------------------------
-survey_accepted(C,V,Y,SurveyID,_,ModifiedCoverage) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,_,_Coverage),
-	survey_results_modified(C,V,Y,SurveyID,_,ModifiedCoverage),
-	not(survey_reason_to_exclude(C,V,Y,SurveyID,_)).
+% Unmodified survey results accepted
+% Modified survey results accepted
+survey_accepted(C, V, Y, Coverage) :-
+    survey_results_for_analysis(C, V, Y, Id, _, Cov),
+    not(survey_reason_to_exclude(C, V, Y, Id, _)),
+    (   survey_results_modified(C, V, Y, Id, _, Mod)
+    ->	Coverage = Mod
+    ;	Coverage = Cov
+    ).
 
 % Survey results modified for recall bias.
 % ---------------------------------------
