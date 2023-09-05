@@ -687,35 +687,41 @@ recall_bias_modified(C, V, Y, Id, Explanation, Modified) :-
 %    Sample size < 300,
 %    The working group decides to exclude the survey.
 
-% --------------------------------------------------
 % Reason to exclude survey: sample size < 300.
-% --------------------------------------------
-survey_reason_to_exclude(C,V,Y,SurveyID,Explanation) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
-	member(ss:SampleSize,Description),
-	SampleSize < 300,
-	not(workingGroupDecision(C,V,Y,acceptSurvey,Explanation,SurveyID,_)),
-	my_concat_atom(['Survey results ignored. Sample size ',SampleSize,' less than 300. '],Explanation).
+survey_reason_to_exclude(C, V, Y, SurveyID, Explanation),
+    survey_results_for_analysis(C, V, Y, SurveyID, Description, _),
+    member(ss:SampleSize, Description),
+    SampleSize < 300,
+    not(workingGroupDecision(C, V, Y, acceptSurvey, Explanation, SurveyID, _))
+ => my_concat_atom(
+	['Survey results ignored. Sample size ', SampleSize,
+	 ' less than 300. '], Explanation).
 
-% Reason to exclude survey: working group decision to exclude survey identified by survey id.
-% -------------------------------------------------------------------------------------------
-survey_reason_to_exclude(C,V,Y,SurveyID,Explain) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
-	workingGroupDecision(C,V,Y,ignoreSurvey,Explanation,SurveyID,_),
-	member(title:Survey,Description),
-	my_concat_atom([Survey,' results ignored by working group. ',Explanation],Explain).
+% Reason to exclude survey: working group decision to exclude survey
+% identified by survey id.
+survey_reason_to_exclude(C, V, Y, SurveyID, Explain),
+    survey_results_for_analysis(C, V, Y, SurveyID, Description, _),
+    workingGroupDecision(C, V, Y, ignoreSurvey, Explanation, SurveyID, _)
+ => member(title:Survey, Description),
+    my_concat_atom(
+	[Survey, ' results ignored by working group. ', Explanation],
+	Explain).
 
-% Reason to exclude survey: working group decision to delate all surveys identified by country, vaccine, year.
-% ------------------------------------------------------------------------------------------------------------
-survey_reason_to_exclude(C,V,Y,SurveyID,Explain) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,Description,_),
-	workingGroupDecision(C,V,Y,ignoreSurvey,Explanation,na,_),
-	member(title:Survey,Description),
-	my_concat_atom([Survey,' results ignored by working group. ',Explanation],Explain).
+% Reason to exclude survey: working group decision to delate all
+% surveys identified by country, vaccine, year.
+survey_reason_to_exclude(C, V, Y, SurveyID, Explain),
+    survey_results_for_analysis(C, V, Y, SurveyID, Description, _),
+    workingGroupDecision(C, V, Y, ignoreSurvey, Explanation, na, _)
+ => member(title:Survey, Description),
+    my_concat_atom(
+	[Survey, ' results ignored by working group. ', Explanation],
+	Explain).
+
+survey_reason_to_exclude(_C, _V, _Y, _SurveyID, _Explain)
+ => fail.
 
 % Survey results passed for inclusion in the analysis include:
 % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months of age
-% --------------------------------------------------------
 survey_results_for_analysis(C,V,Y,SurveyID,Description,Coverage) :-
 	survey_results(C,V,Y,SurveyID,Description,Coverage),
 	member(confirm:Method,Description),
