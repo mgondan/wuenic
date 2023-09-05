@@ -563,7 +563,23 @@ anchor_point(C, V, Y, Type, Explanation, Coverage),
     abs(Reported - Survey) =< Threshold
  => Type = 'R: AP',
     Coverage = Reported,
-    explain(ap, Source, Expl, Explanation).
+    (	Source = gov
+    ->	my_concat_atom(
+	    ['Estimate informed by reported data supported by survey. ',
+	     Expl], Explanation)
+    ;	Source = admin
+    ->	my_concat_atom(
+	    ['Estimate informed by reported administrative data supported by survey. ',
+	     Expl], Explanation)
+    ;	Source = interpolated
+    ->	my_concat_atom(
+	    ['Estimate informed by interpolation between reported data supported by survey. ',
+	     Expl], Explanation)
+    ;	Source = extrapolated
+    ->	my_concat_atom(
+	    ['Estimate based on extrapolation from data reported by national government supported by survey. ',
+	     Expl], Explanation)
+    ).
 
 % Survey results challenge reported
 anchor_point(C, V, Y, Type, Explanation, Coverage),
@@ -579,26 +595,6 @@ anchor_point(C, V, Y, Type, Explanation, Coverage),
 
 anchor_point(_C, _V, _Y, _Type, _Explanation, _Coverage)
  => fail.
-
-explain(ap, gov, Expl, Explanation)
- => my_concat_atom(
-	['Estimate informed by reported data supported by survey. ',
-	 Expl], Explanation).
-
-explain(ap, admin, Expl, Explanation)
- => my_concat_atom(
-	['Estimate informed by reported administrative data supported by survey. ',
-	 Expl], Explanation).
-
-explain(ap, interpolated, Expl, Explanation)
- => my_concat_atom(
-	['Estimate informed by interpolation between reported data supported by survey. ',
-	 Expl], Explanation).
-
-explain(ap, extrapolated, Expl, Explanation)
- => my_concat_atom(
-	['Estimate based on extrapolation from data reported by national government supported by survey. ',
-	 Expl], Explanation).
 
 % ==============================================
 % Level one processing:
