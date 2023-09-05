@@ -415,21 +415,26 @@ wuenic_I(C, V, Y, Rule, Explanation, Coverage)
 firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 
 % Estimate at anchor points
-wuenic_II(C,V,Y,Rule,Explanation,Coverage) :-
-    estimate_required(C, V, Y, _, _),
-    anchor_point(C, V, Y, Rule, Explanation, Coverage).
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+%    estimate_required(C, V, Y, _, _),
+    anchor_point(C, V, Y, Rule0, Explanation0, Coverage0)
+ => Rule = Rule0,
+    Explanation = Explanation0,
+    Coverage = Coverage0.
 
 % No anchor points for any year. Reported data only.
-wuenic_II(C, V, Y, 'R:', Explain, Coverage) :-
-    estimate_required(C, V, Y, _, _),
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+%    estimate_required(C, V, Y, _, _),
+    not(anchor_point(C, V, _, _, _, _))
+ => Rule = 'R:',
     reported_time_series(C, V, Y, Source, Coverage),
-    not(anchor_point(C, V, _, _, _, _)),
-    explain_ro(Source, Explain).
+    explain_ro(Source, Explanation).
 
 % Estimate between anchor points: interpolation forced by working group.
-wuenic_II(C, V, Y, 'W-I:', Explanation, Coverage) :-
-    workingGroupDecision(C, V, Y, interpolate, WGD, _, _),
-    between_anchor_points(C, V, Y, Before, _, CovBefore, After,_,CovAfter),
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+    workingGroupDecision(C, V, Y, interpolate, WGD, _, _)
+ => Rule = 'W-I:',
+    between_anchor_points(C, V, Y, Before, _, CovBefore, After, _, CovAfter),
     interpolate(Before, CovBefore, After, CovAfter, Y, Coverage),
     my_concat_atom(
 	['Estimate informed by interpolation between ', Before,
@@ -438,13 +443,13 @@ wuenic_II(C, V, Y, 'W-I:', Explanation, Coverage) :-
 % Estimate between anchor points: between two reported anchors, gov data.
 % Estimate between anchor points: between two reported anchors, admin data.
 % Estimate between anchor points: between two reported anchors, interpolation.
-wuenic_II(C, V, Y, 'R:', Explanation, Coverage) :-
-    reported_time_series(C, V, Y, Source, Coverage),
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+    not(workingGroupDecision(C, V, Y, calibrate, _, _, _)),
+    reported_time_series(C, V, Y, Source, Coverage0),
     memberchk(Source, [gov, admin, interpolated]),
     between_anchor_points(C, V, Y, _, RuleBefore, _, _, RuleAfter, _),
-    both_anchors_resolved_to_reported(RuleBefore, RuleAfter),
-    not(workingGroupDecision(C, V, Y, interpolate, _, _, _)),
-    not(workingGroupDecision(C, V, Y, calibrate, _, _, _)),
+    both_anchors_resolved_to_reported(RuleBefore, RuleAfter)
+ => Rule = 'R:',
     (   Source = gov
     ->  Explanation = 'Estimate informed by reported data. '
     ;	Source = admin
@@ -453,30 +458,31 @@ wuenic_II(C, V, Y, 'R:', Explanation, Coverage) :-
     ->	my_concat_atom(
 	    ['Estimate informed by interpolation between reported data. '],
 	    Explanation)
-    ).
+    ),
+    Coverage = Coverage0.
 
 % Estimate between anchor points: calibrated
-wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
-    reported_time_series(C, V, Y, _, _ReportedCoverage),
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+    reported_time_series(C, V, Y, _, _Reported),
     between_anchor_points(C, V, Y, Before, RuleBefore, _, After, RuleAfter, _),
-    not(both_anchors_resolved_to_reported(RuleBefore, RuleAfter)),
-    not(workingGroupDecision(C, V, Y, interpolate, _, _, _)),
-    calibrate(C, V, Before, After, Y, Coverage),
+    not(both_anchors_resolved_to_reported(RuleBefore, RuleAfter))
+ => Rule = 'C:',
     my_concat_atom(
 	['Reported data calibrated to ', Before, ' and ', After,' levels. '],
-	Explanation).
+	Explanation),
+    calibrate(C, V, Before, After, Y, Coverage).
 
 % Estimate before earliest anchor: reported
 % Estimate before earliest anchor: reported-extrapolated / interpolated
 % Estimate after latest anchor: reported
 % Estimate after latest anchor: reported-extrapolated / interpolated
-wuenic_II(C, V, Y, 'R:', Explanation, Coverage) :-
-    reported_time_series(C, V, Y, Source, Coverage),
-    not(anchor_point(C, V, Y, _, _, _)),
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+    reported_time_series(C, V, Y, Source, Coverage0),
     anchor_point(C, V, AnchorYear, 'R: AP', _, _),
     (	Y > AnchorYear, not(anchor_point_after(C, V, AnchorYear))
     ;	Y < AnchorYear, not(anchor_point_before(C, V, AnchorYear))
-    ),
+    )
+ => Rule = 'R:',
     (	Source = gov
     ->	Explanation = 'Estimate informed by reported data.'
     ;	Source = admin
@@ -484,24 +490,28 @@ wuenic_II(C, V, Y, 'R:', Explanation, Coverage) :-
     ;	Source = interpolated
     ->	Explanation = 'Estimate informed by interpolation between reported data. '
     ;	Source = extrapolated
-    ->	Explanation = 'Estimate based on extrapolation from data reported by national government. ').
+    ->	Explanation = 'Estimate based on extrapolation from data reported by national government. '),
+    Coverage = Coverage0.
 
 % Estimate before earliest anchor: calibrated
 % Estimate after latest anchor: calibrated
-wuenic_II(C, V, Y, 'C:', Explanation, Coverage) :-
-    reported_time_series(C, V, Y, _, ReportedCoverage),
-    not(anchor_point(C, V, Y, _, _, _)),
+wuenic_II(C, V, Y, Rule, Explanation, Coverage),
+    reported_time_series(C, V, Y, _, Reported),
     anchor_point(C, V, AnchorYear, AnchorRule, _, AnchorCoverage),
     AnchorRule \= 'R: AP',
     (	Y > AnchorYear, not(anchor_point_after(C, V, AnchorYear))
     ;	Y < AnchorYear, not(anchor_point_before(C, V, AnchorYear))
-    ),
-    reported_time_series(C, V, AnchorYear, _, ReportedCoverageAtAnchor),
-    Adj is AnchorCoverage - ReportedCoverageAtAnchor,
-    Coverage is round(ReportedCoverage + Adj),
+    )
+ => Rule = 'C:',
+    reported_time_series(C, V, AnchorYear, _, ReportedAtAnchor),
+    Adj is AnchorCoverage - ReportedAtAnchor,
     my_concat_atom(
 	['Reported data calibrated to ', AnchorYear, ' levels. '],
-	Explanation).
+	Explanation),
+    Coverage is round(Reported + Adj).
+
+wuenic_II(_C, _V, _Y, _Rule, _Explanation, _Coverage)
+ => fail. % MG/todo: Unsure if this rule is needed.
 
 both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
   member(RuleBefore,['R: AP']),
