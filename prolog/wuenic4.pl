@@ -448,8 +448,7 @@ wuenic_II(C, V, Y, Rule, Explanation, Coverage),
     not(workingGroupDecision(C, V, Y, calibrate, _, _, _)),
     reported_time_series(C, V, Y, Source, Coverage0),
     memberchk(Source, [gov, admin, interpolated]),
-    between_anchor_points(C, V, Y, _, RuleBefore, _, _, RuleAfter, _),
-    both_anchors_resolved_to_reported(RuleBefore, RuleAfter)
+    between_anchor_points(C, V, Y, _, 'R: AP', _, _, 'R: AP', _)
  => Rule = 'R:',
     (   Source = gov
     ->  Explanation = 'Estimate informed by reported data. '
@@ -465,8 +464,8 @@ wuenic_II(C, V, Y, Rule, Explanation, Coverage),
 % Estimate between anchor points: calibrated
 wuenic_II(C, V, Y, Rule, Explanation, Coverage),
     reported_time_series(C, V, Y, _, _Reported),
-    between_anchor_points(C, V, Y, Before, RuleBefore, _, After, RuleAfter, _),
-    not(both_anchors_resolved_to_reported(RuleBefore, RuleAfter))
+    between_anchor_points(C, V, Y, Before, _RuleBefore, _, After, _RuleAfter, _)
+%    not(both_anchors_resolved_to_reported(RuleBefore, RuleAfter))
  => Rule = 'C:',
     my_concat_atom(
 	['Reported data calibrated to ', Before, ' and ', After,' levels. '],
@@ -513,10 +512,6 @@ wuenic_II(C, V, Y, Rule, Explanation, Coverage),
 
 wuenic_II(_C, _V, _Y, _Rule, _Explanation, _Coverage)
  => fail. % MG/todo: Unsure if this rule is needed.
-
-both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
-  member(RuleBefore,['R: AP']),
-  member(RuleAfter,['R: AP']).
 
 explain_ro(gov,
 	'Estimate informed by reported data. ').
