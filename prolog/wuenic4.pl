@@ -719,17 +719,16 @@ survey_reason_to_exclude(C, V, Y, Id, Explanation),
 	[Survey, ' results ignored by working group. ', Expl],
 	Explanation).
 
-survey_reason_to_exclude(_C, _V, _Y, _SurveyID, _Explain)
+survey_reason_to_exclude(_C, _V, _Y, _Id, _Explain)
  => fail.
 
 % Survey results passed for inclusion in the analysis include:
 % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months of age
-survey_results_for_analysis(C,V,Y,SurveyID,Description,Coverage) :-
-	survey_results(C,V,Y,SurveyID,Description,Coverage),
-	member(confirm:Method,Description),
-	member(Method,['card or history']),
-	member(age:AgeCohort,Description),
-	member(AgeCohort,['12-23 m','18-29 m','15-26 m','24-35 m']).
+survey_results_for_analysis(C, V, Y, Id, Description, Coverage) :-
+    survey_results(C, V, Y, Id, Description, Coverage),
+    member(confirm:'card or history', Description),
+    member(age:AgeCohort, Description),
+    member(AgeCohort, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']).
 
 % =============================================
 % Create complete time series of reported data.
