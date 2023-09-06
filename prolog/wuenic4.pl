@@ -739,46 +739,43 @@ survey_results_for_analysis(C, V, Y, Id, Description, Coverage) :-
 %    value of nearest year for years no reported or reported excluded
 %        before/after earliest/latest reported value (extrapolated)
 % ==============================================
+
 % Reported data.
-% --------------
-reported_time_series(C,V,Y,Source,Coverage) :-
-		estimate_required(C,V,Y,_,_),
-		reported(C,V,Y,Source,Coverage),
-		not(reported_reason_to_exclude(C,V,Y,_,_)).
+reported_time_series(C, V, Y, Source, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported(C, V, Y, Source, Coverage),
+    not(reported_reason_to_exclude(C, V, Y, _, _)).
 
 % Interpolation, reported data excluded between two years
-% -------------------------------------------------------
-reported_time_series(C,V,Y,interpolated,Coverage) :-
-		estimate_required(C,V,Y,_,_),
-		reported(C,V,Y,_,_),
-		once(reported_reason_to_exclude(C,V,Y,_,_Reason)),
-		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
-		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
+reported_time_series(C, V, Y, interpolated, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported(C, V, Y, _, _),
+    once(reported_reason_to_exclude(C, V, Y, _, _Reason)),
+    year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter),
+    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
 
 % Interpolation, no reported data between two years
-% -------------------------------------------------
-reported_time_series(C,V,Y,interpolated,Coverage) :-
-		estimate_required(C,V,Y,_,_),
-		not(reported(C,V,Y,_,_)),
-		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
-		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
+reported_time_series(C, V, Y, interpolated, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    not(reported(C, V, Y, _, _)),
+    year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter),
+    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
 
 % Extrapolation, reported data for year beyond earliest / latest required estimate excluded
-% ---------------------------------------------------------------------------------------
-reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
-		estimate_required(C,V,Y,_,_),
-		reported(C,V,Y,_,_),
-		once(reported_reason_to_exclude(C,V,Y,_,_Reason)),
-		not(year_between_reported(C,V,Y,_,_,_,_)),
-		nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
+reported_time_series(C, V, Y, extrapolated, CovNearest) :-
+    estimate_required(C, V, Y, _, _),
+    reported(C, V, Y, _, _),
+    once(reported_reason_to_exclude(C, V, Y, _, _Reason)),
+    not(year_between_reported(C, V, Y, _, _, _, _)),
+    nearest_reported(C, V, Y, _Nearest, CovNearest).
 
 % Extrapolation, no reported data for year beyond earliest / latest required estimate
 % ---------------------------------------------------------------------------------
-reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
-	estimate_required(C,V,Y,_,_),
-	not(reported(C,V,Y,_,_)),
-	not(year_between_reported(C,V,Y,_,_,_,_)),
-	nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
+reported_time_series(C, V, Y, extrapolated, CovNearest) :-
+    estimate_required(C, V, Y, _, _),
+    not(reported(C, V, Y, _, _)),
+    not(year_between_reported(C, V, Y, _, _, _, _)),
+    nearest_reported(C, V, Y, _Nearest, CovNearest).
 
 % =====================================
 % Reasons to exclude reported data are:
@@ -897,10 +894,6 @@ anchor_point_after(C, V, After) :-
     anchor_point(C, V, Y, _, _, _),
     Y > After.
 
-anchor_point_between(C, V, Before, After) :-
-    anchor_point(C, V, Y, _, _, _),
-    Before < Y, Y < After.
-
 % routines for interpolated points
 % MG, todo: move in one-year steps instead of generate & test
 year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter) :-
@@ -933,15 +926,17 @@ reported_closer(C, V, Y, Nearest) :-
     abs(Y - Test) < abs(Y - Nearest).
 
 % Get values of nearest surrounding anchor points.
-% -------------------------------------------------
-between_anchor_points(C,V,Y,PreceedingAnchorYear,PreceedingRule,PreceedingCov,
-                          SucceedingAnchorYear,SucceedingRule,SucceedingCov) :-
-	not(anchor_point(C,V,Y,_,_,_)),
-	anchor_point(C,V,PreceedingAnchorYear,PreceedingRule,_,PreceedingCov),
-	anchor_point(C,V,SucceedingAnchorYear,SucceedingRule,_,SucceedingCov),
-	PreceedingAnchorYear < Y,
-	SucceedingAnchorYear > Y,
-	not(anchor_point_between(C,V,PreceedingAnchorYear,SucceedingAnchorYear)).
+between_anchor_points(C, V, Y, Prec, PrecRule, PrecCov, Succ, SuccRule, SuccCov) :-
+    not(anchor_point(C, V, Y, _, _, _)),
+    anchor_point(C, V, Prec, PrecRule, _, PrecCov),
+    Prec < Y,
+    anchor_point(C, V, Succ, SuccRule, _, SuccCov),
+    Succ > Y,
+    not(anchor_point_between(C, V, Prec, Succ)).
+
+anchor_point_between(C, V, Before, After) :-
+    anchor_point(C, V, Y, _, _, _),
+    Before < Y, Y < After.
 
 % Interpolate between two years
 interpolate(Early, EarlyCov, Late, LateCov, Year, Coverage) :-
