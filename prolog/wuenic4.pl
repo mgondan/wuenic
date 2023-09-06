@@ -902,7 +902,7 @@ anchor_point_between(C, V, Before, After) :-
     Before < Y, Y < After.
 
 % routines for interpolated points
-% MG, todo: move in year steps instead of generate & test
+% MG, todo: move in one-year steps instead of generate & test
 year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter) :-
     reported(C, V, Before, _, CovBefore),
     Before < Y,
@@ -912,11 +912,11 @@ year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter) :-
     not(reported_reason_to_exclude(C, V, After, _, _)),
     not(reported_data_between(C, V, Before, After)).
 
-reported_data_between(C, V, YearBefore,YearAfter) :-
-	reported(C,V,YearBetween,_,_),
-	not(reported_reason_to_exclude(C,V,YearBetween,_,_)),
-	YearBetween > YearBefore,
-	YearBetween < YearAfter.
+reported_data_between(C, V, Before, After) :-
+    reported(C, V, Y, _, _),
+    Y > Before,
+    Y < After,
+    not(reported_reason_to_exclude(C, V, Y, _, _)).
 
 % Extrapolation using nearest neighbor
 % ----------------------------------
