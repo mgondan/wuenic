@@ -919,16 +919,18 @@ reported_data_between(C, V, Before, After) :-
     not(reported_reason_to_exclude(C, V, Y, _, _)).
 
 % Extrapolation using nearest neighbor
-% ----------------------------------
-nearest_reported(C,V,Y,YearNearest,CoverageNearest) :-
-	reported(C,V,YearNearest,_,CoverageNearest),
-	not(reported_reason_to_exclude(C,V,YearNearest,_,_)),
-	not(reported_closer(C,V,Y,YearNearest)).
+% MG, todo: move in one-year steps (back and forth) instead of generate
+% & test
+nearest_reported(C, V, Y, Nearest, CovNearest) :-
+    reported(C, V, Nearest, _, CovNearest),
+    not(reported_reason_to_exclude(C, V, Nearest, _, _)),
+    not(reported_closer(C, V, Y, Nearest)).
 
-reported_closer(C,V,Y,YearNearest) :-
-	reported(C,V,YearTest,_,_),
-	not(reported_reason_to_exclude(C,V,YearTest,_,_)),
-	abs(Y - YearTest) < abs(Y - YearNearest).
+% MG, todo: ..., then reported_closer shouldn't be needed anymore
+reported_closer(C, V, Y, Nearest) :-
+    reported(C, V, Test, _, _),
+    not(reported_reason_to_exclude(C, V, Test, _, _)),
+    abs(Y - Test) < abs(Y - Nearest).
 
 % Get values of nearest surrounding anchor points.
 % -------------------------------------------------
