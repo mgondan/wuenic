@@ -868,13 +868,9 @@ reported_time_series(C,V,Y,interpolated,Coverage) :-
 % Extrapolation, reported data for year beyond earliest / latest required estimate excluded
 % ---------------------------------------------------------------------------------------
 reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
-		estimate_required(C,V,Y,_,_),
+    estimate_required(C,V,Y,_,_),
 		reported(C,V,Y,_,_),
-
-		findall(Reason,reported_reason_to_exclude(C,V,Y,_,Reason),ReasonsToExclude),
-		length(ReasonsToExclude,NReasons),
-		NReasons >= 1,
-
+		once(reported_reason_to_exclude(C,V,Y,_,_)),
 		not(year_between_reported(C,V,Y,_,_,_,_)),
 		nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
 
@@ -959,9 +955,10 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 	concat_atom(['Reported data excluded due to decline in reported coverage from ',CoveragePreviousYear,' level to ',
 			Coverage,' percent. '],Explanation).
 
-	reported_later(C,V,Year) :-
-		reported(C,V,YearAfter,_,_),
-		YearAfter > Year.
+reported_later(C, V, Y) :-
+    between(Y, 2023, After),
+    After > Y,
+    reported(C, V, After, _, _).
 
 % Reported to WHO and UNICEF is government estimate. If government
 % estimate missing, then reported is administrative data. If both
@@ -974,7 +971,7 @@ reported_reason_to_exclude(C,V,Y,temporalChange,Explanation) :-
 reported(C, V, Y, Source, Coverage) :-
     gov(C, V, Y, Cov0),
     not(workingGroupDecision(C, V, Y, ignoreGov, _, _, _)),
-%    !,
+    !,
     Source = gov,
     Coverage = Cov0.
 
@@ -984,7 +981,7 @@ reported(C, V, Y, Source, Coverage) :-
     ;	not(gov(C, V, Y, _))
     ),
     not(workingGroupDecision(C, V, Y, ignoreAdmin, _, _, _)),
-%    !,
+    !,
     Source = admin,
     Coverage = Cov0.
 
@@ -1031,16 +1028,39 @@ year_after_reported(C, V, Y, After, Coverage) :-
     Coverage = Cov0.
 
 % Extrapolation using nearest neighbor
-% ----------------------------------
-nearest_reported(C,V,Y,YearNearest,CoverageNearest) :-
-	reported(C,V,YearNearest,_,CoverageNearest),
-	not(reported_reason_to_exclude(C,V,YearNearest,_,_)),
-	not(reported_closer(C,V,Y,YearNearest)).
+nearest_reported(C, V, Y, Nearest, Coverage) :-
+    year_before_reported(C, V, Y, Before, CoverageBefore),
+    year_after_reported(C, V, Y, After, CoverageAfter),
+    !,
+    (	Y - Before < After - Y
+    ->	Nearest = Before,
+	Coverage = CoverageBefore
+    ;	Nearest = After,
+	Coverage = CoverageAfter
+    ).
 
-reported_closer(C,V,Y,YearNearest) :-
-	reported(C,V,YearTest,_,_),
-	not(reported_reason_to_exclude(C,V,YearTest,_,_)),
-	abs(Y - YearTest) < abs(Y - YearNearest).
+nearest_reported(C, V, Y, Nearest, Coverage) :-
+    year_before_reported(C, V, Y, Before, CoverageBefore),
+    year_after_reported(C, V, Y, After, CoverageAfter),
+    !,
+    (	Y - Before < After - Y
+    ->	Nearest = Before,
+	Coverage = CoverageBefore
+    ;	Nearest = After,
+	Coverage = CoverageAfter
+    ).
+
+nearest_reported(C, V, Y, Nearest, Coverage) :-
+    year_before_reported(C, V, Y, Before, CoverageBefore),
+    !,
+    Nearest = Before,
+    Coverage = CoverageBefore.
+
+nearest_reported(C, V, Y, Nearest, Coverage) :-
+    year_after_reported(C, V, Y, After, CoverageAfter),
+    !,
+    Nearest = After,
+    Coverage = CoverageAfter.
 
 % Get values of nearest surrounding anchor points.
 % -------------------------------------------------
