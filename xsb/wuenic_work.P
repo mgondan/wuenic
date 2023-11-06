@@ -1074,42 +1074,6 @@ calibrate(C, V, Prec, _Succ, Y, Coverage) :-
 calibrate(C, V, Prec, Succ, Y, _) :-
     throw(misc_error(calibrate(C, V, Prec, Succ, Y))).
 
-% Calibrate reported data to anchor point value levels. Reported data at both anchors.
-% -----------------------------------------------------------------------------------
-calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
-
-	anchor_point(C,V,PreceedingAnchorYear,_,_,PreceedingCoverage),
-	anchor_point(C,V,SucceedingAnchorYear,_,_,SucceedingCoverage),
-
-	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),
-	reported_time_series(C,V,SucceedingAnchorYear,_,SucceedingReportedCoverage),
-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-
-	interpolate(PreceedingAnchorYear,PreceedingReportedCoverage,
-	            SucceedingAnchorYear,SucceedingReportedCoverage,
-	            Y,ReportedInterpolated),
-
-	interpolate(PreceedingAnchorYear,PreceedingCoverage,
-	            SucceedingAnchorYear,SucceedingCoverage,
-	            Y,AnchorInterpolated),
-
-	Adj is AnchorInterpolated - ReportedInterpolated,
-	Coverage is round(ReportedCoverage + Adj).
-
-% Calibrate reported to preceeding point. Reported data only at preceeding anchor.
-% ----------------------------------------------------------------------------------
-calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
-	anchor_point(C,V,PreceedingAnchorYear,_,_,PreceedingCoverage),
-	anchor_point(C,V,SucceedingAnchorYear,_,_,_),
-
-	reported_time_series(C,V,PreceedingAnchorYear,_,PreceedingReportedCoverage),
-	not(reported_time_series(C,V,SucceedingAnchorYear,_,_)),
-	Adj is PreceedingCoverage - PreceedingReportedCoverage,
-
-	reported_time_series(C,V,Y,_,ReportedCoverage),
-	Coverage is round(ReportedCoverage + Adj).
-
 % Ensure estimates are between 0 and 99 (MG, todo: round only at output)
 bound_0_100(X, Y) :-
     Y is max(0, min(99, round(X))).
