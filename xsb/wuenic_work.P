@@ -108,23 +108,18 @@ vaccine(hib3,hib1).
 vaccine(hepb3,hepb1).
 vaccine(pcv3,pcv1).
 
-admin(country,vaccine,year,coverage).
-gov(country,vaccine,year,coverage).
-vaccinated(country,vaccine,year,vaccinated).
-target(country,vaccine,year,vaccinated).
-legacy(country,vaccine,year,coverage).
-survey_results(country,vaccine,year,id,description,coverage).
-wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
-births_UNPD(country,year,births).
-si_UNPD(country,year,surviving_infants).
-
 % Load country-specific predicates describing data, survey_results,
 % working group decisions and whether an estimate is required.
-% Call estimate/0 to create country-specific estimates.
-% -----------------------------------------------------
-%:- ['data.pl'].
-%:- estimate.
-%:- halt.
+%
+% :- dynamic admin/4.
+% :- dynamic gov/4.
+% :- dynamic vaccinated/4.
+% :- dynamic target/4.
+% :- dynamic legacy/4.
+% :- dynamic survey_results/6.
+% :- dynamic wgd/10.
+% :- dynamic births_UNPD/3.
+% :- dynamic si_UNPD/4.
 
 % ==================================================
 % top level predicate. Creates and outputs estimates.
