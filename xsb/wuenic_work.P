@@ -431,12 +431,21 @@ wuenic_I(C,V,Y,'W:',Explanation,Coverage) :-
 % ==============================================
 
 % No anchor points for any year. Reported data only.
-% ------------------------------------------------
-wuenic_II(C,V,Y,'R:',Explain,Coverage) :-
-	estimate_required(C,V,Y,_,_),
-	reported_time_series(C,V,Y,Source,Coverage),
-	not(anchor_point(C,V,_,_,_,_)),
-	explain(ro,Source,Explain).
+wuenic_II(C, V, Y, 'R:', Expl, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported_time_series(C, V, Y, Source, Coverage),
+    not(anchor_point(C, V, _, _, _, _)),
+    (   Source = gov
+    ->  Expl = 'Estimate informed by reported data. '
+    ;   Source = admin
+    ->  Expl = 'Estimate informed by reported administrative data. '
+    ;   Source = interpolated
+    ->  Expl = 'Estimate based on interpolation between reported values. '
+    ;   Source = extrapolated
+    ->  Expl = 'Estimate informed by extrapolation from reported data. '
+    ;	error_write(wuenic_II/ro),
+	fail
+    ).
 
 % Estimate at anchor points.
 % --------------------------
@@ -618,15 +627,6 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 	Coverage is round(ReportedCoverage + Adj),
 	concat_atom(['Reported data calibrated to ',AnchorYear,' levels.'],Explanation).
 
-% DWB 2023-APR	explain(ro,gov,'Estimate based on coverage reported by national government. ').
-    explain(ro,gov,'Estimate informed by reported data. ').
-% DWB 2023-APR	explain(ro,admin,'Estimate based on reported administrative estimate. ').
-    explain(ro,admin,'Estimate informed by reported administrative data. ').
-% DWB 2023-APR	explain(ro,interpolated,'Estimate based on interpolation between reported values. ').
-    explain(ro,interpolated,'Estimate informed by interpolation between reported data. ').
-% DWB 2023-APR	explain(ro,extrapolated,'Estimate based on extrapolation from data reported by national government. ').
-    explain(ro,extrapolated,'Estimate informed by extrapolation from reported data. ').
-
 both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
   member(RuleBefore,['R: AP']),
   member(RuleAfter,['R: AP']).
@@ -646,12 +646,22 @@ both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
 
 % Anchor point: survey results support reported.
 % ---------------------------------------------
-anchor_point(C,V,Y,'R: AP',Explanation,ReportedCoverage) :-
-	reported_time_series(C,V,Y,Source,ReportedCoverage),
-	survey(C,V,Y,Explain,SurveyCoverage),
-	not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
-	survey_supports_reported(ReportedCoverage,SurveyCoverage),
-	explain(ap,Source,Explain,Explanation).
+anchor_point(C, V, Y, 'R: AP', Expl, ReportedCoverage) :-
+    reported_time_series(C,V,Y,Source,ReportedCoverage),
+    survey(C,V,Y,Expl0,SurveyCoverage),
+    not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
+    survey_supports_reported(ReportedCoverage,SurveyCoverage),
+    (   Source = gov
+    ->  concat_atom(['Estimate informed by reported data supported by survey. ', Expl0], Expl)
+    ;   Source = admin
+    ->  concat_atom(['Estimate informed by reported administrative data supported by survey. ', Expl0], Expl)
+    ;   Source = interpolated
+    ->  concat_atom(['Estimate informed by interpolation between reported data supported by survey. ', Expl0], Expl)
+    ;   Source = extrapolated
+    ->  concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ', Expl0], Expl)
+    ;   error_writeln(anchor_point/ap),
+        fail
+    ).
 
 % Anchor point: survey results challenge reported.
 % -----------------------------------------------
@@ -683,19 +693,6 @@ anchor_point(C,V,Y,'W: AP',Explanation,AssignedCoverage) :-
 	survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
 		survey_reported_threshold(Threshold),
 		(abs(ReportedCoverage - SurveyCoverage) =< Threshold).
-
-	explain(ap,gov,Explain,Explanation) :-
-		% DWB 2023-APR concat_atom(['Estimate based on coverage reported by national government supported by survey. ',Explain],Explanation).
-		concat_atom(['Estimate informed by reported data supported by survey. ',Explain],Explanation).
-	explain(ap,admin,Explain,Explanation) :-
-		% DWB 2023-APR concat_atom(['Estimate based on administrative data reported by national government supported by survey. ',Explain],Explanation).
-		concat_atom(['Estimate informed by reported administrative data supported by survey. ',Explain],Explanation).
-	explain(ap,interpolated,Explain,Explanation) :-
-		% DWB 2023-APR concat_atom(['Estimate based on interpolation between data reported by national government supported by survey. ',Explain],Explanation).
-		concat_atom(['Estimate informed by interpolation between reported data supported by survey. ',Explain],Explanation).
-	explain(ap,extrapolated,Explain,Explanation) :-
-		concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ',Explain],Explanation).
-
 
 % ==============================================
 % Level one processing:
