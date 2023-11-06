@@ -408,29 +408,22 @@ wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
 % -------------------------------------------
 wuenic_I(C,rcv1,Y,Rule,'Estimate based on estimated MCV1. ',Coverage) :-
 	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
+	FirstRubellaDose \= mcv2,
 	wuenic_II(C,mcv1,Y,Rule,_Explanation,Coverage),
-	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
-	not(firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose)).
+	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)).
 
 % Estimate for RCV1 where RCV1 given at MCV2.
 % -------------------------------------------
 wuenic_I(C,rcv1,Y,Rule,'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate',Coverage) :-
-	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
+	estimate_required(C, rcv1, Y, _, mcv2),
 	wuenic_II(C,mcv2,Y,Rule,_Explanation,Coverage),
-	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)),
-	firstRubellaAtSecondMCV(C,rcv1,Y,FirstRubellaDose).
+	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)).
 
 % ===============
 % Estimate assigned by working group.
 % -----------------------------------
 wuenic_I(C,V,Y,'W:',Explanation,Coverage) :-
 	workingGroupDecision(C,V,Y,assignWUENIC,Explanation,_,Coverage).
-
-% First rubella given with second measles dose
-% ---------------------------------------------
-firstRubellaAtSecondMCV(_C,rcv1,_Y,FirstRubellaDose) :-
-  member(FirstRubellaDose,['mcv2']).
-
 
 %   Preliminary estimates.
 % ==============================================
