@@ -442,9 +442,9 @@ wuenic_II(C, V, Y, 'R:', Expl, Coverage) :-
     ->  Expl = 'Estimate based on interpolation between reported values. '
     ;   Source = extrapolated
     ->  Expl = 'Estimate informed by extrapolation from reported data. '
-    ;	error_write(wuenic_II/ro),
-	fail
+    ;	throw(misc_error(wuenic_II(C, V, Y, 'R:', Expl, Coverage)))
     ).
+
 
 % Estimate at anchor points.
 % --------------------------
@@ -645,11 +645,11 @@ both_anchors_resolved_to_reported(RuleBefore,RuleAfter) :-
 
 % Anchor point: survey results support reported.
 % ---------------------------------------------
-anchor_point(C, V, Y, 'R: AP', Expl, ReportedCoverage) :-
-    reported_time_series(C,V,Y,Source,ReportedCoverage),
-    survey(C,V,Y,Expl0,SurveyCoverage),
-    not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
-    survey_supports_reported(ReportedCoverage,SurveyCoverage),
+anchor_point(C, V, Y, 'R: AP', Expl, Coverage) :-
+    reported_time_series(C, V, Y, Source, Coverage),
+    survey(C, V, Y, Expl0, SurveyCoverage),
+    not(workingGroupDecision(C, V, Y, assignAnchor, _, _, _)),
+    survey_supports_reported(Coverage, SurveyCoverage),
     (   Source = gov
     ->  concat_atom(['Estimate informed by reported data supported by survey. ', Expl0], Expl)
     ;   Source = admin
@@ -658,8 +658,7 @@ anchor_point(C, V, Y, 'R: AP', Expl, ReportedCoverage) :-
     ->  concat_atom(['Estimate informed by interpolation between reported data supported by survey. ', Expl0], Expl)
     ;   Source = extrapolated
     ->  concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ', Expl0], Expl)
-    ;   error_writeln(anchor_point/ap),
-        fail
+    ;	throw(misc_error(anchor_point(C, V, Y, 'R: AP', Expl, Coverage)))
     ).
 
 % Anchor point: survey results challenge reported.
@@ -1056,6 +1055,32 @@ interpolate(EarlyYear,EarlyCoverage,LateYear,LateCoverage,Year,Coverage) :-
 	Coverage is round(EarlyCoverage +
 	           (Year - EarlyYear)*
 			((LateCoverage - EarlyCoverage)/(LateYear - EarlyYear))).
+
+% Calibrate reported data to anchor points
+% MG, issue: why are values rounded?
+calibrate(C, V, Prec, Succ, Y, Coverage) :-
+    reported_time_series(C, V, Prec, _, PrecRep),
+    reported_time_series(C, V, Succ, _, SuccRep),
+    anchor_point(C, V, Prec, _, _, PrecCov),
+    anchor_point(C, V, Succ, _, _, SuccCov),
+    !,
+    reported_time_series(C, V, Y, _, Reported),
+    interpolate(Prec, PrecRep, Succ, SuccRep, Y, RepInterp),
+    interpolate(Prec, PrecCov, Succ, SuccCov, Y, AnchInterp),
+    Adj is AnchInterp - RepInterp,
+    Coverage is round(Reported + Adj).
+
+% Reported data only at preceeding anchor
+calibrate(C, V, Prec, _Succ, Y, Coverage) :-
+    reported_time_series(C, V, Prec, _, PrecRep),
+    anchor_point(C, V, Prec, _, _, PrecCov),
+    !,
+    reported_time_series(C, V, Y, _, Reported),
+    Adj is PrecCov - PrecRep,
+    Coverage is round(Reported + Adj).
+
+calibrate(C, V, Prec, Succ, Y, _) :-
+    throw(misc_error(calibrate(C, V, Prec, Succ, Y))).
 
 % Calibrate reported data to anchor point value levels. Reported data at both anchors.
 % -----------------------------------------------------------------------------------
