@@ -88,6 +88,7 @@ WHO and UNICEF working group memebers as of 1 January 2010 - 30 April 2012:
 :- import length/2 from lists.
 :- import sum_list/2 from lists.
 :- import concat_atom/2 from string.
+:- import between/3 from basics.
 
 % sawtooth_threshold : difference in increase/decrease between Y+/-1 and Y in reported data
 % survey_reported_threshold : differerence between survey results and reported data.
@@ -1016,11 +1017,11 @@ year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter) :
 	not(reported_reason_to_exclude(C,V,YearAfter,_,_)),
 	not(reported_data_between(C,V,YearBefore,YearAfter)).
 
-reported_data_between(C,V,YearBefore,YearAfter) :-
-	reported(C,V,YearBetween,_,_),
-	not(reported_reason_to_exclude(C,V,YearBetween,_,_)),
-	YearBetween > YearBefore,
-	YearBetween < YearAfter.
+reported_data_between(C, V, From, To) :-
+    between(From, To, Y),
+    Y > From, Y < To,
+    reported(C, V, Y, _, _),
+    not(reported_reason_to_exclude(C, V, Y, _, _)).
 
 % Extrapolation using nearest neighbor
 % ----------------------------------
