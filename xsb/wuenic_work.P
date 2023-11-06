@@ -110,16 +110,16 @@ vaccine(pcv3,pcv1).
 
 % Load country-specific predicates describing data, survey_results,
 % working group decisions and whether an estimate is required.
-%
-% :- dynamic admin/4.
-% :- dynamic gov/4.
-% :- dynamic vaccinated/4.
-% :- dynamic target/4.
-% :- dynamic legacy/4.
-% :- dynamic survey_results/6.
-% :- dynamic wgd/10.
-% :- dynamic births_UNPD/3.
-% :- dynamic si_UNPD/4.
+% :- multifile admin/4.
+% :- multifile gov/4.
+% :- multifile vaccinated/4.
+% :- multifile target/4.
+% :- multifile legacy/4.
+% :- multifile survey_results/6.
+% :- multifile wgd/10.
+% :- multifile births_UNPD/3.
+% :- multifile si_UNPD/4.
+% :- multifile firstRubellaAtSecondMCV/4.
 
 % ==================================================
 % top level predicate. Creates and outputs estimates.
@@ -403,21 +403,23 @@ wuenic_I(C,dtp1,Y,'RMF',Explanation,RMFCoverage) :-
 	rmf(DTP3Coverage,RMFCoverage),
 	concat_atom(['Estimate based on DTP3 coverage of ',DTP3Coverage,'. '],Explanation).
 
-% ==================
-% Estimate for RCV1 where RCV1 given at MCV1.
-% -------------------------------------------
-wuenic_I(C,rcv1,Y,Rule,'Estimate based on estimated MCV1. ',Coverage) :-
-	estimate_required(C,rcv1,Y,_,FirstRubellaDose),
-	FirstRubellaDose \= mcv2,
-	wuenic_II(C,mcv1,Y,Rule,_Explanation,Coverage),
-	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)).
+% Estimate for RCV1 where RCV1 given at MCV1
+wuenic_I(C, rcv1, Y, Rule, 'Estimate based on estimated MCV1. ', Coverage) :-
+    estimate_required(C, rcv1, Y, _, FirstRubellaDose),
+    wuenic_II(C, mcv1, Y, Rule, _Explanation, Coverage),
+    not(workingGroupDecision(C, rcv1, Y, assignWUENIC, _, _, _)),
+    not(firstRubellaAtSecondMCV(C, rcv1, Y, FirstRubellaDose)).
 
-% Estimate for RCV1 where RCV1 given at MCV2.
-% -------------------------------------------
-wuenic_I(C,rcv1,Y,Rule,'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate',Coverage) :-
-	estimate_required(C, rcv1, Y, _, mcv2),
-	wuenic_II(C,mcv2,Y,Rule,_Explanation,Coverage),
-	not(workingGroupDecision(C,rcv1,Y,assignWUENIC,_,_,_)).
+% Estimate for RCV1 where RCV1 given at MCV2
+wuenic_I(C, rcv1, Y, Rule, 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate', Coverage) :-
+    estimate_required(C, rcv1, Y, _, FirstRubellaDose),
+    wuenic_II(C, mcv2, Y, Rule, _Explanation, Coverage),
+    not(workingGroupDecision(C, rcv1, Y, assignWUENIC, _, _, _)),
+    firstRubellaAtSecondMCV(C, rcv1, Y, FirstRubellaDose).
+
+% First rubella given with second measles dose (see country-specific
+% files for other options)
+firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 
 % ===============
 % Estimate assigned by working group.
