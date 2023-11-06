@@ -182,15 +182,14 @@ estimate :-
 
 % Final estimate where there are wuenic values
 % --------------------------------------------
-wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,Source,SeriesValue,SurveyInfo) :-
+wuenic(C,V,Y,Rule,Explanation,Coverage,Prev,GC,Admin,Gov,Reported,Vaccinated,Target,Births,SI,Source,Series,Survey) :-
 	estimate_required(C,V,Y,_,_),
 	wuenic_I(C,V,Y,Rule,Explain,Cov),
 	bound_0_100(Cov,Coverage),
-
 	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC),
 	%assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC),
-
-	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo),
+	collect_data(C, V, Y,
+	    Prev, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Series, Source, Survey),
 	change_from_previous_revision(C,V,Y,Coverage,Change),
 	collect_explanations(C, V, Y, Text),
 	concat_atom([Explain, ' ', Text, ' ', Change, ' ', GoCExplanation], Explanation).
@@ -1094,42 +1093,94 @@ calibrate(C,V,PreceedingAnchorYear,SucceedingAnchorYear,Y,Coverage) :-
 	reported_time_series(C,V,Y,_,ReportedCoverage),
 	Coverage is round(ReportedCoverage + Adj).
 
-% Ensure estimates are between 0 and 99.
-% ---------------------------------------
-bound_0_100(X,Y) :- X >= 0, X < 99, Y is round(X).
-bound_0_100(X,Y) :- X < 0, Y is 0.
-bound_0_100(X,Y) :- X >= 99, Y is 99.
+% Ensure estimates are between 0 and 99 (MG, todo: round only at output)
+bound_0_100(X, Y) :-
+    Y is max(0, min(99, round(X))).
 
-% Add underlying data to each C,V,Y estimate
-% ------------------------------------------
-collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo) :-
-	legacy_estimate(C,V,Y,PrevRev),
-	admin_data(C,V,Y,Admin),
-	gov_data(C,V,Y,Gov),
-	reported_data(C,V,Y,Reported),
-	vaccinated_data(C,V,Y,Vaccinated),
-	target_data(C,V,Y,Target),
-	time_series_data(C,V,Y,Source,SeriesValue),
-	unpd_births_data(C,Y,UnpdBirths),
-	unpd_si_data(C,Y,UnpdSI),
-	survey_data(C,V,Y,SurveyInfo).
+% Add underlying data to each C, V, Y estimate
+collect_data(C, V, Y, Prev, Admin, Gov, Reported, Vaccinated,
+        Target, Births, SI, Series, Source, Survey) :-
+    legacy_estimate(C, V, Y, Prev),
+    admin_data(C, V, Y, Admin),
+    gov_data(C, V, Y, Gov),
+    reported_data(C, V, Y, Reported),
+    vaccinated_data(C, V, Y, Vaccinated),
+    target_data(C, V, Y, Target),
+    time_series_data(C, V, Y, Source, Series),
+    unpd_births_data(C, Y, Births),
+    unpd_si_data(C, Y, SI),
+    survey_data(C, V, Y, Survey).
 
-legacy_estimate(C,V,Y,PrevRev) :- legacy(C,V,Y,PrevRev).
-legacy_estimate(C,V,Y,'') :- not(legacy(C,V,Y,_)).
+legacy_estimate(C, V, Y, Data) :-
+    legacy(C, V, Y, Data0),
+    !,
+    Data = Data0.
 
-admin_data(C,V,Y,Admin) :- admin(C,V,Y,Admin).                                       admin_data(C,V,Y,'') :- not(admin(C,V,Y,_)).
-gov_data(C,V,Y,Gov) :- gov(C,V,Y,Gov).                                               gov_data(C,V,Y,'') :- not(gov(C,V,Y,_)).
-reported_data(C,V,Y,Reported) :- reported(C,V,Y,_,Reported).                         reported_data(C,V,Y,'') :- not(reported(C,V,Y,_,_)).
-vaccinated_data(C,V,Y,Vaccinated) :- vaccinated(C,V,Y,Vaccinated).                   vaccinated_data(C,V,Y,'') :- not(vaccinated(C,V,Y,_)).
-target_data(C,V,Y,Target) :- target(C,V,Y,Target).                                   target_data(C,V,Y,'') :- not(target(C,V,Y,_)).
-unpd_births_data(C,Y,UnpdBirths) :- births_UNPD(C,Y,UnpdBirths).                     unpd_births_data(C,Y,'') :- not(births_UNPD(C,Y,_)).
-unpd_si_data(C,Y,UnpdSI) :- si_UNPD(C,Y,UnpdSI).                                     unpd_si_data(C,Y,'') :- not(si_UNPD(C,Y,_)).
+legacy_estimate(_, _, _, '').
 
-time_series_data(C,V,Y,Source,SeriesValue) :- reported_time_series(C,V,Y,Source,SeriesValue).
-time_series_data(C,V,Y,'','') :- not(reported_time_series(C,V,Y,_,_)).
+admin_data(C, V, Y, Data) :-
+    admin(C, V, Y, Data0),
+    !,
+    Data = Data0.
 
-survey_data(C,V,Y,SurveyInfo) :- survey(C,V,Y,_,SurveyInfo).
-survey_data(C,V,Y,'') :- not(survey(C,V,Y,_,_)).
+admin_data(_, _, _, '').
+
+gov_data(C, V, Y, Data) :-
+    gov(C, V, Y, Data0),
+    !,
+    Data = Data0.
+
+gov_data(_, _, _, '').
+
+reported_data(C, V, Y, Data) :-
+    reported(C, V, Y, _, Data0),
+    !,
+    Data = Data0.
+
+reported_data(_, _, _, '').
+
+vaccinated_data(C, V, Y, Data) :-
+    vaccinated(C, V, Y, Data0),
+    !,
+    Data = Data0.
+
+vaccinated_data(_, _, _, '').
+
+target_data(C, V, Y, Data) :-
+    target(C, V, Y, Data0),
+    !,
+    Data = Data0.
+
+target_data(_, _, _, '').
+
+unpd_births_data(C, Y, Data) :-
+    births_UNPD(C, Y, Data0),
+    !,
+    Data = Data0.
+
+unpd_births_data(_, _, '').
+
+unpd_si_data(C, Y, Data) :-
+    si_UNPD(C, Y, Data0),
+    !,
+    Data = Data0.
+
+unpd_si_data(_, _, '').
+
+time_series_data(C, V, Y, Source, Value) :-
+    reported_time_series(C, V, Y, Source0, Value0),
+    !,
+    Source = Source0,
+    Value = Value0.
+
+time_series_data(_, _, _, '', '').
+
+survey_data(C, V, Y, Data) :-
+    survey(C, V, Y, _, Data0),
+    !,
+    Data = Data0.
+
+survey_data(_, _, _, '').
 
 % Collect explanations in natural language terms
 collect_explanations(C, V, Y, Explanations) :-
