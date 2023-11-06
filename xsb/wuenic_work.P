@@ -192,8 +192,8 @@ wuenic(C,V,Y,Rule,Explanation,Coverage,PrevRev,GC,Admin,Gov,Reported,Vaccinated,
 
 	collect_data(C,V,Y,PrevRev,Admin,Gov,Reported,Vaccinated,Target,UnpdBirths,UnpdSI,_ReportedGoC,SeriesValue,Source,SurveyInfo),
 	change_from_previous_revision(C,V,Y,Coverage,Change),
-	collect_explanations(C,V,Y,Text),
-	concat_atom([Explain,' ',Text,' ',Change,' ',GoCExplanation],Explanation).
+	collect_explanations(C, V, Y, Text),
+	concat_atom([Explain, ' ', Text, ' ', Change, ' ', GoCExplanation], Explanation).
 
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
@@ -1131,19 +1131,30 @@ time_series_data(C,V,Y,'','') :- not(reported_time_series(C,V,Y,_,_)).
 survey_data(C,V,Y,SurveyInfo) :- survey(C,V,Y,_,SurveyInfo).
 survey_data(C,V,Y,'') :- not(survey(C,V,Y,_,_)).
 
-% Collection explanations.
-% -----------------------
-collect_explanations(C,V,Y,Explanations) :-
-	findall(Text,explanation(C,V,Y,Text),Explanations).
+% Collect explanations in natural language terms
+collect_explanations(C, V, Y, Explanations) :-
+    findall(Expl, explanation(C, V, Y, Expl), Explanations).
 
-explanation(C,V,Y,Text) :- survey_reason_to_exclude(C,V,Y,_,Text).
-explanation(C,V,Y,Text) :- survey_results_modified(C,V,Y,_,Text,_).
-explanation(C,V,Y,Text) :- reported_reason_to_exclude(C,V,Y,_,Text).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,comment,Text,_,_).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,acceptSurvey,Text,_,_).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,acceptReported,Text,_,_).
-explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,ignoreGov,Text,_,_).
-%explanation(C,V,Y,Text) :- workingGroupDecision(C,V,Y,interpolate,Text,_,_).
+explanation(C, V, Y, Expl) :-
+    survey_reason_to_exclude(C, V, Y, _, Expl).
+
+explanation(C, V, Y, Expl) :-
+    survey_results_modified(C, V, Y, _, Expl, _).
+
+explanation(C, V, Y, Expl) :-
+    reported_reason_to_exclude(C, V, Y, _, Expl).
+
+explanation(C, V, Y, Expl) :-
+    workingGroupDecision(C, V, Y, comment, Expl, _, _).
+
+explanation(C, V, Y, Expl) :-
+    workingGroupDecision(C, V, Y, acceptSurvey, Expl, _, _).
+
+explanation(C, V, Y, Expl) :-
+    workingGroupDecision(C, V, Y, acceptReported, Expl, _, _).
+
+explanation(C, V, Y, Expl) :-
+    workingGroupDecision(C, V, Y, ignoreGov, Expl, _, _).
 
 open_out_file(Out,File,Header) :-
 	open(File,write,Out),
@@ -1155,3 +1166,5 @@ output_results([H|T],Out) :- output_fields(H,Out), output_results(T,Out).
 
 output_fields([],Out) :- nl(Out).
 output_fields([H|T],Out) :- write(Out,H),write(Out,'\t'),output_fields(T,Out).
+
+
