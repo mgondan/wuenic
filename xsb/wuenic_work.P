@@ -830,57 +830,58 @@ survey_results_for_analysis(C,V,Y,SurveyID,Description,Coverage) :-
 % =============================================
 % Create complete time series of reported data.
 %
-% Timeseries consists of:
-%    coverage reported (gov or admin) by government
-%    interpolated values if no reported or reported excluded between 2 years of reported.
-%    value of nearest year for years no reported or reported excluded
-%        before/after earliest/latest reported value (extrapolated)
-% ==============================================
+% So far, semi-deterministic, i.e., no cuts allowed. Needed by
+% anchor_point for search.
+%
 % Reported data.
-% --------------
-reported_time_series(C,V,Y,Source,Coverage) :-
-		estimate_required(C,V,Y,_,_),
-		reported(C,V,Y,Source,Coverage),
-		not(reported_reason_to_exclude(C,V,Y,_,_)).
+reported_time_series(C, V, Y, Source, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported(C, V, Y, Source0, Cov0),
+    not(reported_reason_to_exclude(C, V, Y, _, _)),
+%    !,
+    Source = Source0,
+    Coverage = Cov0.
 
 % Interpolation, reported data excluded between two years
-% -------------------------------------------------------
-reported_time_series(C,V,Y,interpolated,Coverage) :-
-		estimate_required(C,V,Y,_,_),
-		reported(C,V,Y,_,_),
-
-		findall(Reason,reported_reason_to_exclude(C,V,Y,_,Reason),ReasonsToExclude),
-		length(ReasonsToExclude,NReasons),
-		NReasons >= 1,
-
-		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
-		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
+reported_time_series(C, V, Y, Source, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported(C, V, Y, _, _),
+    once(reported_reason_to_exclude(C, V, Y, _, _)),
+    year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter),
+%    !,
+    Source = interpolated,
+    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
 
 % Interpolation, no reported data between two years
-% -------------------------------------------------
-reported_time_series(C,V,Y,interpolated,Coverage) :-
-		estimate_required(C,V,Y,_,_),
-		not(reported(C,V,Y,_,_)),
+reported_time_series(C, V, Y, Source, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    not(reported(C, V, Y, _, _)),
+    year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter),
+%    !,
+    Source = interpolated,
+    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
 
-		year_between_reported(C,V,Y,YearBefore,CoverageBefore,YearAfter,CoverageAfter),
-		interpolate(YearBefore,CoverageBefore,YearAfter,CoverageAfter,Y,Coverage).
-
-% Extrapolation, reported data for year beyond earliest / latest required estimate excluded
-% ---------------------------------------------------------------------------------------
-reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
-    estimate_required(C,V,Y,_,_),
-		reported(C,V,Y,_,_),
-		once(reported_reason_to_exclude(C,V,Y,_,_)),
-		not(year_between_reported(C,V,Y,_,_,_,_)),
-		nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
-
-% Extrapolation, no reported data for year beyond earliest / latest required estimate
-% ---------------------------------------------------------------------------------
-reported_time_series(C,V,Y,extrapolated,CoverageNearest) :-
-	estimate_required(C,V,Y,_,_),
-	not(reported(C,V,Y,_,_)),
+% Extrapolation, latest required estimate excluded
+reported_time_series(C, V, Y, Source, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    reported(C, V, Y, _, _),
+    once(reported_reason_to_exclude(C, V, Y, _, _)),
 	not(year_between_reported(C,V,Y,_,_,_,_)),
-	nearest_reported(C,V,Y,_YearNearest,CoverageNearest).
+    nearest_reported(C, V, Y, _Year, Cov0),
+%    !,
+    Source = extrapolated,
+    Coverage = Cov0.
+
+% Extrapolation, no reported data for year beyond earliest / latest
+% required estimate
+reported_time_series(C, V, Y, Source, Coverage) :-
+    estimate_required(C, V, Y, _, _),
+    not(reported(C, V, Y, _, _)),
+	not(year_between_reported(C,V,Y,_,_,_,_)),
+    nearest_reported(C, V, Y, _Year, Cov0),
+%    !,
+    Source = extrapolated,
+    Coverage = Cov0.
 
 % =====================================
 % Reasons to exclude reported data are:
