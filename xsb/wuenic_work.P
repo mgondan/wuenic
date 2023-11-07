@@ -386,10 +386,11 @@ wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
     workingGroupDecision(C, V, Y, interpolate, Expl0, _, _),
     !,
     Rule = 'W-I:',
-    between_anchor_points(C, V, Y, Before, _, CovBefore, After, _, CovAfter),
-    concat_atom(['Estimate informed by interpolation between ', Before,
-		 ' and ', After, ' levels. ', Expl0], Expl),
-    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
+    prec_anchor_point(C, V, Y, Prec, _, PrecCov),
+    succ_anchor_point(C, V, Y, Succ, _, SuccCov),
+    concat_atom(['Estimate informed by interpolation between ', Prec,
+		 ' and ', Succ, ' levels. ', Expl0], Expl),
+    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 % Estimate for DTP1 > DTP3
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
@@ -445,7 +446,13 @@ wuenic_I(_C, _V, _Y, _Rule, _Expl, _Coverage) :-
 
 % Preliminary estimates
 %
-
+% Case distinction between
+% * Estimate at anchor point
+% * Estimate between anchor points
+% * Estimate before anchor point
+% * Estimate after anchor point
+% * No anchor points
+%
 % Estimate at anchor points
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     anchor_point(C, V, Y, Rule0, Expl0, Cov0),
@@ -458,8 +465,9 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Cov0),
     member(Source, [gov, admin, interpolated]),
-    between_anchor_points(C, V, Y, _, 'R: AP', _, _, 'R: AP', _),
-    % todo: check if next line is needed (check at to wuenic_I?)
+    prec_anchor_point(C, V, Y, _, 'R: AP', _),
+    succ_anchor_point(C, V, Y, _, 'R: AP', _),
+    % todo: check if next line is needed (check at wuenic_I?)
     % not(workingGroupDecision(C, V, Y, calibrate, _, _, _)),
     !,
     Rule = 'R:',
@@ -473,13 +481,14 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 % Estimate between anchor points: calibrated
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, _, _),
-    between_anchor_points(C, V, Y, Before, RuleBefore, _, After, RuleAfter, _),
-    ( RuleBefore \= 'R: AP' ; RuleAfter \= 'R: AP' ),
+    prec_anchor_point(C, V, Y, Prec, PrecRule, _),
+    succ_anchor_point(C, V, Y, Succ, SuccRule, _),
+    ( PrecRule \= 'R: AP' ; SuccRule \= 'R: AP' ),
     !,
     Rule = 'C:',
-    concat_atom(['Reported data calibrated to ', Before,
-		 ' and ', After, ' levels. '], Expl),
-    calibrate(C, V, Before, After, Y, Coverage).
+    concat_atom(['Reported data calibrated to ', Prec,
+		 ' and ', Succ, ' levels. '], Expl),
+    calibrate(C, V, Prec, Succ, Y, Coverage).
 
 % Estimate before earliest anchor: reported
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -958,10 +967,6 @@ nearest_reported(C, V, Y, Nearest, Coverage) :-
     Coverage = CoverageAfter.
 
 % Get values of nearest surrounding anchor points.
-between_anchor_points(C, V, Y, Prec, PrecRule, PrecCov, Succ, SuccRule, SuccCov) :-
-    prec_anchor_point(C, V, Y, Prec, PrecRule, PrecCov),
-    succ_anchor_point(C, V, Y, Succ, SuccRule, SuccCov).
-
 prec_anchor_point(C, V, Y, Prec, Rule, Coverage) :-
     Dist is Y - 1997, % change to minimum from estimate_required
     between(1, Dist, Minus),
