@@ -571,43 +571,56 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 %
 % semidet, because it is used for search in wuenic_II
 %
+% Anchor point value set to reported value by working group
+anchor_point(C, V, Y, Rule, Expl, Coverage) :-
+    reported_time_series(C, V, Y, _, Cov0),
+    workingGroupDecision(C, V, Y, assignAnchor, Expl0, _, Cov0),
+    !,
+    Rule = 'R: AP',
+    Expl = Expl0,
+    Coverage = Cov0.
+
+% Anchor point value NOT set to reported value by working group
+anchor_point(C, V, Y, Rule, Expl, Coverage) :-
+    reported_time_series(C, V, Y, _, _Cov0),
+    workingGroupDecision(C, V, Y, assignAnchor, Expl0, _, Assigned),
+    % Cov0 \= Assigned,
+    !,
+    Rule = 'W: AP',
+    concat_atom(['Estimate of ', Assigned, ' percent assigned by working group. ',
+	Expl0], Expl),
+    Coverage = Assigned.
+
 % Survey results support reported
-anchor_point(C, V, Y, 'R: AP', Expl, Coverage) :-
-    reported_time_series(C, V, Y, Source, Coverage),
-    not(workingGroupDecision(C, V, Y, assignAnchor, _, _, _)),
-    survey(C, V, Y, Expl0, SurveyCoverage),
+anchor_point(C, V, Y, Rule, Expl, Coverage) :-
+    reported_time_series(C, V, Y, Source, Cov0),
+    survey(C, V, Y, Expl0, Survey),
     survey_reported_threshold(Threshold),
-    abs(Coverage - SurveyCoverage) =< Threshold,
+    abs(Cov0 - Survey) =< Threshold,
+    !,
+    Rule = 'R: AP',
     member(Source-Expl1,
       [ gov-'Estimate informed by reported data supported by survey. ',
 	admin-'Estimate informed by reported administrative data supported by survey. ',
 	interpolated-'Estimate informed by interpolation between reported data supported by survey. ',
 	extrapolated-'Estimate based on extrapolation from data reported by national government supported by survey. '
       ]),
-    concat_atom([Expl1, Expl0], Expl).
+    concat_atom([Expl1, Expl0], Expl),
+    Coverage = Cov0.
 
 % Survey results challenge reported
-anchor_point(C, V, Y, 'S: AP', Expl, Coverage) :-
-    reported_time_series(C, V, Y, _, ReportedCoverage),
-    not(workingGroupDecision(C, V, Y, assignAnchor, _, _, _)),
-    survey(C, V, Y, Expl0, Coverage),
-    survey_reported_threshold(Threshold),
-    abs(ReportedCoverage - Coverage) > Threshold,
+anchor_point(C, V, Y, Rule, Expl, Coverage) :-
+    reported_time_series(C, V, Y, _, _Cov0),
+    survey(C, V, Y, Expl0, Survey),
+    % survey_reported_threshold(Threshold),
+    % abs(Cov0 - Survey) > Threshold,
+    !,
+    Rule = 'S: AP',
     concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',
-		 Expl0, ' '], Expl).
+		 Expl0, ' '], Expl),
+    Coverage = Survey.
 
-% Anchor point value set to reported value by working group
-anchor_point(C, V, Y, 'R: AP', Expl, Coverage) :-
-    reported_time_series(C, V, Y, _, Coverage),
-    workingGroupDecision(C, V, Y, assignAnchor, Expl, _, Coverage).
 
-% Anchor point value NOT set to reported value by working group
-anchor_point(C, V, Y, 'W: AP', Expl, Assigned) :-
-    reported_time_series(C, V, Y, _, Coverage),
-    workingGroupDecision(C, V, Y, assignAnchor, Expl0, _, Assigned),
-    Coverage \= Assigned,
-    concat_atom(['Estimate of ', Assigned, ' percent assigned by working group. ',
-		 Expl0], Expl).
 
 % ==============================================
 % Level one processing:
