@@ -648,7 +648,8 @@ anchor_point(C, V, Y, 'R: AP', Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Coverage),
     survey(C, V, Y, Expl0, SurveyCoverage),
     not(workingGroupDecision(C, V, Y, assignAnchor, _, _, _)),
-    survey_supports_reported(Coverage, SurveyCoverage),
+    survey_reported_threshold(Threshold),
+    abs(Coverage - SurveyCoverage) =< Threshold,
     (   Source = gov
     ->  concat_atom(['Estimate informed by reported data supported by survey. ', Expl0], Expl)
     ;   Source = admin
@@ -666,7 +667,8 @@ anchor_point(C,V,Y,'S: AP',Explanation,SurveyCoverage) :-
 	reported_time_series(C,V,Y,_,ReportedCoverage),
 	survey(C,V,Y,Explain,SurveyCoverage),
 	not(workingGroupDecision(C,V,Y,assignAnchor,_,_,_)),
-	not(survey_supports_reported(ReportedCoverage,SurveyCoverage)),
+        survey_reported_threshold(Threshold),
+        abs(ReportedCoverage - SurveyCoverage) > Threshold,
 	concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',Explain,' '],Explanation).
 
 % Anchor point: anchor point value set to reported value
@@ -684,12 +686,6 @@ anchor_point(C,V,Y,'W: AP',Explanation,AssignedCoverage) :-
 	workingGroupDecision(C,V,Y,assignAnchor,WGD_EXP,_,AssignedCoverage),
 	Coverage \= AssignedCoverage,
 	concat_atom(['Estimate of ',AssignedCoverage,' percent assigned by working group. ', WGD_EXP], Explanation).
-
-	% Determine whether survey supports reported
-	% -------------------------------------------
-	survey_supports_reported(ReportedCoverage,SurveyCoverage) :-
-		survey_reported_threshold(Threshold),
-		(abs(ReportedCoverage - SurveyCoverage) =< Threshold).
 
 % ==============================================
 % Level one processing:
