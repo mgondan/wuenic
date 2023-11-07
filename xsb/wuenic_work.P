@@ -515,7 +515,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported data. ',ReportedCoverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(prec_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate before earliest anchor: reported-extrapolated / interpolated
@@ -528,7 +528,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. 
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(prec_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate before earliest anchor: reported-extrapolated / interpolated
@@ -540,7 +540,7 @@ wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by nati
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(prec_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate before earliest anchor: calibrated
@@ -551,7 +551,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
 	Y < AnchorYear,
-	not(anchor_point_earlier(C,V,AnchorYear)),
+	not(prec_anchor_point(C, V, AnchorYear, _, _, _)),
 	not(member(AnchorRule,['R: AP'])),
 
 	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
@@ -568,7 +568,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported data.',ReportedCoverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(succ_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: reported
@@ -580,7 +580,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by reported administrative data. ',Repor
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(succ_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: reported-extrapolated / interpolated
@@ -593,7 +593,7 @@ wuenic_II(C,V,Y,'R:','Estimate informed by interpolation between reported data. 
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(succ_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: reported-extrapolated / interpolated
@@ -605,7 +605,7 @@ wuenic_II(C,V,Y,'R:','Estimate based on extrapolation from data reported by nati
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,_),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(succ_anchor_point(C, V, AnchorYear, _, _, _)),
 	member(AnchorRule,['R: AP']).
 
 % Estimate after latest anchor: calibrated
@@ -616,7 +616,7 @@ wuenic_II(C,V,Y,'C:',Explanation,Coverage) :-
 
 	anchor_point(C,V,AnchorYear,AnchorRule,_,AnchorCoverage),
 	Y > AnchorYear,
-	not(anchor_point_later(C,V,AnchorYear)),
+	not(succ_anchor_point(C, V, AnchorYear, _, _, _)),
 	not(member(AnchorRule,['R: AP'])),
 
 	reported_time_series(C,V,AnchorYear,_,ReportedCoverageAtAnchor),
@@ -991,22 +991,6 @@ workingGroupDecision(C, V, Y, Action, Explanation, Survey, Coverage) :-
     wgd(C, V, Begin, End, Action, Explanation, Survey, Coverage, _, _),
     Begin =< Y, End >= Y.
 
-% Utilities and general auxiliary predicates
-anchor_point_earlier(C, V, Y) :-
-    between(1997, Y, Year),
-    Year < Y,
-    anchor_point(C, V, Year, _, _, _).
-
-anchor_point_later(C, V, Y) :-
-    between(Y, 2023, Year),
-    Year > Y,
-    anchor_point(C, V, Year, _, _, _).
-
-anchor_point_between(C, V, Before, After) :-
-    between(Before, After, Year),
-    Year > Before, Year < After,
-    anchor_point(C, V, Year, _, _, _).
-
 % routines for interpolated points
 year_between_reported(C, V, Y, YearBefore, CoverageBefore, YearAfter, CoverageAfter) :-
     year_before_reported(C, V, Y, YearBefore, CoverageBefore),
@@ -1056,15 +1040,29 @@ nearest_reported(C, V, Y, Nearest, Coverage) :-
     Coverage = CoverageAfter.
 
 % Get values of nearest surrounding anchor points.
-% -------------------------------------------------
-between_anchor_points(C,V,Y,PreceedingAnchorYear,PreceedingRule,PreceedingCov,
-                          SucceedingAnchorYear,SucceedingRule,SucceedingCov) :-
-	not(anchor_point(C,V,Y,_,_,_)),
-	anchor_point(C,V,PreceedingAnchorYear,PreceedingRule,_,PreceedingCov),
-	anchor_point(C,V,SucceedingAnchorYear,SucceedingRule,_,SucceedingCov),
-	PreceedingAnchorYear < Y,
-	SucceedingAnchorYear > Y,
-	not(anchor_point_between(C,V,PreceedingAnchorYear,SucceedingAnchorYear)).
+between_anchor_points(C, V, Y, Prec, PrecRule, PrecCov, Succ, SuccRule, SuccCov) :-
+    not(anchor_point(C, V, Y, _, _, _)),
+    prec_anchor_point(C, V, Y, Prec, PrecRule, PrecCov),
+    succ_anchor_point(C, V, Y, Succ, SuccRule, SuccCov).
+
+prec_anchor_point(C, V, Y, Prec, Rule, Coverage) :-
+    Dist is Y - 1997, % change to minimum from estimate_required
+    between(1, Dist, Minus),
+    Prec0 is Y - Minus,
+    anchor_point(C, V, Prec0, Rule0, _Expl0, Cov0),
+    !,
+    Prec = Prec0,
+    Rule = Rule0,
+    Coverage = Cov0.
+
+succ_anchor_point(C, V, Y, Succ, Rule, Coverage) :-
+    between(Y, 2023, Succ0),
+    Succ0 > Y,
+    anchor_point(C, V, Succ0, Rule0, _Expl0, Cov0),
+    !,
+    Succ = Succ0,
+    Rule = Rule0,
+    Coverage = Cov0.
 
 % Interpolate between two years
 interpolate(Prec, PrecCov, Succ, SuccCov, Year, Coverage) :-
