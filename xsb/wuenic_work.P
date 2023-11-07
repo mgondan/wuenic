@@ -85,6 +85,7 @@ WHO and UNICEF working group memebers as of 1 January 2010 - 30 April 2012:
 
 
 :- import member/2 from lists.
+:- import append/3 from lists.
 :- import length/2 from lists.
 :- import sum_list/2 from lists.
 :- import concat_atom/2 from string.
@@ -195,7 +196,9 @@ wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated
     collect_data(C, V, Y, Prev, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Series, Source, Survey),
     change_from_previous_revision(C, V, Y, Coverage, Change),
     collect_explanations(C, V, Y, Text),
-    concat_atom([Expl0, ' ', Text, ' ', Change, ' ', GoCExpl], Expl).
+    append([Expl0, ' '], Text, Expl1),
+    append(Expl1, [' ', Change, ' ', GoCExpl], Expl2),
+    concat_atom(Expl2, Expl).
 
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
@@ -220,7 +223,7 @@ wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated
 	assign_GoC(C,V,Y,Rule,_Coverage,Support,'2') :- two_stars(C,V,Y,Rule,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- challenge(C,V,Y,Rule,Coverage,_),
 												   setof(Evidence,challenge(C,V,Y,Rule,Coverage,Evidence),List),
-												   concat_atom(['Estimate challenged by: ',List],Support),
+												   concat_atom(['Estimate challenged by: '|List],Support),
 												   not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
 
 	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- no_data(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
