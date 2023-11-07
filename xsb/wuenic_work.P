@@ -381,6 +381,16 @@ wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
     Expl = Expl0,
     Coverage = Cov0.
 
+% Interpolation forced by working group: todo: should be wuenic_I
+wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
+    workingGroupDecision(C, V, Y, interpolate, Expl0, _, _),
+    !,
+    Rule = 'W-I:',
+    between_anchor_points(C, V, Y, Before, _, CovBefore, After, _, CovAfter),
+    concat_atom(['Estimate informed by interpolation between ', Before,
+		 ' and ', After, ' levels. ', Expl0], Expl),
+    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
+
 % Estimate for DTP1 > DTP3
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp1, Y, _Rule, _Expl, Cov0),
@@ -435,15 +445,6 @@ wuenic_I(_C, _V, _Y, _Rule, _Expl, _Coverage) :-
 
 % Preliminary estimates
 %
-% Interpolation forced by working group: todo: should be wuenic_I
-wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-    workingGroupDecision(C, V, Y, interpolate, Expl0, _, _),
-    !,
-    Rule = 'W-I:',
-    between_anchor_points(C, V, Y, Before, _, CovBefore, After, _, CovAfter),
-    concat_atom(['Estimate informed by interpolation between ', Before,
-		 ' and ', After, ' levels. ', Expl0], Expl),
-    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
 
 % Estimate at anchor points
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
