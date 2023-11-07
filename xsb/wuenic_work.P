@@ -997,10 +997,11 @@ workingGroupDecision(C, V, Y, Action, Explanation, Survey, Coverage) :-
 % -------------------------------------------
 anchor_point_earlier(C,V,AnchorYear) :- anchor_point(C,V,Year,_,_,_), Year < AnchorYear.
 anchor_point_later(C,V,AnchorYear)   :- anchor_point(C,V,Year,_,_,_), Year > AnchorYear.
-anchor_point_between(C,V,YearBefore,YearAfter) :-
-	anchor_point(C,V,YearBetween,_,_,_),
-	YearBefore < YearBetween,
-	YearAfter  > YearBetween.
+
+anchor_point_between(C, V, Before, After) :-
+    between(Before, After, Year),
+    Year > Before, Year < After,
+    anchor_point(C, V, Year, _, _, _).
 
 % routines for interpolated points
 % --------------------------------
