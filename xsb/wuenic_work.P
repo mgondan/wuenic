@@ -631,21 +631,15 @@ survey(C, V, Y, Expl, Coverage) :-
 		 N, ' survey(s). '], Expl).
 
 % Unmodified survey results accpeted.
-%
-% semidet, because multiple surveys are averaged
 survey_accepted(C, V, Y, ID, Coverage) :-
-    survey_results_for_analysis(C, V, Y, ID, _, Coverage),
+    survey_results_for_analysis(C, V, Y, ID, _, Cov0),
     not(survey_reason_to_exclude(C, V, Y, ID, _)),
-    not(survey_results_modified(C, V, Y, ID, _, _)).
-
-% Modified survey results accepted.
-survey_accepted(C, V, Y, ID, Coverage) :-
-    survey_results_for_analysis(C, V, Y, ID, _, _),
-    not(survey_reason_to_exclude(C, V, Y, ID, _)),
-    survey_results_modified(C, V, Y, ID, _, Coverage).
+    (	survey_results_modified(C, V, Y, ID, _, Modified)
+    ->	Coverage = Modified
+    ;	Coverage = Cov0
+    ).
 
 % Survey results modified for recall bias.
-% ---------------------------------------
 survey_results_modified(C, V, Y, ID, Expl, Coverage) :-
     member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
 
