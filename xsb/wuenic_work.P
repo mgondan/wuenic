@@ -1041,17 +1041,6 @@ nearest_reported(C, V, Y, Nearest, Coverage) :-
 
 nearest_reported(C, V, Y, Nearest, Coverage) :-
     year_before_reported(C, V, Y, Before, CoverageBefore),
-    year_after_reported(C, V, Y, After, CoverageAfter),
-    !,
-    (	Y - Before < After - Y
-    ->	Nearest = Before,
-	Coverage = CoverageBefore
-    ;	Nearest = After,
-	Coverage = CoverageAfter
-    ).
-
-nearest_reported(C, V, Y, Nearest, Coverage) :-
-    year_before_reported(C, V, Y, Before, CoverageBefore),
     !,
     Nearest = Before,
     Coverage = CoverageBefore.
