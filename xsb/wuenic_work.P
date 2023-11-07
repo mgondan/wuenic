@@ -719,10 +719,11 @@ reported_time_series(C, V, Y, Source, Coverage) :-
     (	not(reported(C, V, Y, _, _))
     ;	reported_rejected(C, V, Y)
     ),
-    year_between_reported(C, V, Y, Before, CovBefore, After, CovAfter),
+    year_before_reported(C, V, Y, Prec, PrecCov),
+    year_after_reported(C, V, Y, Succ, SuccCov),
     !,
     Source = interpolated,
-    interpolate(Before, CovBefore, After, CovAfter, Y, Coverage).
+    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 % Extrapolation, latest required estimate
 reported_time_series(C, V, Y, Source, Coverage) :-
