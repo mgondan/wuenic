@@ -187,17 +187,15 @@ estimate :-
 
 % Final estimate where there are wuenic values
 % --------------------------------------------
-wuenic(C,V,Y,Rule,Explanation,Coverage,Prev,GC,Admin,Gov,Reported,Vaccinated,Target,Births,SI,Source,Series,Survey) :-
-	estimate_required(C,V,Y,_,_),
-	wuenic_I(C,V,Y,Rule,Explain,Cov),
-	bound_0_100(Cov,Coverage),
-	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC),
-	%assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC),
-	collect_data(C, V, Y,
-	    Prev, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Series, Source, Survey),
-	change_from_previous_revision(C,V,Y,Coverage,Change),
-	collect_explanations(C, V, Y, Text),
-	concat_atom([Explain, ' ', Text, ' ', Change, ' ', GoCExplanation], Explanation).
+wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Source, Series, Survey) :-
+    estimate_required(C, V, Y, _, _),
+    wuenic_I(C, V, Y, Rule, Expl0, Cov0),
+    bound_0_100(Cov0, Coverage),
+    assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, GoCExpl, GC),
+    collect_data(C, V, Y, Prev, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Series, Source, Survey),
+    change_from_previous_revision(C, V, Y, Coverage, Change),
+    collect_explanations(C, V, Y, Text),
+    concat_atom([Expl0, ' ', Text, ' ', Change, ' ', GoCExpl], Expl).
 
 % ------------------------------------------------------------------------------
 %  End of wuenic top level routine.
@@ -818,16 +816,12 @@ workingGroupDecision(C, V, Y, Action, Explanation, Survey, Coverage) :-
     Begin =< Y, End >= Y.
 
 % routines for interpolated points
-year_between_reported(C, V, Y, YearBefore, CoverageBefore, YearAfter, CoverageAfter) :-
-    year_before_reported(C, V, Y, YearBefore, CoverageBefore),
-    year_after_reported(C, V, Y, YearAfter, CoverageAfter).
-
 year_before_reported(C, V, Y, Before, Coverage) :-
     Dist is Y - 1997, % change to minimum from estimate_required
     between(1, Dist, Minus),
     Bef0 is Y - Minus,
     reported(C, V, Bef0, _, Cov0),
-    not(reported_reason_to_exclude(C, V, Bef0, _, _)),
+    not(reported_rejected(C, V, Bef0)),
     !,
     Before = Bef0,
     Coverage = Cov0.
@@ -836,7 +830,7 @@ year_after_reported(C, V, Y, After, Coverage) :-
     between(Y, 2023, Aft0), % change to date(Date) or maximum from estimate_required
     Aft0 > Y,
     reported(C, V, Aft0, _, Cov0),
-    not(reported_reason_to_exclude(C, V, Aft0, _, _)),
+    not(reported_rejected(C, V, Aft0)),
     !,
     After = Aft0,
     Coverage = Cov0.
