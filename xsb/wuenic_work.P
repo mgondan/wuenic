@@ -703,72 +703,76 @@ anchor_point(C,V,Y,'W: AP',Explanation,AssignedCoverage) :-
 % Final survey information. If multiple survey in the
 % same year, accepted and modified results are averaged.
 % ----------------------------------
-survey(C,V,Y,Explanation,Coverage) :-
-%	bagof(Cov,survey_accepted(C,V,Y,_,_,Cov),CoverageList),
-	bagof(Cov,Dist^SID^survey_accepted(C,V,Y,SID,Dist,Cov),CoverageList),
-
-	length(CoverageList,N),
-	sum_list(CoverageList,SumCov),
-	Coverage is round(SumCov / N),
-	concat_atom(['Survey evidence of ',Coverage,' percent based on ',N, ' survey(s). '],Explanation).
+survey(C, V, Y, Expl, Coverage) :-
+%   bagof(Cov,survey_accepted(C,V,Y,_,_,Cov),CoverageList),
+%   bagof(Cov,SID^survey_accepted(C,V,Y,SID,Cov),CoverageList),
+    findall(Cov, survey_accepted(C, V, Y, _, Cov), CoverageList),
+    length(CoverageList, N),
+    N >= 1,
+    sum_list(CoverageList,SumCov),
+    Coverage is round(SumCov / N),
+    concat_atom(['Survey evidence of ', Coverage, ' percent based on ',
+		 N, ' survey(s). '], Expl).
 
 % Unmodified survey results accpeted.
-% -----------------------------------
-survey_accepted(C,V,Y,SurveyID,_,Coverage) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,_,Coverage),
-	not(survey_results_modified(C,V,Y,SurveyID,_,_)),
-	not(survey_reason_to_exclude(C,V,Y,SurveyID,_)).
+%
+% semidet, because multiple surveys are averaged
+survey_accepted(C, V, Y, ID, Coverage) :-
+    survey_results_for_analysis(C, V, Y, ID, _, Coverage),
+    not(survey_reason_to_exclude(C, V, Y, ID, _)),
+    not(survey_results_modified(C, V, Y, ID, _, _)).
 
 % Modified survey results accepted.
-% ---------------------------------
-survey_accepted(C,V,Y,SurveyID,_,ModifiedCoverage) :-
-	survey_results_for_analysis(C,V,Y,SurveyID,_,_Coverage),
-	survey_results_modified(C,V,Y,SurveyID,_,ModifiedCoverage),
-	not(survey_reason_to_exclude(C,V,Y,SurveyID,_)).
+survey_accepted(C, V, Y, ID, Coverage) :-
+    survey_results_for_analysis(C, V, Y, ID, _, _),
+    not(survey_reason_to_exclude(C, V, Y, ID, _)),
+    survey_results_modified(C, V, Y, ID, _, Coverage).
 
 % Survey results modified for recall bias.
 % ---------------------------------------
 survey_results_modified(C, V, Y, ID, Expl, Coverage) :-
     member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
-    vaccine(V, FirstDose),
 
     % Third dose, card only
     survey_results(C, V, Y, ID, DescriptionCard3Dose, C3Cov),
     member(confirm:card, DescriptionCard3Dose),
     member(age:AgeCohortCard3Dose, DescriptionCard3Dose),
-    member(AgeCohortCard3Dose, ['12-23 m','18-29 m','15-26 m', '24-35 m']),
+    member(AgeCohortCard3Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
     % First dose, card or history
-    survey_results(C, FirstDose, Y, ID, DescriptionCoH1Dose, CoH1Cov),
+    vaccine(V, First),
+    survey_results(C, First, Y, ID, DescriptionCoH1Dose, CoH1Cov),
     member(confirm:'card or history', DescriptionCoH1Dose),
     member(age:AgeCohortCoH1, DescriptionCoH1Dose),
-    member(AgeCohortCoH1, ['12-23 m','18-29 m','15-26 m','24-35 m']),
+    member(AgeCohortCoH1, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
     % First dose, card only
-    survey_results(C, FirstDose, Y, ID, DescriptionCard1Dose, C1Cov),
+    survey_results(C, First, Y, ID, DescriptionCard1Dose, C1Cov),
     C1Cov > 0,
     member(confirm:card, DescriptionCard1Dose),
     member(age:AgeCohortCard1Dose, DescriptionCard1Dose),
-    member(AgeCohortCard1Dose, ['12-23 m','18-29 m','15-26 m','24-35 m']),
+    member(AgeCohortCard1Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
     Adj is C3Cov / C1Cov,
     ThirdHistoryAdj is (CoH1Cov - C1Cov) * Adj,
-    CovAdjustedRecall is C3Cov + ThirdHistoryAdj,
-    bound_0_100(CovAdjustedRecall, Coverage),
+    CovAdjusted is C3Cov + ThirdHistoryAdj,
+    bound_0_100(CovAdjusted, Cov0),
 
     survey_results_for_analysis(C, V, Y, ID, Description, SurveyCoverage),
-    Coverage \= SurveyCoverage,
+    Cov0 \= SurveyCoverage,
+
     SurveyCovRounded is round(SurveyCoverage),
     CH1 is round(CoH1Cov),
     C1 is round(C1Cov),
     C3 is round(C3Cov),
     member(title:Title, Description),
     concat_atom([Title, ' card or history results of ', SurveyCovRounded,
-		 ' percent modifed for recall bias to ', Coverage,
+		 ' percent modifed for recall bias to ', Cov0,
 		 ' percent based on 1st dose card or history coverage of ',
 		 CH1, ' percent, 1st dose card only coverage of ',
 		 C1, ' percent and 3rd dose card only coverage of ',
-		 C3, ' percent. '], Expl).
+		 C3, ' percent. '], Expl),
+    Coverage = Cov0.
 
 % -------------------------------------------------
 % Survey results accepted if no reason to exclude.
