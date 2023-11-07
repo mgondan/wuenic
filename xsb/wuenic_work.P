@@ -564,7 +564,7 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 % Working group assigns anchor point value.
 %
 % semidet, because it is used for search in wuenic_II
-
+%
 % Survey results support reported
 anchor_point(C, V, Y, 'R: AP', Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Coverage),
@@ -572,16 +572,13 @@ anchor_point(C, V, Y, 'R: AP', Expl, Coverage) :-
     survey(C, V, Y, Expl0, SurveyCoverage),
     survey_reported_threshold(Threshold),
     abs(Coverage - SurveyCoverage) =< Threshold,
-    (   Source = gov
-    ->  concat_atom(['Estimate informed by reported data supported by survey. ', Expl0], Expl)
-    ;   Source = admin
-    ->  concat_atom(['Estimate informed by reported administrative data supported by survey. ', Expl0], Expl)
-    ;   Source = interpolated
-    ->  concat_atom(['Estimate informed by interpolation between reported data supported by survey. ', Expl0], Expl)
-    ;   Source = extrapolated
-    ->  concat_atom(['Estimate based on extrapolation from data reported by national government supported by survey. ', Expl0], Expl)
-    ;	throw(misc_error(anchor_point(C, V, Y, 'R: AP', Expl, Coverage)))
-    ).
+    member(Source-Expl1,
+      [ gov-'Estimate informed by reported data supported by survey. ',
+	admin-'Estimate informed by reported administrative data supported by survey. ',
+	interpolated-'Estimate informed by interpolation between reported data supported by survey. ',
+	extrapolated-'Estimate based on extrapolation from data reported by national government supported by survey. '
+      ]),
+    concat_atom([Expl1, Expl0], Expl).
 
 % Survey results challenge reported
 anchor_point(C, V, Y, 'S: AP', Expl, Coverage) :-
@@ -953,7 +950,6 @@ nearest_reported(C, V, Y, Nearest, Coverage) :-
 
 % Get values of nearest surrounding anchor points.
 between_anchor_points(C, V, Y, Prec, PrecRule, PrecCov, Succ, SuccRule, SuccCov) :-
-    not(anchor_point(C, V, Y, _, _, _)),
     prec_anchor_point(C, V, Y, Prec, PrecRule, PrecCov),
     succ_anchor_point(C, V, Y, Succ, SuccRule, SuccCov).
 
