@@ -630,10 +630,18 @@ survey(C, V, Y, Expl, Coverage) :-
     concat_atom(['Survey evidence of ', Coverage, ' percent based on ',
 		 N, ' survey(s). '], Expl).
 
-% Unmodified survey results accpeted.
+% Reasons to exclude a survey include:
+%    Sample size < 300,
+%    The working group decides to exclude the survey.
 survey_accepted(C, V, Y, ID, Coverage) :-
-    survey_results_for_analysis(C, V, Y, ID, _, Cov0),
-    not(survey_reason_to_exclude(C, V, Y, ID, _)),
+    survey_results_for_analysis(C, V, Y, ID, Desc, Cov0),
+    (	workingGroupDecision(C, V, Y, acceptSurvey, _, ID, _)
+    ;	member(ss:Size, Desc),
+        Size >= 300,
+        not(workingGroupDecision(C, V, Y, ignoreSurvey, _, ID, _)),
+        not(workingGroupDecision(C, V, Y, ignoreSurvey, _, na, _))
+    ),
+    % survey accepted
     (	survey_results_modified(C, V, Y, ID, _, Modified)
     ->	Coverage = Modified
     ;	Coverage = Cov0
@@ -683,32 +691,6 @@ survey_results_modified(C, V, Y, ID, Expl, Coverage) :-
 		 C1, ' percent and 3rd dose card only coverage of ',
 		 C3, ' percent. '], Expl),
     Coverage = Cov0.
-
-% -------------------------------------------------
-% Survey results accepted if no reason to exclude.
-%
-% Reasons to exclude a survey include:
-%    Sample size < 300,
-%    The working group decides to exclude the survey.
-%
-% semidet because of collect_explanations
-survey_reason_to_exclude(C, V, Y, ID, Expl) :-
-    survey_results_for_analysis(C, V, Y, ID, Description, _),
-    not(workingGroupDecision(C, V, Y, acceptSurvey, Expl, ID, _)),
-    member(ss:Size, Description),
-    Size < 300,
-%   !,
-    concat_atom(['Survey results ignored. Sample size ', Size,
-		 ' less than 300. '], Expl).
-
-survey_reason_to_exclude(C, V, Y, ID, Expl) :-
-    survey_results_for_analysis(C, V, Y, ID, Description, _),
-    (	workingGroupDecision(C, V, Y, ignoreSurvey, Expl0, ID, _)
-    ;	workingGroupDecision(C, V, Y, ignoreSurvey, Expl0, na, _)
-    ),
-    member(title:Title, Description),
-%   !,
-    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
 
 % Survey results passed for inclusion in the analysis include:
 % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months
@@ -1121,3 +1103,33 @@ output_results([H|T],Out) :- output_fields(H,Out), output_results(T,Out).
 
 output_fields([],Out) :- nl(Out).
 output_fields([H|T],Out) :- write(Out,H),write(Out,'\t'),output_fields(T,Out).
+
+
+
+
+% -------------------------------------------------
+% Survey results accepted if no reason to exclude.
+%
+% Reasons to exclude a survey include:
+%    Sample size < 300,
+%    The working group decides to exclude the survey.
+%
+% semidet because of collect_explanations
+survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+    survey_results_for_analysis(C, V, Y, ID, Description, _),
+    not(workingGroupDecision(C, V, Y, acceptSurvey, Expl, ID, _)),
+    member(ss:Size, Description),
+    Size < 300,
+%   !,
+    concat_atom(['Survey results ignored. Sample size ', Size,
+		 ' less than 300. '], Expl).
+
+survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+    survey_results_for_analysis(C, V, Y, ID, Description, _),
+    (	workingGroupDecision(C, V, Y, ignoreSurvey, Expl0, ID, _)
+    ;	workingGroupDecision(C, V, Y, ignoreSurvey, Expl0, na, _)
+    ),
+    member(title:Title, Description),
+%   !,
+    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
+
