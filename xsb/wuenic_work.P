@@ -991,12 +991,16 @@ workingGroupDecision(C, V, Y, Action, Explanation, Survey, Coverage) :-
     wgd(C, V, Begin, End, Action, Explanation, Survey, Coverage, _, _),
     Begin =< Y, End >= Y.
 
-
-% ==========================================
 % Utilities and general auxiliary predicates
-% -------------------------------------------
-anchor_point_earlier(C,V,AnchorYear) :- anchor_point(C,V,Year,_,_,_), Year < AnchorYear.
-anchor_point_later(C,V,AnchorYear)   :- anchor_point(C,V,Year,_,_,_), Year > AnchorYear.
+anchor_point_earlier(C, V, Y) :-
+    between(1997, Y, Year),
+    Year < Y,
+    anchor_point(C, V, Year, _, _, _).
+
+anchor_point_later(C, V, Y) :-
+    between(Y, 2023, Year),
+    Year > Y,
+    anchor_point(C, V, Year, _, _, _).
 
 anchor_point_between(C, V, Before, After) :-
     between(Before, After, Year),
@@ -1004,7 +1008,6 @@ anchor_point_between(C, V, Before, After) :-
     anchor_point(C, V, Year, _, _, _).
 
 % routines for interpolated points
-% --------------------------------
 year_between_reported(C, V, Y, YearBefore, CoverageBefore, YearAfter, CoverageAfter) :-
     year_before_reported(C, V, Y, YearBefore, CoverageBefore),
     year_after_reported(C, V, Y, YearAfter, CoverageAfter).
