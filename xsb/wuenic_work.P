@@ -620,28 +620,13 @@ anchor_point(C, V, Y, Rule, Expl, Coverage) :-
 		 Expl0, ' '], Expl),
     Coverage = Survey.
 
-
-
-% ==============================================
-% Level one processing:
-%
-%   Review data reported by national authorities
-%   and survey results. Reported and survey data
-%   are accepted, ignored, or modified. Modified
-%   data are accepted in the modified form.
-% ==============================================
-
-% Final survey information. If multiple survey in the
-% same year, accepted and modified results are averaged.
-% ----------------------------------
+% Final survey information. If multiple surveys in the same year,
+% results are averaged.
 survey(C, V, Y, Expl, Coverage) :-
-%   bagof(Cov,survey_accepted(C,V,Y,_,_,Cov),CoverageList),
-%   bagof(Cov,SID^survey_accepted(C,V,Y,SID,Cov),CoverageList),
-    findall(Cov, survey_accepted(C, V, Y, _, Cov), CoverageList),
-    length(CoverageList, N),
-    N >= 1,
-    sum_list(CoverageList,SumCov),
-    Coverage is round(SumCov / N),
+    findall(Cov, survey_accepted(C, V, Y, _, Cov), [H | T]),
+    length([H | T], N),
+    sum_list([H | T], Sum),
+    Coverage is round(Sum / N),
     concat_atom(['Survey evidence of ', Coverage, ' percent based on ',
 		 N, ' survey(s). '], Expl).
 
