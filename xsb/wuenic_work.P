@@ -255,15 +255,15 @@ assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
 assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
     throw(misc_error(assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade))).
 
-		goc_reported_condition(C,V,Y,_Rule,'R+') :- % MG, todo: Rule = R?
-			reported(C,V,Y,_,_),
-			wuenic_I(C,V,Y,R,_,_),
-			member(R,['R:','R: AP']).
-
-		goc_reported_condition(C,V,Y,_Rule,'R-') :- % see above
-			reported(C,V,Y,_,_),
-			wuenic_I(C,V,Y,R,_,_),
-			not(member(R,['R:','R: AP'])).
+% Criteria
+goc_reported_condition(C, V, Y, _Rule, Support) :-
+    reported(C, V, Y, _, _),
+    wuenic_I(C, V, Y, R, _, _), % MG, todo: Rule = R?
+    !,
+    (	member(R, ['R:', 'R: AP'])
+    ->	Support = 'R+'
+    ;	Support = 'R-' % check if this can be a default
+    ).
 
 		goc_survey_condition(C,V,Y,Rule,'S+') :-
 			supporting_survey_in_scope(C,V,Y,Rule),
