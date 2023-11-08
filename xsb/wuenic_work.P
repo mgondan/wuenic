@@ -240,10 +240,25 @@ assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
     concat_atom(['Estimate challenged by: ' | List], Expl),
     Grade = '1'.
 
-assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
-    two_sources(C, V, Y, Rule, Expl0),
+assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+    goc_reported_condition(C, V, Y, 'R+'),
+    goc_survey_condition(C, V, Y, 'S+'),
     !,
-    Expl = Expl0,
+    Expl = 'GoC=R+ S+',
+    Grade = '2'.
+
+assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+    goc_survey_condition(C, V, Y, 'S+'),
+    goc_denominator_condition(C, V, Y, 'D+'),
+    !,
+    Expl = 'GoC=S+ D+',
+    Grade = '2'.
+
+assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+    goc_reported_condition(C, V, Y, 'R+'),
+    goc_denominator_condition(C, V, Y, 'D+'),
+    !,
+    Expl = 'GoC=R+ D+',
     Grade = '2'.
 
 assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
@@ -336,28 +351,13 @@ recal_unpd(C, V, Y, Coverage) :-
     Coverage is Vaccinated / SI * 100.
 
 
-	% Supported by two data sources, no challenge
-	% --------------------------------------------
-	two_sources(C,V,Y,_Rule,'GoC=R+ S+') :-
-		goc_reported_condition(C,V,Y,'R+'),
-		goc_survey_condition(C,V,Y,'S+').
-	two_sources(C,V,Y,_Rule,'GoC=S+ D+') :-
-		goc_survey_condition(C,V,Y,'S+'),
-		goc_denominator_condition(C,V,Y,'D+').
-	two_sources(C,V,Y,_Rule,'GoC=R+ D+') :-
-		goc_reported_condition(C,V,Y,'R+'),
-		goc_denominator_condition(C,V,Y,'D+').
-
 	% Supported by single source, no challenge
 	% -------------------------------------
 	one_source(C,V,Y,_Rule,'GoC=R+') :-
-		not(two_sources(C,V,Y,_,_)),
 		goc_reported_condition(C,V,Y,'R+').
 	one_source(C,V,Y,_Rule,'GoC=S+') :-
-		not(two_sources(C,V,Y,_,_)),
 		goc_survey_condition(C,V,Y,'S+').
 	one_source(C,V,Y,_Rule,'GoC=D+') :-
-		not(two_sources(C,V,Y,_,_)),
 		goc_denominator_condition(C,V,Y,'D+').
 
 	% Empirical evidence challenges estimate.
