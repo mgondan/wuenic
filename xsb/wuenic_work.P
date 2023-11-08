@@ -187,7 +187,6 @@ estimate :-
 	output_results(Estimates,OutFile), close(OutFile).
 
 % Final estimate where there are wuenic values
-% --------------------------------------------
 wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Source, Series, Survey) :-
     estimate_required(C, V, Y, _, _),
     wuenic_I(C, V, Y, Rule, Expl0, Cov0),
@@ -200,22 +199,24 @@ wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated
     append(Expl1, [' ', Change, ' ', GoCExpl], Expl2),
     concat_atom(Expl2, Expl).
 
-% ------------------------------------------------------------------------------
-%  End of wuenic top level routine.
+% Copy rcv1 from mcv1
+assign_Grade_of_Confidence(C, rcv1, Y, Rule, Coverage, Expl, Grade) :-
+    estimate_required(C, rcv1, Y, _, na),
+    !,
+    assign_GoC(C, mcv1, Y, Rule, Coverage, Expl, Grade).
 
-	assign_Grade_of_Confidence(C,V,Y,Rule,Coverage,GoCExplanation,GC) :-
-		not(member(V,['rcv1'])),
-		assign_GoC(C,V,Y,Rule,Coverage,GoCExplanation,GC).
+% Copy rcv1 from mcv2
+assign_Grade_of_Confidence(C, rcv1, Y, Rule, Coverage, Expl, Grade) :-
+    estimate_required(C, rcv1, Y, _, mcv2),
+    !,
+    assign_GoC(C, mcv2, Y, Rule, Coverage, Expl, Grade).
 
-	% MG: Copy rcv1 from mcv1
-	assign_Grade_of_Confidence(C,rcv1,Y,Rule,Coverage,GoCExplanation,GC) :-
-		estimate_required(C,rcv1,Y,_,na),
-		assign_GoC(C,mcv1,Y,Rule,Coverage,GoCExplanation,GC).
+assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade) :-
+    !,
+    assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade).
 
-	% MG: Copy rcv1 from mcv2
-	assign_Grade_of_Confidence(C,rcv1,Y,Rule,Coverage,GoCExplanation,GC) :-
-		estimate_required(C,rcv1,Y,_,mcv2),
-		assign_GoC(C,mcv2,Y,Rule,Coverage,GoCExplanation,GC).
+assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade) :-
+    throw(misc_error(assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade))).
 
 	% GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars) - modified 4 July 2016 TB
 	% --------------------------------------------------------------------------------------------------
