@@ -218,18 +218,40 @@ assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade) :-
 assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade) :-
     throw(misc_error(assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade))).
 
-	% GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars) - modified 4 July 2016 TB
-	% --------------------------------------------------------------------------------------------------
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'3') :- three_stars(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,Rule,_Coverage,Support,'2') :- two_stars(C,V,Y,Rule,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- challenge(C,V,Y,Rule,Coverage,_),
-												   setof(Evidence,challenge(C,V,Y,Rule,Coverage,Evidence),List),
-												   concat_atom(['Estimate challenged by: '|List],Support),
-												   not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
+% GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars)
+assign_GoC(C, V, Y, _Rule, _, Expl, Grade) :-
+    workingGroupDecision(C, V, Y, assignGoC, Expl0, _, Grade0),
+    !,
+    concat_atom(['GoC=Assigned by working group. ', Expl0], Expl),
+    Grade = Grade0.
 
-	assign_GoC(C,V,Y,Rule,Coverage,Support,'1') :- no_data(C,V,Y,Rule,Coverage,Support),not(workingGroupDecision(C,V,Y,assignGoC,_,_,_)).
-	assign_GoC(C,V,Y,_Rule,_,Support,GC) :- workingGroupDecision(C,V,Y,assignGoC,Explanation,_,GC),
-												   concat_atom(['GoC=Assigned by working group. ',Explanation],Support).
+assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
+    three_stars(C, V, Y, Rule, Coverage, Expl0),
+    !,
+    Expl = Expl0,
+    Grade = '3'.
+
+assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
+    two_stars(C, V, Y, Rule, Expl0),
+    !,
+    Expl = Expl0,
+    Grade = '2'.
+
+assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
+    challenge(C, V, Y, Rule, Coverage, _),
+    !,
+    setof(Expl0, challenge(C, V, Y, Rule, Coverage, Expl0), List),
+    concat_atom(['Estimate challenged by: ' | List], Expl),
+    Grade = '1'.
+
+assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
+    no_data(C, V, Y, Rule, Coverage, Expl0),
+    !,
+    Expl = Expl0,
+    Grade = '1'.
+
+assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
+    throw(misc_error(assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade))).
 
 	% Supported by reported data, survey and denominator
 	% --------------------------------------------------
