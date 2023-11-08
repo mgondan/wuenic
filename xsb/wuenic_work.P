@@ -265,12 +265,15 @@ goc_reported_condition(C, V, Y, _Rule, Support) :-
     ;	Support = 'R-' % check if this can be a default
     ).
 
-		goc_survey_condition(C,V,Y,Rule,'S+') :-
-			supporting_survey_in_scope(C,V,Y,Rule),
-			not(challenging_survey_in_scope(C,V,Y)).
+goc_survey_condition(C, V, Y, _, Support) :-
+    challenging_survey_in_scope(C, V, Y),
+    !,
+    Support = 'S-'.
 
-		goc_survey_condition(C,V,Y,_,'S-') :-
-			challenging_survey_in_scope(C,V,Y).
+goc_survey_condition(C, V, Y, Rule, Support) :-
+    supporting_survey_in_scope(C, V, Y, Rule),
+    !,
+    Support = 'S+'.
 
 %  simplify previous rule to.
 %			supporting_survey_in_scope(C,V,Y,Rule) :-
