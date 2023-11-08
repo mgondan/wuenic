@@ -233,18 +233,24 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
     Expl = 'GoC=R+ S+ D+',
     Grade = '3'.
 
-assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
-    two_stars(C, V, Y, Rule, Expl0),
-    !,
-    Expl = Expl0,
-    Grade = '2'.
-
 assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
     challenge(C, V, Y, Rule, Coverage, _),
     !,
     setof(Expl0, challenge(C, V, Y, Rule, Coverage, Expl0), List),
     concat_atom(['Estimate challenged by: ' | List], Expl),
     Grade = '1'.
+
+assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
+    two_sources(C, V, Y, Rule, Expl0),
+    !,
+    Expl = Expl0,
+    Grade = '2'.
+
+assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
+    one_source(C, V, Y, Rule, Expl0),
+    !,
+    Expl = Expl0,
+    Grade = '2'.
 
 assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
     no_data(C, V, Y, Rule, Coverage, Expl0),
@@ -329,12 +335,6 @@ recal_unpd(C, V, Y, Coverage) :-
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
 
-
-	two_stars(C,V,Y,Rule,Support) :-
-		(two_sources(C,V,Y,Rule,Support);
-		one_source(C,V,Y,Rule,Support)),
-%		not(three_stars(C,V,Y,_,_,_)),
-		not(challenge(C,V,Y,_,_,_)).
 
 	% Supported by two data sources, no challenge
 	% --------------------------------------------
