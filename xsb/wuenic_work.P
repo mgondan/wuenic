@@ -233,10 +233,9 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
     Expl = 'GoC=R+ S+ D+',
     Grade = '3'.
 
-assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
-    challenge(C, V, Y, Rule, Coverage, _),
+assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+    setof(Expl0, challenge(C, V, Y, Expl0), List),
     !,
-    setof(Expl0, challenge(C, V, Y, Rule, Coverage, Expl0), List),
     concat_atom(['Estimate challenged by: ' | List], Expl),
     Grade = '1'.
 
@@ -362,12 +361,14 @@ recal_unpd(C, V, Y, Coverage) :-
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
 
-	% Empirical evidence challenges estimate.
-	% --------------------------------------
-	challenge(C,V,Y,_Rule,_Coverage,Condition) :-
-		(goc_reported_condition(C,V,Y,'R-'),Condition = 'R-');
-		(goc_survey_condition(C,V,Y,'S-'),Condition = 'S-');
-		(goc_denominator_condition(C,V,Y,'D-'),Condition = 'D-').
+challenge(C, V, Y, 'R-') :-
+    goc_reported_condition(C, V, Y, 'R-').
+
+challenge(C, V, Y, 'S-') :-
+    goc_survey_condition(C, V, Y, 'S-').
+
+challenge(C, V, Y, 'D-') :-
+    goc_denominator_condition(C, V, Y, 'D-').
 
 	% No empirical supporting evidence.
 	% --------------------------------
