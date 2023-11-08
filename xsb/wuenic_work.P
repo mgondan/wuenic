@@ -191,7 +191,7 @@ wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated
     estimate_required(C, V, Y, _, _),
     wuenic_I(C, V, Y, Rule, Expl0, Cov0),
     bound_0_100(Cov0, Coverage),
-    assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, GoCExpl, GC),
+    assign_Grade_of_Confidence(C, V, Y, GoCExpl, GC),
     collect_data(C, V, Y, Prev, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Series, Source, Survey),
     change_from_previous_revision(C, V, Y, Coverage, Change),
     collect_explanations(C, V, Y, Text),
@@ -200,32 +200,32 @@ wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated
     concat_atom(Expl2, Expl).
 
 % Copy rcv1 from mcv1
-assign_Grade_of_Confidence(C, rcv1, Y, Rule, Coverage, Expl, Grade) :-
+assign_Grade_of_Confidence(C, rcv1, Y, Expl, Grade) :-
     estimate_required(C, rcv1, Y, _, na),
     !,
-    assign_GoC(C, mcv1, Y, Rule, Coverage, Expl, Grade).
+    assign_GoC(C, mcv1, Y, Expl, Grade).
 
 % Copy rcv1 from mcv2
-assign_Grade_of_Confidence(C, rcv1, Y, Rule, Coverage, Expl, Grade) :-
+assign_Grade_of_Confidence(C, rcv1, Y, Expl, Grade) :-
     estimate_required(C, rcv1, Y, _, mcv2),
     !,
-    assign_GoC(C, mcv2, Y, Rule, Coverage, Expl, Grade).
+    assign_GoC(C, mcv2, Y, Expl, Grade).
 
-assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade) :-
+assign_Grade_of_Confidence(C, V, Y, Expl, Grade) :-
     !,
-    assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade).
+    assign_GoC(C, V, Y, Expl, Grade).
 
-assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade) :-
-    throw(misc_error(assign_Grade_of_Confidence(C, V, Y, Rule, Coverage, Expl, Grade))).
+assign_Grade_of_Confidence(C, V, Y, Expl, Grade) :-
+    throw(misc_error(assign_Grade_of_Confidence(C, V, Y, Expl, Grade))).
 
 % GoC = 1 is low confidence (1 star), GoC = 3 is high confidence (3 stars)
-assign_GoC(C, V, Y, _Rule, _, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     workingGroupDecision(C, V, Y, assignGoC, Expl0, _, Grade0),
     !,
     concat_atom(['GoC=Assigned by working group. ', Expl0], Expl),
     Grade = Grade0.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+'),
@@ -233,52 +233,52 @@ assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
     Expl = 'GoC=R+ S+ D+',
     Grade = '3'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     setof(Expl0, challenge(C, V, Y, Expl0), List),
     !,
     concat_atom(['Estimate challenged by: ' | List], Expl),
     Grade = '1'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_reported_condition(C, V, Y, 'R+'),
     goc_survey_condition(C, V, Y, 'S+'),
     !,
     Expl = 'GoC=R+ S+',
     Grade = '2'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=S+ D+',
     Grade = '2'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_reported_condition(C, V, Y, 'R+'),
     goc_denominator_condition(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=R+ D+',
     Grade = '2'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_reported_condition(C, V, Y, 'R+'),
     !,
     Expl = 'GoC=R+',
     Grade = '2'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_survey_condition(C, V, Y, 'S+'),
     !,
     Expl = 'GoC=S+',
     Grade = '2'.
 
-assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(C, V, Y, Expl, Grade) :-
     goc_denominator_condition(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=D+',
     Grade = '2'.
 
-assign_GoC(_C, _V, _Y, _Rule, _Coverage, Expl, Grade) :-
+assign_GoC(_C, _V, _Y, Expl, Grade) :-
     !,
     Expl = 'GoC=No accepted empirical data',
     Grade = '1'.
