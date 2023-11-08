@@ -265,6 +265,7 @@ goc_reported_condition(C, V, Y, Support) :-
     ;	Support = 'R-' % check if this can be a default
     ).
 
+% Search for any survey that challenges the reported coverage
 goc_survey_condition(C, V, Y, Support) :-
     wuenic_I(C, V, Y, _, _, Cov0),
     estimate_required(C, V, Year, _, _),
@@ -277,14 +278,14 @@ goc_survey_condition(C, V, Y, Support) :-
     Support = 'S-'.
 
 goc_survey_condition(C, V, Y, Support) :-
-    wuenic_I(C, V, Y, _, _, Cov0),
+    wuenic_I(C, V, Y, _, _, _Cov0),
     estimate_required(C, V, Year, _, _),
-    survey(C, V, Year, _, Coverage),
+    survey(C, V, Year, _, _Coverage),
     confidence_survey_scope(Scope),
     abs(Y - Year) =< Scope,
     !,
-    confidence_survey_threshold(Threshold),
-    abs(Cov0 - Coverage) =< Threshold,
+%    confidence_survey_threshold(Threshold), % S- not fulfilled
+%    abs(Cov0 - Coverage) =< Threshold,
     Support = 'S+'.
 
 %  simplify previous rule to.
@@ -299,40 +300,35 @@ goc_survey_condition(C, V, Y, Support) :-
 % Modified 2017-05-05 Burton
 %
 
-		goc_denominator_condition(C,V,Y,'D+') :-
-			goc_unpd_recal(C,V,Y),
-			recal_unpd(C,V,Y,CovRec),
-			confidence_UNPD_threshold(Threshold),
-			wuenic_I(C,V,Y,_Rule,_Explain,Coverage),
-			abs(Coverage - CovRec) < Threshold.
-		goc_denominator_condition(C,V,Y,'D-') :-
-			goc_unpd_recal(C,V,Y),
-			recal_unpd(C,V,Y,CovRec),
-			confidence_UNPD_threshold(Threshold),
-			wuenic_I(C,V,Y,_Rule,_Explain,Coverage),
-			abs(Coverage - CovRec) >= Threshold.
+% MG: < and =< inconsistent with other criteria
+goc_denominator_condition(C, V, Y, Support) :-
+    vaccinated(C, V, Y, _),
+    births_UNPD(C, Y, _),
+    si_UNPD(C, Y, _),
+    wuenic_I(C, V, Y, _Rule, _Expl, Cov0),
+    recal_unpd(C, V, Y, Coverage),
+    !,
+    confidence_UNPD_threshold(Threshold),
+    (	abs(Coverage - Cov0) < Threshold
+    ->	Support = 'D+'
+    ;	Support = 'D-'
+    ).
 
-			% Ensure unpd data exist.
-			% ------------------------
-			goc_unpd_recal(C,V,Y) :- vaccinated(C,V,Y,_), births_UNPD(C,Y,_), si_UNPD(C,Y,_).
+% Recalculate coverage using reported number of children vaccinated and
+% births and surviving infants from UNPD estimates. Births used for bcg
+% and hepb birth dose, surviving infants for remaining vaccines.
+recal_unpd(C, V, Y, Coverage) :-
+    member(V, [bcg, hepbb]),
+    !,
+    vaccinated(C, V, Y, Vaccinated),
+    births_UNPD(C, Y, Births),
+    Coverage is Vaccinated / Births * 100.
 
-			% Recalculate coverage using reported number of children vaccinated
-			% and births and surviving infants from UNPD estimates.
-			% Births used for bcg and hepb birth dose, surviving infants
-			% for remaining vaccines.
-			% ------------------------
-			recal_unpd(C,V,Y,CovRec) :-
-				member(V,['bcg','hepbb']),
-				vaccinated(C,V,Y,Vaccinated),
-				births_UNPD(C,Y,Births),
-				CovRec is Vaccinated / Births * 100.
-				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / Births.
-			recal_unpd(C,V,Y,CovRec) :-
-				member(V,['dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepb3','hib3','rotac','pcv3','yfv']),
-				vaccinated(C,V,Y,Vaccinated),
-				si_UNPD(C,Y,SI),
-				CovRec is Vaccinated / SI * 100.
-				% correction of calculation for larger integers old statement = CovRec is Vaccinated * 100 / SI.
+recal_unpd(C, V, Y, Coverage) :-
+    vaccinated(C, V, Y, Vaccinated),
+    si_UNPD(C, Y, SI),
+    Coverage is Vaccinated / SI * 100.
+
 
 	two_stars(C,V,Y,Rule,Support) :-
 		(two_sources(C,V,Y,Rule,Support);
