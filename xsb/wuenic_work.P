@@ -131,60 +131,22 @@ firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 % top level predicate. Creates and outputs estimates.
 % ==================================================
 estimate :-
+    country(CountryCode, CountryName),
+    date(Date),
 
-	% Unify country code, country name and date for output.
-	% ----------------------------------------------------
-	country(CountryCode,CountryName),
-	date(Date),
-
-	% Collect the set of all final estimates in list Estimate.
-      % -------------------------------------------------------
-	setof([
-		CountryName,
-		Date,
-		CountryCode,
-		Vaccine,
-		Year,
-		Coverage,
-		PrevRev,
-		GC,
-		Admin,
-		Gov,
-		Reported,
-		Vaccinated,
-		Target,
-		UnpdBirths,
-		UnpdSI,
-		SeriesValue,
-		Source,
-		SurveyInfo,
-		Rule,
-		Explanation],
-
-	   wuenic(
-		CountryCode,
-		Vaccine,
-		Year,
-		Rule,
-		Explanation,
-		Coverage,
-		PrevRev,
-		GC,
-		Admin,
-		Gov,
-		Reported,
-		Vaccinated,
-		Target,
-		UnpdBirths,
-		UnpdSI,
-		Source,
-		SeriesValue,
-		SurveyInfo),
-
-		Estimates),
-
-	open_out_file(OutFile,'wuenic.out',	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
-	output_results(Estimates,OutFile), close(OutFile).
+    setof([ CountryName, Date, CountryCode, Vaccine, Year, Coverage,
+	  PrevRev, GC, Admin, Gov, Reported, Vaccinated, Target,
+	  UnpdBirths, UnpdSI, SeriesValue, Source, SurveyInfo, Rule,
+	  Explanation ],
+	wuenic(CountryCode, Vaccine, Year, Rule, Explanation,
+	    Coverage, PrevRev, GC, Admin, Gov, Reported, Vaccinated,
+	    Target, UnpdBirths, UnpdSI, Source, SeriesValue,
+	    SurveyInfo),
+	Estimates),
+    open_out_file(OutFile, 'wuenic.out',
+	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
+    output_results(Estimates, OutFile),
+    close(OutFile).
 
 % Final estimate where there are wuenic values
 wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Source, Series, Survey) :-
@@ -366,17 +328,15 @@ challenge(C, V, Y, 'S-') :-
 challenge(C, V, Y, 'D-') :-
     goc_denominator_condition(C, V, Y, 'D-').
 
-	change_from_previous_revision(C,V,Y,Coverage,'') :-
-		legacy(C,V,Y,PreviousCoverage),
-		PreviousCoverage = Coverage.
+change_from_previous_revision(C, V, Y, Coverage, Change) :-
+    legacy(C, V, Y, Previous),
+    Previous \= Coverage,
+    !,
+    concat_atom(['Estimate of ', Coverage,
+		 ' percent changed from previous revision value of ',
+		 Previous,' percent. '], Change).
 
-	change_from_previous_revision(C,V,Y,Coverage,Change) :-
-		legacy(C,V,Y,PreviousCoverage),
-		not(PreviousCoverage = Coverage),
-		concat_atom(['Estimate of ',Coverage,' percent changed from previous revision value of ',PreviousCoverage,' percent. '],Change).
-
-	change_from_previous_revision(C,V,Y,_,'') :-
-		not(legacy(C,V,Y,_)).
+change_from_previous_revision(_C, _V, _Y, _, '').
 
 % Estimate assigned by working group
 wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
@@ -1031,34 +991,35 @@ explanation(C, V, Y, Expl) :-
 explanation(C, V, Y, Expl) :-
     workingGroupDecision(C, V, Y, ignoreGov, Expl, _, _).
 
-open_out_file(Out,File,Header) :-
-	open(File,write,Out),
-	write(Out,Header),
-	nl(Out).
+open_out_file(Out, File, Header) :-
+    open(File, write, Out),
+    write(Out, Header),
+    nl(Out).
 
-output_results([],_).
-output_results([H|T],Out) :- output_fields(H,Out), output_results(T,Out).
+output_results([], _).
 
-output_fields([],Out) :- nl(Out).
-output_fields([H|T],Out) :- write(Out,H),write(Out,'\t'),output_fields(T,Out).
+output_results([H | T], Out) :-
+    output_fields(H, Out),
+    output_results(T, Out).
 
+output_fields([], Out) :-
+    nl(Out).
 
+output_fields([H | T], Out) :-
+    write(Out, H),
+    write(Out, '\t'),
+    output_fields(T, Out).
 
-
-% -------------------------------------------------
-% Survey results accepted if no reason to exclude.
-%
 % Reasons to exclude a survey include:
 %    Sample size < 300,
 %    The working group decides to exclude the survey.
 %
-% semidet because of collect_explanations
+% used for explanation/4
 survey_reason_to_exclude(C, V, Y, ID, Expl) :-
     survey_results_for_analysis(C, V, Y, ID, Description, _),
     not(workingGroupDecision(C, V, Y, acceptSurvey, Expl, ID, _)),
     member(ss:Size, Description),
     Size < 300,
-%   !,
     concat_atom(['Survey results ignored. Sample size ', Size,
 		 ' less than 300. '], Expl).
 
@@ -1068,8 +1029,8 @@ survey_reason_to_exclude(C, V, Y, ID, Expl) :-
     ;	workingGroupDecision(C, V, Y, ignoreSurvey, Expl0, na, _)
     ),
     member(title:Title, Description),
-%   !,
-    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
+    concat_atom([Title, ' results ignored by working group. ',
+		 Expl0], Expl).
 
 % Reasons to exclude reported data are:
 %  1. Working group decision.
@@ -1077,11 +1038,10 @@ survey_reason_to_exclude(C, V, Y, ID, Expl) :-
 %  3. Inconsistent temporal changes (sawtooth or sudden change most
 %  recent year)
 %
-%  semidet, needed for collect_explanations
+%  semidet, needed for explanation/4
 reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     reported(C, V, Y, _, _),
     workingGroupDecision(C, V, Y, ignoreReported, Expl0, _, _),
-%    !,
     Reason = wdg,
     concat_atom(['Reported data excluded. ', Expl0], Expl).
 
@@ -1089,7 +1049,6 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     reported(C, V, Y, _, Coverage),
     not(workingGroupDecision(C, V, Y, acceptReported, _, _, _)),
     Coverage > 100,
-%    !,
     Reason = 100,
     concat_atom(['Reported data excluded because ', Coverage,
 		 ' percent greater than 100 percent. '], Expl).
@@ -1104,11 +1063,11 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     sawtooth_threshold(Threshold),
     Coverage - CoveragePrec > Threshold,
     Coverage - CoverageSucc > Threshold,
-%    !,
     Reason = sawtooth,
-    concat_atom(['Reported data excluded due to an increase from ',
-		 CoveragePrec, ' percent to ', Coverage,
-		 ' percent with decrease ', CoverageSucc, ' percent. '], Expl).
+    concat_atom(
+	['Reported data excluded due to an increase from ',
+	 CoveragePrec, ' percent to ', Coverage,
+	 ' percent with decrease ', CoverageSucc, ' percent. '], Expl).
 
 reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     reported(C, V, Y, _, Coverage),
@@ -1120,11 +1079,11 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     sawtooth_threshold(Threshold),
     CoveragePrec - Coverage > Threshold,
     CoverageSucc - Coverage > Threshold,
-%    !,
     Reason = sawtooth,
-    concat_atom(['Reported data excluded due to decline in reported coverage from ',
-		 CoverageSucc, ' percent to ', Coverage,
-		 ' percent with increase to ', CoverageSucc,' percent. '], Expl).
+    concat_atom(
+	['Reported data excluded due to decline in reported coverage from ',
+	  CoverageSucc, ' percent to ', Coverage,
+	  ' percent with increase to ', CoverageSucc,' percent. '], Expl).
 
 % Reason to exclude reported: sudden change in most recently reported
 % data for classic vaccines.
@@ -1137,10 +1096,10 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     reported(C, V, Prec, _, CoveragePrec),
     sawtooth_threshold(Threshold),
     abs(CoveragePrec - Coverage) > Threshold,
-%    !,
     Reason = temporalChange,
-    concat_atom(['Reported data excluded due to sudden change in coverage from ',
-		 CoveragePrec, ' level to ', Coverage,' percent. '], Expl).
+    concat_atom(
+	['Reported data excluded due to sudden change in coverage from ',
+	 CoveragePrec, ' level to ', Coverage,' percent. '], Expl).
 
 % Reason to exclude reported: sudden decline in most recently reported
 % data for new vaccines.
@@ -1153,8 +1112,8 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     reported(C, V, Prec, _, CoveragePrec),
     sawtooth_threshold(Threshold),
     (CoveragePrec - Coverage) > Threshold,
-%    !,
     Reason = temporalChange,
-    concat_atom(['Reported data excluded due to decline in reported coverage from ',
-		 CoveragePrec,' level to ', Coverage, ' percent. '], Expl).
+    concat_atom(
+	['Reported data excluded due to decline in reported coverage from ',
+	 CoveragePrec,' level to ', Coverage, ' percent. '], Expl).
 
