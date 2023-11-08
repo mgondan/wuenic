@@ -225,9 +225,9 @@ assign_GoC(C, V, Y, _Rule, _, Expl, Grade) :-
     concat_atom(['GoC=Assigned by working group. ', Expl0], Expl),
     Grade = Grade0.
 
-assign_GoC(C, V, Y, Rule, _Coverage, Expl, Grade) :-
-    goc_reported_condition(C, V, Y, Rule, 'R+'),
-    goc_survey_condition(C, V, Y, Rule, 'S+'),
+assign_GoC(C, V, Y, _Rule, _Coverage, Expl, Grade) :-
+    goc_reported_condition(C, V, Y, 'R+'),
+    goc_survey_condition(C, V, Y, 'S+'),
     goc_denominator_condition(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=R+ S+ D+',
@@ -256,22 +256,28 @@ assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade) :-
     throw(misc_error(assign_GoC(C, V, Y, Rule, Coverage, Expl, Grade))).
 
 % Criteria
-goc_reported_condition(C, V, Y, _Rule, Support) :-
+goc_reported_condition(C, V, Y, Support) :-
     reported(C, V, Y, _, _),
-    wuenic_I(C, V, Y, R, _, _), % MG, todo: Rule = R?
+    wuenic_I(C, V, Y, Rule, _, _),
     !,
-    (	member(R, ['R:', 'R: AP'])
+    (	member(Rule, ['R:', 'R: AP'])
     ->	Support = 'R+'
     ;	Support = 'R-' % check if this can be a default
     ).
 
-goc_survey_condition(C, V, Y, _, Support) :-
+goc_survey_condition(C, V, Y, Support) :-
     challenging_survey_in_scope(C, V, Y),
     !,
     Support = 'S-'.
 
-goc_survey_condition(C, V, Y, Rule, Support) :-
-    supporting_survey_in_scope(C, V, Y, Rule),
+goc_survey_condition(C, V, Y, Support) :-
+    wuenic_I(C, V, Y, _, _, Cov0),
+    estimate_required(C, V, Year, _, _),
+    survey(C, V, Year, _, Coverage),
+    confidence_survey_scope(Scope),
+    abs(Y - Year) =< Scope,
+    confidence_survey_threshold(Threshold),
+    abs(Cov0 - Coverage) =< Threshold,
     !,
     Support = 'S+'.
 
@@ -279,19 +285,10 @@ goc_survey_condition(C, V, Y, Rule, Support) :-
 %			supporting_survey_in_scope(C,V,Y,Rule) :-
 %				survey(C,V,Y,_,_),
 %				wuenic_I(C,V,Y,'S: AP',_,_).
-
+%
 % rewrite rule to look at relationship between estimate rule and
 % surveys in scope rule rather than difference in COV and SurveyCoverage
 %
-			supporting_survey_in_scope(C,V,Y,_) :-
-				estimate_required(C,V,SurveyYear,_,_),
-				survey(C,V,SurveyYear,_,SurveyCoverage),
-				confidence_survey_scope(Scope),
-				abs(Y - SurveyYear) =< Scope,
-				confidence_survey_threshold(Threshold),
-				wuenic_I(C,V,Y,_,_Explanation,Cov),
-				abs(Cov - SurveyCoverage) =< Threshold.
-
 % rewrite to look for surveys that challenge surveys.
 % Modified 2017-05-05 Burton
 %
@@ -347,40 +344,40 @@ goc_survey_condition(C, V, Y, Rule, Support) :-
 
 	% Supported by two data sources, no challenge
 	% --------------------------------------------
-	two_sources(C,V,Y,Rule,'GoC=R+ S+') :-
-		goc_reported_condition(C,V,Y,Rule,'R+'),
-		goc_survey_condition(C,V,Y,Rule,'S+').
-	two_sources(C,V,Y,Rule,'GoC=S+ D+') :-
-		goc_survey_condition(C,V,Y,Rule,'S+'),
+	two_sources(C,V,Y,_Rule,'GoC=R+ S+') :-
+		goc_reported_condition(C,V,Y,'R+'),
+		goc_survey_condition(C,V,Y,'S+').
+	two_sources(C,V,Y,_Rule,'GoC=S+ D+') :-
+		goc_survey_condition(C,V,Y,'S+'),
 		goc_denominator_condition(C,V,Y,'D+').
-	two_sources(C,V,Y,Rule,'GoC=R+ D+') :-
-		goc_reported_condition(C,V,Y,Rule,'R+'),
+	two_sources(C,V,Y,_Rule,'GoC=R+ D+') :-
+		goc_reported_condition(C,V,Y,'R+'),
 		goc_denominator_condition(C,V,Y,'D+').
 
 	% Supported by single source, no challenge
 	% -------------------------------------
-	one_source(C,V,Y,Rule,'GoC=R+') :-
+	one_source(C,V,Y,_Rule,'GoC=R+') :-
 		not(two_sources(C,V,Y,_,_)),
-		goc_reported_condition(C,V,Y,Rule,'R+').
-	one_source(C,V,Y,Rule,'GoC=S+') :-
+		goc_reported_condition(C,V,Y,'R+').
+	one_source(C,V,Y,_Rule,'GoC=S+') :-
 		not(two_sources(C,V,Y,_,_)),
-		goc_survey_condition(C,V,Y,Rule,'S+').
+		goc_survey_condition(C,V,Y,'S+').
 	one_source(C,V,Y,_Rule,'GoC=D+') :-
 		not(two_sources(C,V,Y,_,_)),
 		goc_denominator_condition(C,V,Y,'D+').
 
 	% Empirical evidence challenges estimate.
 	% --------------------------------------
-	challenge(C,V,Y,Rule,_Coverage,Condition) :-
-		(goc_reported_condition(C,V,Y,Rule,'R-'),Condition = 'R-');
-		(goc_survey_condition(C,V,Y,Rule,'S-'),Condition = 'S-');
+	challenge(C,V,Y,_Rule,_Coverage,Condition) :-
+		(goc_reported_condition(C,V,Y,'R-'),Condition = 'R-');
+		(goc_survey_condition(C,V,Y,'S-'),Condition = 'S-');
 		(goc_denominator_condition(C,V,Y,'D-'),Condition = 'D-').
 
 	% No empirical supporting evidence.
 	% --------------------------------
 	no_data(C,V,Y,_Rule,_Coverage,'GoC=No accepted empirical data') :-
-		not(goc_reported_condition(C,V,Y,_,_)),
-		not(goc_survey_condition(C,V,Y,_,_)),
+		not(goc_reported_condition(C,V,Y,_)),
+		not(goc_survey_condition(C,V,Y,_)),
 		not(goc_denominator_condition(C,V,Y,_)).
 
 	change_from_previous_revision(C,V,Y,Coverage,'') :-
