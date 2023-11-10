@@ -382,8 +382,8 @@ wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp3, Y, _, _, DTP3),
     !,
-    Rule = 'RMF:',
-    concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ', DTP3, '. '], Expl),
+    Rule = 'RMF', % RMF without colon, bug in Ver 3
+    concat_atom(['Estimate based on DTP3 coverage of ', DTP3, '. '], Expl),
     Coverage is round(DTP3 - 0.0058 * DTP3 * DTP3 + 0.3912 * DTP3 + 18.258).
 
 % Estimate for RCV1 where RCV1 given at MCV2
