@@ -145,10 +145,11 @@ estimate :-
 	    Target, UnpdBirths, UnpdSI, Source, SeriesValue,
 	    SurveyInfo),
 	Estimates),
-    open_out_file(OutFile, 'wuenic.out',
+    concat_atom([CountryCode, '.new.txt'], OutFile),
+    open_out_file(Out, OutFile,
 	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
-    output_results(Estimates, OutFile),
-    close(OutFile).
+    output_results(Estimates, Out),
+    close(Out).
 
 % Final estimate where there are wuenic values
 wuenic(C, V, Y, Rule, Expl, Coverage, Prev, GC, Admin, Gov, Reported, Vaccinated, Target, Births, SI, Source, Series, Survey) :-

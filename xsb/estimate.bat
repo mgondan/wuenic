@@ -1,3 +1,7 @@
-call xsb64 -e "consult(wuenic_work), consult(bgd), estimate, halt."
-"C:\Progra~1\swipl\bin\swipl.exe" -g "(file_sha1('wuenic.out', SHA1), writeln(SHA1), halt)"
-echo 73af417f4276f63c8692a9404ce37bf1c9d56849
+call xsb64 --quietload --nobanner --noprompt -e "consult(wuenic_work), consult(%1), estimate, halt."
+echo New
+"C:\Progra~1\swipl\bin\swipl.exe" -g "(file_sha1('%1.new.txt', SHA1), writeln(SHA1), halt)"
+
+call xsb64 --quietload --nobanner --noprompt -e "consult(wuenic_ver_3), consult(%1), estimate, halt."
+echo Old
+"C:\Progra~1\swipl\bin\swipl.exe" -g "(file_sha1('%1.old.txt', SHA1), writeln(SHA1), halt)"
