@@ -709,14 +709,20 @@ reported_time_series(C, V, Y, Source, Coverage) :-
 %  2. Coverage > 100%
 %  3. Inconsistent temporal changes (sawtooth or sudden change most
 %  recent year)
-reported_rejected(C, V, Y) :-
-    workingGroupDecision(C, V, Y, acceptReported, _, _, _),
-    !,
-    fail.
+
+%reported_rejected(C, V, Y) :-
+%    workingGroupDecision(C, V, Y, acceptReported, _, _, _),
+%    !,
+%    fail.
 
 reported_rejected(C, V, Y) :-
     workingGroupDecision(C, V, Y, ignoreReported, _Expl0, _, _),
     !.
+
+reported_rejected(C, V, Y) :-
+    workingGroupDecision(C, V, Y, acceptReported, _, _, _),
+    !,
+    fail.
 
 reported_rejected(C, V, Y) :-
     reported(C, V, Y, _, Coverage),
