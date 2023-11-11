@@ -701,6 +701,12 @@ target0(C, V, Y, Vaccinated) :-
     ;   fail
     ).
 
+admin0(C, V, Y, Coverage) :-
+    (   current_predicate(admin/4)
+    ->  admin(C, V, Y, Coverage)
+    ;   fail
+    ).
+
 % =============================================
 % Create complete time series of reported data.
 %
@@ -809,7 +815,7 @@ reported(C, V, Y, Source, Coverage) :-
     Coverage = Cov0.
 
 reported(C, V, Y, Source, Coverage) :-
-    admin(C, V, Y, Cov0),
+    admin0(C, V, Y, Cov0),
     (	workingGroupDecision(C, V, Y, ignoreGov, _, _, _)
     ;	not(gov(C, V, Y, _))
     ),
@@ -949,7 +955,7 @@ legacy_estimate(C, V, Y, Data) :-
 legacy_estimate(_, _, _, '').
 
 admin_data(C, V, Y, Data) :-
-    admin(C, V, Y, Data0),
+    admin0(C, V, Y, Data0),
     !,
     Data = Data0.
 
