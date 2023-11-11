@@ -144,7 +144,7 @@ estimate :-
 	    Target, UnpdBirths, UnpdSI, Source, SeriesValue,
 	    SurveyInfo),
 	Estimates),
-    concat_atom([CountryCode, '.new.txt'], OutFile),
+    concat_atom([CountryCode, '.pl.new.txt'], OutFile),
     open_out_file(Out, OutFile,
 	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
     output_results(Estimates, Out),
@@ -349,15 +349,18 @@ wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
     Coverage = Cov0.
 
 % Interpolation forced by working group
-wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
-    workingGroupDecision(C, V, Y, interpolate, Expl0, _, _),
-    !,
-    Rule = 'W-I:',
-    prec_anchor_point(C, V, Y, Prec, _, PrecCov),
-    succ_anchor_point(C, V, Y, Succ, _, SuccCov),
-    concat_atom(['Estimate informed by interpolation between ', Prec,
-		 ' and ', Succ, ' levels. ', Expl0], Expl),
-    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
+%
+% (temporarily moved to Level II)
+%
+% wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
+%     workingGroupDecision(C, V, Y, interpolate, Expl0, _, _),
+%     prec_anchor_point(C, V, Y, Prec, _, PrecCov),
+%     succ_anchor_point(C, V, Y, Succ, _, SuccCov),
+%     !,
+%     Rule = 'W-I:',
+%     concat_atom(['Estimate informed by interpolation between ', Prec,
+%                  ' and ', Succ, ' levels. ', Expl0], Expl),
+%    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 % Estimate for DTP1 > DTP3
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
@@ -427,6 +430,17 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     Rule = Rule0,
     Expl = Expl0,
     Coverage = Cov0.
+
+% Estimate between anchor points: interpolation forced by working group
+wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+    workingGroupDecision(C, V, Y, interpolate, Expl0, _, _),
+    prec_anchor_point(C, V, Y, Prec, _, PrecCov),
+    succ_anchor_point(C, V, Y, Succ, _, SuccCov),
+    !,
+    Rule = 'W-I:',
+    concat_atom(['Estimate informed by interpolation between ', Prec,
+		 ' and ', Succ, ' levels. ', Expl0], Expl),
+    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 % Estimate between anchor points: between two reported anchors
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-

@@ -1,8 +1,8 @@
-%  Bangladesh - BGD
-%  Sun May 28 11:37:15 2023
+%  Bangladesh - BGD 
+%  Wed Sep 06 18:39:00 2023 
 
-country(bgd,'Bangladesh').
-date('Sun May 28 11:37:15 2023').
+country(bgd,'Bangladesh'). 
+date('Wed Sep 06 18:39:00 2023').
 
 estimate_required(bgd,bcg,1997,na,'na').
  estimate_required(bgd,bcg,1998,na,'na').
@@ -1149,40 +1149,40 @@ births_UNPD(bgd,1997,3692440).
  births_UNPD(bgd,2029,2857451).
  births_UNPD(bgd,2030,2815531).
 
-si_UNPD(bgd,1997,3493997).
- si_UNPD(bgd,1998,3517495).
- si_UNPD(bgd,1999,3536087).
- si_UNPD(bgd,2000,3565641).
- si_UNPD(bgd,2001,3580876).
- si_UNPD(bgd,2002,3588870).
- si_UNPD(bgd,2003,3574581).
- si_UNPD(bgd,2004,3542621).
- si_UNPD(bgd,2005,3458636).
- si_UNPD(bgd,2006,3393455).
- si_UNPD(bgd,2007,3338138).
- si_UNPD(bgd,2008,3259183).
- si_UNPD(bgd,2009,3162757).
- si_UNPD(bgd,2010,3072609).
- si_UNPD(bgd,2011,2995308).
- si_UNPD(bgd,2012,2969152).
- si_UNPD(bgd,2013,2977911).
- si_UNPD(bgd,2014,2963789).
- si_UNPD(bgd,2015,2945222).
- si_UNPD(bgd,2016,2958959).
- si_UNPD(bgd,2017,2920202).
- si_UNPD(bgd,2018,2954146).
- si_UNPD(bgd,2019,2972410).
- si_UNPD(bgd,2020,2958134).
- si_UNPD(bgd,2021,2957723).
- si_UNPD(bgd,2022,2940527).
- si_UNPD(bgd,2023,2936034).
- si_UNPD(bgd,2024,2928766).
- si_UNPD(bgd,2025,2914791).
- si_UNPD(bgd,2026,2891177).
- si_UNPD(bgd,2027,2872269).
- si_UNPD(bgd,2028,2844167).
- si_UNPD(bgd,2029,2821026).
- si_UNPD(bgd,2030,2781329).
+si_UNPD(bgd,1997,3692440).
+ si_UNPD(bgd,1998,3710628).
+ si_UNPD(bgd,1999,3723175).
+ si_UNPD(bgd,2000,3747294).
+ si_UNPD(bgd,2001,3756397).
+ si_UNPD(bgd,2002,3757983).
+ si_UNPD(bgd,2003,3736470).
+ si_UNPD(bgd,2004,3696847).
+ si_UNPD(bgd,2005,3603063).
+ si_UNPD(bgd,2006,3529412).
+ si_UNPD(bgd,2007,3466895).
+ si_UNPD(bgd,2008,3379263).
+ si_UNPD(bgd,2009,3274543).
+ si_UNPD(bgd,2010,3176782).
+ si_UNPD(bgd,2011,3092771).
+ si_UNPD(bgd,2012,3061928).
+ si_UNPD(bgd,2013,3067200).
+ si_UNPD(bgd,2014,3049016).
+ si_UNPD(bgd,2015,3026354).
+ si_UNPD(bgd,2016,3036914).
+ si_UNPD(bgd,2017,2993715).
+ si_UNPD(bgd,2018,3025083).
+ si_UNPD(bgd,2019,3040527).
+ si_UNPD(bgd,2020,3022909).
+ si_UNPD(bgd,2021,3019672).
+ si_UNPD(bgd,2022,2994966).
+ si_UNPD(bgd,2023,2987615).
+ si_UNPD(bgd,2024,2977540).
+ si_UNPD(bgd,2025,2960932).
+ si_UNPD(bgd,2026,2934630).
+ si_UNPD(bgd,2027,2913331).
+ si_UNPD(bgd,2028,2882811).
+ si_UNPD(bgd,2029,2857451).
+ si_UNPD(bgd,2030,2815531).
 
 survey_results(bgd,pol3,1997,bgd1998161,[title:'National Coverage Evaluation Survey Bangladesh 1998',type:'16',yrcoll:'1998',cr:54,confirm:'card',age:'12-23 m',timead:'',val:'crude',ss:0], 91).
 
@@ -2661,12 +2661,11 @@ wgd(bgd,bcg,1997,1997,assignAnchor,'Legacy estimate.',na,92,_,na).
  wgd(bgd,mcv1,1997,1997,assignAnchor,'Legacy estimate.',na,72,_,na).
  wgd(bgd,pol3,1997,1997,assignAnchor,'Legacy estimate.',na,78,_,na).
 
-wgd(bgd,_X,2005,2203,internalComment,' Nationally reported data includes only valid doses administered.',na,na,na,na).
- wgd(bgd,_X,2012,2014,comment,' Target population revised downward based on 2011 census results.',na,na,na,na).
- wgd(bgd,_X,2012,2012,internalComment,' Used wgd assignAnchor to solve challenges with inability to produce average value for the 2 surveys.',na,na,na,na).
- wgd(bgd,_X,2013,2013,internalComment,' see time series for numerator and denominator. In 2014 decision made to set anchors at survey values for messaging purposes, to move away from admin data since government also does not trust admin.',na,na,na,na).
- wgd(bgd,_X,2020,2020,comment,' While reported administrative coverage consistently appears overestimated when compared to recent survey results, declines in reported administered doses are neither reflected in the reported official coverage nor the estimated coverage.',na,na,na,na).
- wgd(bgd,_X,2022,2022,comment,' WHO and UNICEF are aware of an ongoing Demographic and Health Survey and await the final results.',na,na,na,na).
+wgd(bgd,X,2005,2203,internalComment,' Nationally reported data includes only valid doses administered.',na,na,na,na).
+ wgd(bgd,X,2012,2014,comment,' Target population revised downward based on 2011 census results.',na,na,na,na).
+ wgd(bgd,X,2012,2012,internalComment,' Used wgd assignAnchor to solve challenges with inability to produce average value for the 2 surveys.',na,na,na,na).
+ wgd(bgd,X,2013,2013,internalComment,' see time series for numerator and denominator. In 2014 decision made to set anchors at survey values for messaging purposes, to move away from admin data since government also does not trust admin.',na,na,na,na).
+ wgd(bgd,X,2020,2020,comment,' While reported administrative coverage consistently appears overestimated when compared to recent survey results, declines in reported administered doses are neither reflected in the reported official coverage nor the estimated coverage.',na,na,na,na).
  wgd(bgd,bcg,1998,1998,assignAnchor,' Estimate based on survey result.',na,91,na,na).
  wgd(bgd,bcg,1998,2203,ignoreReported,' Nationally reported data for official coverage includes only valid doses administered.',na,na,na,na).
  wgd(bgd,bcg,2001,2001,assignAnchor,' Estimate based on survey result.',na,95,na,na).
