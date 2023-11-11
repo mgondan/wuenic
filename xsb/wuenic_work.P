@@ -524,7 +524,7 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     member(Source-Expl,
       [ gov-'Estimate informed by reported data. ',
 	admin-'Estimate informed by reported administrative data. ',
-	interpolated-'Estimate based on interpolation between reported values. ',
+	interpolated-'Estimate informed by interpolation between reported data. ',
 	extrapolated-'Estimate informed by extrapolation from reported data. '
       ]),
     Coverage = Cov0.
