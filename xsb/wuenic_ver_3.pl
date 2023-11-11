@@ -182,7 +182,7 @@ estimate :-
 
 		Estimates),
 
-        concat_atom([CountryCode, '.old.txt'], OutFile),
+        concat_atom([CountryCode, '.pl.old.txt'], OutFile),
 	open_out_file(Out, OutFile,	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
 	output_results(Estimates,Out), close(Out).
 
