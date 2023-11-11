@@ -1096,7 +1096,7 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     Reason = sawtooth,
     concat_atom(
 	['Reported data excluded due to decline in reported coverage from ',
-	  CoverageSucc, ' percent to ', Coverage,
+	  CoveragePrec, ' percent to ', Coverage,
 	  ' percent with increase to ', CoverageSucc,' percent. '], Expl).
 
 % Reason to exclude reported: sudden change in most recently reported
