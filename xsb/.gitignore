@@ -1,3 +1,5 @@
-bgd.xwam
+*.xwam
 wuenic.out
 wuenic_work.xwam
+*.old.txt
+*.new.txt
