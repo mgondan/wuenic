@@ -108,17 +108,15 @@ vaccine(hib3,hib1).
 vaccine(hepb3,hepb1).
 vaccine(pcv3,pcv1).
 
-% admin(country,vaccine,year,coverage).
-% gov(country,vaccine,year,coverage).
-% vaccinated(country,vaccine,year,vaccinated).
-% target(country,vaccine,year,vaccinated).
-% legacy(country,vaccine,year,coverage).
-% survey_results(country,vaccine,year,id,description,coverage).
-% wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
-%
-%
-% births_UNPD(country,year,births).
-% si_UNPD(country,year,surviving_infants).
+admin(country,vaccine,year,coverage).
+gov(country,vaccine,year,coverage).
+vaccinated(country,vaccine,year,vaccinated).
+target(country,vaccine,year,vaccinated).
+legacy(country,vaccine,year,coverage).
+survey_results(country,vaccine,year,id,description,coverage).
+wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
+births_UNPD(country,year,births).
+si_UNPD(country,year,surviving_infants).
 
 % Load country-specific predicates describing data, survey_results,
 % working group decisions and whether an estimate is required.

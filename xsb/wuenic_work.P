@@ -112,16 +112,15 @@ vaccine(pcv3,pcv1).
 
 % Load country-specific predicates describing data, survey_results,
 % working group decisions and whether an estimate is required.
-% :- multifile admin/4.
-% :- multifile gov/4.
-% :- multifile vaccinated/4.
-% :- multifile target/4.
-% :- multifile legacy/4.
-% :- multifile survey_results/6.
-% :- multifile wgd/10.
-% :- multifile births_UNPD/3.
-% :- multifile si_UNPD/4.
-% :- multifile firstRubellaAtSecondMCV/4.
+% admin(country,vaccine,year,coverage).
+% gov(country,vaccine,year,coverage).
+% vaccinated(country,vaccine,year,vaccinated).
+% target(country,vaccine,year,vaccinated).
+% legacy(country,vaccine,year,coverage).
+% survey_results(country,vaccine,year,id,description,coverage).
+% wgd(country,vaccine,year1,year2,action,explanation,covid1,covass1,covid2,covass2).
+% births_UNPD(country,year,births).
+% si_UNPD(country,year,surviving_infants).
 
 % First rubella given with second measles dose (see country-specific
 % files for other options)
@@ -295,7 +294,7 @@ goc_survey_condition(C, V, Y, Support) :-
 
 % MG: < and =< inconsistent with other criteria
 goc_denominator_condition(C, V, Y, Support) :-
-    vaccinated(C, V, Y, _),
+    vaccinated0(C, V, Y, _),
     births_UNPD(C, Y, _),
     si_UNPD(C, Y, _),
     wuenic_I(C, V, Y, _Rule, _Expl, Cov0),
@@ -313,12 +312,12 @@ goc_denominator_condition(C, V, Y, Support) :-
 recal_unpd(C, V, Y, Coverage) :-
     member(V, [bcg, hepbb]),
     !,
-    vaccinated(C, V, Y, Vaccinated),
+    vaccinated0(C, V, Y, Vaccinated),
     births_UNPD(C, Y, Births),
     Coverage is Vaccinated / Births * 100.
 
 recal_unpd(C, V, Y, Coverage) :-
-    vaccinated(C, V, Y, Vaccinated),
+    vaccinated0(C, V, Y, Vaccinated),
     si_UNPD(C, Y, SI),
     Coverage is Vaccinated / SI * 100.
 
@@ -620,20 +619,20 @@ survey_results_modified(C, V, Y, ID, Expl, Coverage) :-
     member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
 
     % Third dose, card only
-    survey_results(C, V, Y, ID, DescriptionCard3Dose, C3Cov),
+    survey_results0(C, V, Y, ID, DescriptionCard3Dose, C3Cov),
     member(confirm:card, DescriptionCard3Dose),
     member(age:AgeCohortCard3Dose, DescriptionCard3Dose),
     member(AgeCohortCard3Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
     % First dose, card or history
     vaccine(V, First),
-    survey_results(C, First, Y, ID, DescriptionCoH1Dose, CoH1Cov),
+    survey_results0(C, First, Y, ID, DescriptionCoH1Dose, CoH1Cov),
     member(confirm:'card or history', DescriptionCoH1Dose),
     member(age:AgeCohortCoH1, DescriptionCoH1Dose),
     member(AgeCohortCoH1, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
     % First dose, card only
-    survey_results(C, First, Y, ID, DescriptionCard1Dose, C1Cov),
+    survey_results0(C, First, Y, ID, DescriptionCard1Dose, C1Cov),
     C1Cov > 0,
     member(confirm:card, DescriptionCard1Dose),
     member(age:AgeCohortCard1Dose, DescriptionCard1Dose),
@@ -664,10 +663,29 @@ survey_results_modified(C, V, Y, ID, Expl, Coverage) :-
 % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months
 % of age
 survey_results_for_analysis(C, V, Y, ID, Description, Coverage) :-
-    survey_results(C, V, Y, ID, Description, Coverage),
+    survey_results0(C, V, Y, ID, Description, Coverage),
     member(confirm:'card or history', Description),
     member(age:AgeCohort, Description),
     member(AgeCohort, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']).
+
+% No surveys in some countries
+survey_results0(C, V, Y, ID, Description, Coverage) :-
+    (   current_predicate(survey_results/6)
+    ->  survey_results(C, V, Y, ID, Description, Coverage)
+    ;   fail
+    ).
+
+vaccinated0(C, V, Y, Vaccinated) :-
+    (   current_predicate(vaccinated/4)
+    ->  vaccinated(C, V, Y, Vaccinated)
+    ;   fail
+    ).
+
+target0(C, V, Y, Vaccinated) :-
+    (   current_predicate(vaccinated/4)
+    ->  target(C, V, Y, Vaccinated)
+    ;   fail
+    ).
 
 % =============================================
 % Create complete time series of reported data.
@@ -938,14 +956,14 @@ reported_data(C, V, Y, Data) :-
 reported_data(_, _, _, '').
 
 vaccinated_data(C, V, Y, Data) :-
-    vaccinated(C, V, Y, Data0),
+    vaccinated0(C, V, Y, Data0),
     !,
     Data = Data0.
 
 vaccinated_data(_, _, _, '').
 
 target_data(C, V, Y, Data) :-
-    target(C, V, Y, Data0),
+    target0(C, V, Y, Data0),
     !,
     Data = Data0.
 
