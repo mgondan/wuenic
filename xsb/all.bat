@@ -1,0 +1,1 @@
+for %%f in (???.pl) do call estimate %%f
