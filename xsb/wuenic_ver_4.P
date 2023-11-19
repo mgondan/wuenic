@@ -29,7 +29,9 @@
 %
 % * Created: 6 November 2011
 % * V3: 6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv GoC
-% * V3.9: 18 Dec 2023. Simplified the code for better maintainance
+% * V3.9: 18 Nov 2023. Simplified the code for better maintainance
+% * V4.0: 19 Nov 2023. Corrected some inconsistencies in the output.
+%   Does not affect coverage estimates.
 %
 % WHO and UNICEF working group memebers as of 1 January 2010 - 30 April
 % 2012:
@@ -116,7 +118,7 @@ year_range(1997, 2022).
 
 % ==================================================
 % Collects all estimates and saves it in
-% (country).pl.new.txt
+% (country).pl.v40.txt
 % ==================================================
 estimate :-
     country(Code, Country),
@@ -129,7 +131,7 @@ estimate :-
             PrevRev, GC, Admin, Gov, Reported, Vaccinated, Target,
             UnpdBirths, UnpdSI, Source, SeriesValue, SurveyInfo),
 	Estimates),
-    concat_atom([Code, '.pl.v39.txt'], OutFile),
+    concat_atom([Code, '.pl.v40.txt'], OutFile),
     open_out_file(Out, OutFile,
 	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
     output_results(Estimates, Out),
@@ -179,14 +181,14 @@ confidence(C, V, Y, Expl, Grade) :-
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=R+ S+ D+',
-    Grade = '3'.
+    Grade = 3.
 
 % If any estimate has been challenged, confidence is low
 confidence(C, V, Y, Expl, Grade) :-
     setof(Expl0, challenge(C, V, Y, Expl0), List),
     !,
     concat_atom(['Estimate challenged by: ' | List], Expl),
-    Grade = '1'.
+    Grade = 1.
 
 % Confidence in one or two sources, two stars
 confidence(C, V, Y, Expl, Grade) :-
@@ -194,45 +196,45 @@ confidence(C, V, Y, Expl, Grade) :-
     conf_survey(C, V, Y, 'S+'),
     !,
     Expl = 'GoC=R+ S+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_survey(C, V, Y, 'S+'),
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=S+ D+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_reported(C, V, Y, 'R+'),
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=R+ D+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_reported(C, V, Y, 'R+'),
     !,
     Expl = 'GoC=R+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_survey(C, V, Y, 'S+'),
     !,
     Expl = 'GoC=S+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=D+',
-    Grade = '2'.
+    Grade = 2.
 
 % Low confidence
 confidence(_C, _V, _Y, Expl, Grade) :-
     !,
     Expl = 'GoC=No accepted empirical data',
-    Grade = '1'.
+    Grade = 1.
 
 % Check if any source is challenged
 challenge(C, V, Y, 'R-') :-
@@ -345,8 +347,8 @@ wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
 
 % Interpolation forced by working group
 %
-% (In V3, this predicate is at Level II, will be moved to
-% Level I in V4)
+% (In V3, this predicate is at Level II, may be moved to
+% Level I in future versions)
 %
 % wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
 %     decision(C, V, Y, interpolate, Expl0, _, _),
@@ -381,7 +383,7 @@ wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp3, Y, _, _, DTP3),
     !,
-    Rule = 'RMF', % Todo: add colon in V4 (RMF:)
+    Rule = 'RMF:',
     concat_atom(['Estimate based on DTP3 coverage of ', DTP3, '. '], Expl),
     Coverage is round(DTP3 - 0.0058 * DTP3 * DTP3 + 0.3912 * DTP3 + 18.258).
 
@@ -438,8 +440,9 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Cov0),
     prec_anchor(C, V, Y, _Prec, PrecRule, _),
+    PrecRule = 'R: AP',
     succ_anchor(C, V, Y, _Succ, SuccRule, _),
-    PrecRule = 'R: AP', SuccRule = 'R: AP',
+    SuccRule = 'R: AP',
     !,
     Rule = 'R:',
     member(Source-Expl,
@@ -461,12 +464,14 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
                 ' and ', Succ, ' levels. '], Expl),
     calibrate(C, V, Prec, Succ, Y, Coverage).
 
-% Before earliest anchor (of type reported)
+% Before earliest/after latest anchor (of type reported)
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Cov0),
-    succ_anchor(C, V, Y, _Anchor, AnchorRule, _),
-    AnchorRule = 'R: AP',
-    !,
+    (   succ_anchor(C, V, Y, _Anchor, AnchorRule, _AnchorCov),
+        AnchorRule = 'R: AP'
+    ;   prec_anchor(C, V, Y, _Anchor, AnchorRule, _AnchorCov),
+        AnchorRule = 'R: AP'
+    ), !,
     Rule = 'R:',
     member(Source-Expl,
       [ gov-'Estimate informed by reported data. ',
@@ -476,41 +481,16 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
       ]),
     Coverage = Cov0.
 
-% Before earliest anchor (not of type "reported"): calibrated
+% Before earliest/after latest anchor (not of type reported): calibrated
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, _, Cov0),
-    succ_anchor(C, V, Y, Anchor, AnchorRule, AnchorCov),
-    AnchorRule \= 'R: AP',
-    !,
+    (   succ_anchor(C, V, Y, Anchor, AnchorRule, AnchorCov),
+        AnchorRule \= 'R: AP'
+    ;   prec_anchor(C, V, Y, Anchor, AnchorRule, AnchorCov),
+        AnchorRule \= 'R: AP'
+    ), !,
     Rule = 'C:',
     concat_atom(['Reported data calibrated to ', Anchor, ' levels. '], Expl),
-    reported_time_series(C, V, Anchor, _, ReportedCoverageAtAnchor),
-    Adj is AnchorCov - ReportedCoverageAtAnchor,
-    Coverage is round(Cov0 + Adj).
-
-% After latest anchor of type "reported"
-wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-    reported_time_series(C, V, Y, Source, Cov0),
-    prec_anchor(C, V, Y, _Anchor, AnchorRule, _AnchorCov),
-    AnchorRule = 'R: AP',
-    !,
-    Rule = 'R:',
-    member(Source-Expl,
-      [ gov-'Estimate informed by reported data.',
-	admin-'Estimate informed by reported administrative data. ',
-	interpolated-'Estimate informed by interpolation between reported data. ',
-	extrapolated-'Estimate based on extrapolation from data reported by national government. '
-      ]),
-    Coverage = Cov0.
-
-% After latest anchor (not of type "reported"): calibrate
-wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-    reported_time_series(C, V, Y, _, Cov0),
-    prec_anchor(C, V, Y, Anchor, AnchorRule, AnchorCov),
-    AnchorRule \= 'R: AP',
-    !,
-    Rule = 'C:',
-    concat_atom(['Reported data calibrated to ', Anchor, ' levels.'], Expl),
     reported_time_series(C, V, Anchor, _, ReportedAtAnchor),
     Adj is AnchorCov - ReportedAtAnchor,
     Coverage is round(Cov0 + Adj).
@@ -1006,27 +986,17 @@ survey_reason_to_exclude(C, V, Y, ID, Expl) :-
     concat_atom(['Survey results ignored. Sample size ', Size, ' less than 300. '], Expl).
 
 % V4 version
-% survey_reason_to_exclude(C, V, Y, ID, Expl) :-
-%     survey_results_for_analysis(C, V, Y, ID, Description, _),
-%     (	decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
-%     ;	decision(C, V, Y, ignoreSurvey, Expl0, na, _)
-%     ),
-%     member(title:Title, Description),
-%     concat_atom([Title, ' results ignored by working group. ', Expl0],
-%     Expl).
-
-% Duplicated the rule to preserve order of explanations in V3 output file
+%
+% Keeps explanations for the same survey together
+%
 survey_reason_to_exclude(C, V, Y, ID, Expl) :-
     survey_for_analysis(C, V, Y, ID, Description, _),
-    decision(C, V, Y, ignoreSurvey, Expl0, ID, _),
+    (	decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
+    ;	decision(C, V, Y, ignoreSurvey, Expl0, na, _)
+    ),
     member(title:Title, Description),
-    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
-
-survey_reason_to_exclude(C, V, Y, ID, Expl) :-
-    survey_for_analysis(C, V, Y, ID, Description, _),
-    decision(C, V, Y, ignoreSurvey, Expl0, na, _),
-    member(title:Title, Description),
-    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
+    concat_atom([Title, ' results ignored by working group. ', Expl0],
+    Expl).
 
 % Reasons to exclude reported data are:
 %  1. Working group decision.
