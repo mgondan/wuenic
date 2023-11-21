@@ -60,29 +60,49 @@ once2 = function(pred="country")
 rep3 = function(pred="births_UNPD")
 {
   q = call(pred, expression(C), expression(Y), expression(Children))
+  
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
-  do.call("rbind", s)
+  s = do.call("rbind", s)
+  
+  Yn = 1997:2022
+  Vn = levels(as.factor(s$V))
+  m = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  m[cbind(as.character(s$Y), s$V)] = s$Children
+  return(m)
 }
 
 rep4 = function(pred="vaccinated")
 {
   q = call(pred, expression(C), expression(V), expression(Y), expression(Cov))
+
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
-  do.call("rbind", s)
+  s = do.call("rbind", s)
+  
+  Yn = 1997:2022
+  Vn = levels(as.factor(s$V))
+  m = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  m[cbind(as.character(s$Y), s$V)] = s$Cov
+  return(m)
 }
 
 estimate_required = function()
 {
-  q = call("estimate_required", expression(C), expression(V), expression(Y), expression(Comb),
-           expression(A5))
+  q = call("estimate_required", expression(C), expression(V), expression(Y), 
+           expression(Comb), expression(A5))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
-  do.call("rbind", s)
+  s = do.call("rbind", s)
+
+  Yn = 1997:2022
+  Vn = levels(as.factor(s$V))
+  m = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  m[cbind(as.character(s$Y), s$V)] = TRUE
+  return(m)
 }
 
 survey_results = function()
@@ -92,20 +112,57 @@ survey_results = function()
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
-  do.call("rbind", s[9:20])
+  s = do.call("rbind", s)
+
+  Yn = 1997:2022
+  Vn = levels(as.factor(s$V))
+  Info = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), 
+    dimnames=list(Yn, Vn))
+  Info[cbind(as.character(s$Y), s$V)] = s$Info.title
+  # more to come
+  Cov = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), 
+    dimnames=list(Yn, Vn))
+  Cov[cbind(as.character(s$Y), s$V)] = s$Cov
+  list(Info, Cov)
 }
 
 decisions = function()
 {
   q = call("wgd", expression(C), expression(V), expression(Y0), expression(Y1),
-           expression(Dec), expression(Expl), 
+           expression(Dec), expression(Info), 
            expression(A1), expression(Cov), expression(A3), expression(A4))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, padNA,
-             v=c("C", "V", "Y0", "Y1", "Dec", "Expl", "A1", "Cov", "A3", "A4"))
+             v=c("C", "V", "Y0", "Y1", "Dec", "Info", "A1", "Cov", "A3", "A4"))
   s = lapply(s, as.data.frame)
-  do.call("rbind", s)
+
+  # Handle V = NA
+  s = do.call("rbind", s)
+  Vn = levels(as.factor(s$V))
+  s = apply(s, MARGIN=1, simplify=FALSE,
+    FUN=function(d)
+      if(is.na(d['V']))
+        data.frame(V=Vn, Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], Info=d['Info'], Cov=d['Cov'], row.names=NULL)
+      else 
+        data.frame(V=d['V'], Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], Info=d['Info'], Cov=d['Cov']))
+  
+  # Handle Year range
+  s = do.call("rbind", s)
+  s = apply(s, MARGIN=1, simplify=FALSE,
+    FUN=function(d)
+      data.frame(V=d['V'], Y=d['Y0']:min(2022, d['Y1']), Dec=d['Dec'], Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+  s = do.call("rbind", s)
+
+  Yn = 1997:2022
+  Vn = levels(as.factor(s$V))
+  Dec = matrix("", nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  Dec[cbind(as.character(s$Y), s$V)] = s$Dec
+  Info = matrix("", nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  Info[cbind(as.character(s$Y), s$V)] = s$Info
+  Cov = matrix(0L, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  Cov[cbind(as.character(s$Y), s$V)] = s$Cov
+  list(Dec, Info, Cov)
 }
 
 # Read country file
