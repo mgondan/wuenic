@@ -1,6 +1,10 @@
 library(rolog)
 consult("xsb/bgd.pl")
 
+Vn = c("bcg", "dtp1", "dtp3", "hepb3", "hib3", "ipv1", "mcv1", "mcv2", "pcv3",
+  "pol1", "pol3", "rcv1")
+Yn = 1997:2022
+
 # Change atoms to character strings
 # Change list elements of type name:elem to named list elements
 atom2char = function(q)
@@ -66,14 +70,14 @@ rep3 = function(pred="births_UNPD")
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
   
-  Yn = 1997:2022
-  Vn = levels(as.factor(s$V))
-  m = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
-  m[cbind(as.character(s$Y), s$V)] = s$Children
+  m = numeric(length(Yn))
+  names(m) = Yn
+  m[] = NA_real_
+  m[as.character(s$Y)] = s$Children
   return(m)
 }
 
-rep4 = function(pred="vaccinated")
+rep4 = function(pred="admin")
 {
   q = call(pred, expression(C), expression(V), expression(Y), expression(Cov))
 
@@ -81,10 +85,16 @@ rep4 = function(pred="vaccinated")
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
-  
-  Yn = 1997:2022
-  Vn = levels(as.factor(s$V))
-  m = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  index = which(!(s$V %in% Vn))
+  if(length(index))
+  {
+    warning("Unknown vaccine name(s): ", 
+      paste(levels(as.factor(s$V[index])), collapse=", "))
+    s = s[-index, ]    
+  }
+    
+  m = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), 
+    dimnames=list(Yn, Vn))
   m[cbind(as.character(s$Y), s$V)] = s$Cov
   return(m)
 }
@@ -98,8 +108,6 @@ estimate_required = function()
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
 
-  Yn = 1997:2022
-  Vn = levels(as.factor(s$V))
   m = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
   m[cbind(as.character(s$Y), s$V)] = TRUE
   return(m)
@@ -113,9 +121,14 @@ survey_results = function()
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
-
-  Yn = 1997:2022
-  Vn = levels(as.factor(s$V))
+  index = which(!(s$V %in% Vn))
+  if(length(index))
+  {
+    warning("Unknown vaccine name(s): ", 
+      paste(levels(as.factor(s$V[index])), collapse=", "))
+    s = s[-index, ]    
+  }
+  
   Info = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), 
     dimnames=list(Yn, Vn))
   Info[cbind(as.character(s$Y), s$V)] = s$Info.title
@@ -123,7 +136,7 @@ survey_results = function()
   Cov = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), 
     dimnames=list(Yn, Vn))
   Cov[cbind(as.character(s$Y), s$V)] = s$Cov
-  list(Info, Cov)
+  list(Info=Info, Cov=Cov)
 }
 
 decisions = function()
@@ -139,7 +152,6 @@ decisions = function()
 
   # Handle V = NA
   s = do.call("rbind", s)
-  Vn = levels(as.factor(s$V))
   s = apply(s, MARGIN=1, simplify=FALSE,
     FUN=function(d)
       if(is.na(d['V']))
@@ -154,15 +166,16 @@ decisions = function()
       data.frame(V=d['V'], Y=d['Y0']:min(2022, d['Y1']), Dec=d['Dec'], Info=d['Info'], Cov=d['Cov'], row.names=NULL))
   s = do.call("rbind", s)
 
-  Yn = 1997:2022
-  Vn = levels(as.factor(s$V))
-  Dec = matrix("", nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  Dec = matrix("", nrow=length(Yn), ncol=length(Vn), 
+    dimnames=list(Yn, Vn))
   Dec[cbind(as.character(s$Y), s$V)] = s$Dec
-  Info = matrix("", nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  Info = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn),
+    dimnames=list(Yn, Vn))
   Info[cbind(as.character(s$Y), s$V)] = s$Info
-  Cov = matrix(0L, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
+  Cov = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), 
+    dimnames=list(Yn, Vn))
   Cov[cbind(as.character(s$Y), s$V)] = s$Cov
-  list(Dec, Info, Cov)
+  list(Dec=Dec, Info=Info, Cov=Cov)
 }
 
 # Read country file
@@ -181,3 +194,48 @@ bth = rep3("births_UNPD")
 svi = rep3("si_UNPD")
 svy = survey_results()
 wgd = decisions()
+
+# % Reported to WHO and UNICEF is government estimate. If government
+# % estimate missing, then reported is administrative data. If both
+# % missing, fail.
+# reported(C, V, Y, Source, Coverage) :-
+#    gov(C, V, Y, Cov0),
+#    not(decision(C, V, Y, ignoreGov, _, _, _)),
+#    !,
+#    Source = gov,
+#    Coverage = Cov0.
+#
+# reported(C, V, Y, Source, Coverage) :-
+#     admin0(C, V, Y, Cov0),
+#     (   decision(C, V, Y, ignoreGov, _, _, _)
+#     ;   not(gov(C, V, Y, _))
+#     ),
+#     not(decision(C, V, Y, ignoreAdmin, _, _, _)),
+#     !,
+#     Source = admin,
+#     Coverage = Cov0.
+
+rep = matrix(NA_real_, nrow=nrow(est), ncol=ncol(est), dimnames=dimnames(est))
+
+# Fill with admin data
+index = !is.na(adm)
+index = index & (wgd$Dec == "ignoreGov" | is.na(gov))
+index = index & wgd$Dec != "ignoreAdmin"
+rep[index] = adm[index]
+
+# Fill with gov data
+index = !is.na(gov)
+index = index & wgd$Dec != "ignoreGov"
+rep[index] = gov[index]
+
+# % Time series of reported data
+# %
+# % Reported data available
+# reported_time_series(C, V, Y, Source, Coverage) :-
+#     estimate_required(C, V, Y, _, _),
+#     reported(C, V, Y, Source0, Cov0),
+#     not(reported_rejected(C, V, Y)),
+#     !,
+#     Source = Source0,
+#     Coverage = Cov0.
+
