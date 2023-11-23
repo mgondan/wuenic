@@ -4,6 +4,7 @@ consult("xsb/bgd.pl")
 Vn = c("bcg", "dtp1", "dtp3", "hepb3", "hib3", "ipv1", "mcv1", "mcv2", "pcv3",
   "pol1", "pol3", "rcv1")
 Yn = 1997:2022
+sawtooth = 10
 
 # Change atoms to character strings
 # Change list elements of type name:elem to named list elements
@@ -215,18 +216,115 @@ wgd = decisions()
 #     Source = admin,
 #     Coverage = Cov0.
 
-rep = matrix(NA_real_, nrow=nrow(est), ncol=ncol(est), dimnames=dimnames(est))
+reported = matrix(NA_real_, nrow=nrow(est), ncol=ncol(est),
+  dimnames=dimnames(est))
+
+source = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
+  dimnames=dimnames(est))
 
 # Fill with admin data
 index = !is.na(adm)
 index = index & (wgd$Dec == "ignoreGov" | is.na(gov))
 index = index & wgd$Dec != "ignoreAdmin"
-rep[index] = adm[index]
+reported[index] = adm[index]
+source[index] = "adm"
 
 # Fill with gov data
 index = !is.na(gov)
 index = index & wgd$Dec != "ignoreGov"
-rep[index] = gov[index]
+reported[index] = gov[index]
+source[index] = "gov"
+
+# % Reasons to exclude reported data are:
+# % * Working group decision.
+# % * Coverage > 100%
+# % * Inconsistent temporal changes (sawtooth or sudden change)
+#
+# % Rejection dominates accepted, see below
+# reported_rejected(C, V, Y) :-
+#     decision(C, V, Y, ignoreReported, _Expl0, _, _),
+#     !.
+# % See above
+# reported_rejected(C, V, Y) :-
+#     decision(C, V, Y, acceptReported, _, _, _),
+#     !,
+#     fail.
+#
+# % Implausible coverage
+# reported_rejected(C, V, Y) :-
+#     reported(C, V, Y, _, Coverage),
+#     Coverage > 100,
+#     !.
+#
+# % Sudden jumps
+# reported_rejected(C, V, Y) :-
+#     reported(C, V, Y, _, Coverage),
+#     Prec is Y - 1,
+#     Succ is Y + 1,
+#     reported(C, V, Prec, _, PrecCov),
+#     reported(C, V, Succ, _, SuccCov),
+#     sawtooth_threshold(Threshold),
+#     (   Coverage - PrecCov > Threshold,
+#         Coverage - SuccCov > Threshold
+#     ;   PrecCov - Coverage > Threshold,
+#         SuccCov - Coverage > Threshold
+#     ), !.
+#
+# % Sudden change in most recently reported data for classic vaccines, or
+# % sudden decline in most recently reported data for new vaccines
+# reported_rejected(C, V, Y) :-
+#     reported(C, V, Y, _, Coverage),
+#     not(reported_later(C, V, Y)),
+#     Prec is Y - 1,
+#     reported(C, V, Prec, _, PrecCov),
+#     sawtooth_threshold(Threshold),
+#     (   member(V, [pcv3, rotac])
+#     ->  PrecCov - Coverage > Threshold
+#     ;   abs(PrecCov - Coverage) > Threshold
+#     ), !.
+
+rep_rejected = matrix(FALSE, nrow=nrow(est), ncol=ncol(est),
+  dimnames=dimnames(est))
+
+index = !apply(reported, 2, is.na)
+index = apply(index, 2, which)
+index = lapply(index, rev)
+index = sapply(index, "[", 1)
+index = cbind(index, 1:length(Vn))
+index = index[!(Vn %in% c("pcv3", "rotac")), , drop=FALSE]
+index = na.exclude(index)
+jump = apply(rbind(NA, reported), 2, diff)
+rep_rejected[index] = abs(jump[index]) > sawtooth
+
+index = !apply(reported, 2, is.na)
+index = apply(index, 2, which)
+index = lapply(index, rev)
+index = sapply(index, "[", 1)
+index = cbind(index, 1:length(Vn))
+index = index[Vn %in% c("pcv3", "rotac"), , drop=FALSE]
+index = na.exclude(index)
+jump = apply(rbind(NA, reported), 2, diff)
+rep_rejected[index] = jump[index] < -sawtooth
+
+up = rbind(0, diff(reported)) > sawtooth
+down = rbind(diff(reported), 0) < -sawtooth
+index = which(up & down, arr.ind=TRUE)
+rep_rejected[index] = TRUE
+
+down = rbind(0, diff(reported)) < -sawtooth
+up = rbind(diff(reported), 0) > sawtooth
+index = which(down & up, arr.ind=TRUE)
+rep_rejected[index] = TRUE
+
+index = !is.na(reported)
+index = index & reported > 100
+rep_rejected[index] = TRUE
+
+index = wgd$Dec == "acceptReported"
+rep_rejected[index] = FALSE
+
+index = wgd$Dec == "ignoreReported"
+rep_rejected[index] = TRUE
 
 # % Time series of reported data
 # %
@@ -238,4 +336,54 @@ rep[index] = gov[index]
 #     !,
 #     Source = Source0,
 #     Coverage = Cov0.
+#
+# % Interpolation, no data/reported data excluded between two years
+# reported_time_series(C, V, Y, Source, Coverage) :-
+#     estimate_required(C, V, Y, _, _),
+#     (   not(reported(C, V, Y, _, _))
+#     ;   reported_rejected(C, V, Y)
+#     ),
+#     year_before_reported(C, V, Y, Prec, PrecCov),
+#     year_after_reported(C, V, Y, Succ, SuccCov),
+#     !,
+#     Source = interpolated,
+#     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
+#
+# % Extrapolation, latest required estimate
+# reported_time_series(C, V, Y, Source, Coverage) :-
+#     estimate_required(C, V, Y, _, _),
+#     (   not(reported(C, V, Y, _, _))
+#     ;   reported_rejected(C, V, Y)
+#     ),
+#     nearest_reported(C, V, Y, _Year, Cov0),
+#     !,
+#     Source = extrapolated,
+#     Coverage = Cov0.
 
+rep_ts = matrix(NA_integer_, nrow=nrow(est), ncol=ncol(est),
+  dimnames=dimnames(est))
+rep_src = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
+  dimnames=dimnames(est))
+
+itp = reported
+itp[rep_rejected] = NA
+itp = apply(itp, 2, zoo::na.approx, na.rm=FALSE)
+index = est
+index = index & (is.na(reported) | rep_rejected)
+index = index & !is.na(itp)
+rep_ts[index] = itp[index]
+rep_src[index] = "interpolated"
+
+etp = apply(itp, 2, zoo::na.locf, na.rm=FALSE)
+etp = apply(etp, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
+index = est
+index = index & (is.na(reported) | rep_rejected)
+index = index & is.na(itp) & !is.na(etp)
+rep_ts[index] = etp[index]
+rep_src[index] = "extrapolated"
+
+index = est
+index = index & !is.na(reported)
+index = index & !rep_rejected
+rep_ts[index] = reported[index]
+rep_src[index] = source[index]
