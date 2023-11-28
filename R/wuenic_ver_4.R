@@ -9,6 +9,10 @@ Yn = 1997:2022
 sawtooth = 10
 svy.thrs = 10
 
+# the default setting
+Rubella = YV_char
+Rubella[, "rcv1"] = "mcv2"
+
 YV = list(Yn, Vn)
 YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
@@ -87,15 +91,30 @@ rep4 = function(pred="admin")
 est_req = function()
 {
   q = call("estimate_required", expression(C), expression(V), expression(Y), 
-    expression(Comb), expression(A5))
+           expression(Comb), expression(A5))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
   s$Y = as.character(s$Y)
-
+  
   m = YV_bool
   m[cbind(s$Y, s$V)] = TRUE
+  return(m)
+}
+
+rubella = function()
+{
+  q = call("estimate_required", expression(C), expression(V), expression(Y), 
+           expression(Comb), expression(Rub))
+  s = findall(q)
+  s = lapply(s, atom2char)
+  s = lapply(s, as.data.frame)
+  s = do.call("rbind", s)
+  s$Y = as.character(s$Y)
+  
+  m = YV_char
+  m[cbind(s$Y, s$V)] = s$Rub
   return(m)
 }
 
@@ -173,6 +192,7 @@ s = once(call("date", expression(Date)))
 Date = atom2char(s$Date)
 
 Ereq = est_req()
+Rubella = rubella()
 Admin = rep4("admin")
 Gov = rep4("gov")
 Legacy = rep4("legacy")
@@ -853,3 +873,64 @@ index = !is.na(Anchor.Cov)
 Rule[index] = Anchor.Rule[index]
 Info[index] = Anchor.Info[index]
 Cov[index] = Anchor.Cov[index]
+
+# % Obtain estimates for vaccine coverage. At Level 1, check for working group
+# % decisions and work around obvious inconsistencies.
+#
+# % Estimate for RCV1 where RCV1 given at MCV1
+# wuenic_I(C, rcv1, Y, Rule, Expl, Coverage) :-
+#   estimate_required(C, rcv1, Y, _, _),
+#   !,
+#   wuenic_II(C, mcv1, Y, Rule, _, Coverage),
+#   Expl = 'Estimate based on estimated MCV1. '.
+
+index = Ereq[, "rcv1"]
+Rule[index, "rcv1"] = Rule[index, "mcv1"]
+Info[index, "rcv1"] = "Estimate based on estimated MCV1. "
+Cov[index, "rcv1"] = Cov[index, "mcv1"]
+
+# % Estimate for RCV1 where RCV1 given at MCV2
+# wuenic_I(C, rcv1, Y, Rule, Expl, Coverage) :-
+#   estimate_required(C, rcv1, Y, _, FirstRubellaDose),                   ***
+#   firstRubellaAtSecondMCV(C, rcv1, Y, FirstRubellaDose),
+#   !,
+#   wuenic_II(C, mcv2, Y, Rule, _, Coverage),
+#   Expl = 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate'.
+
+# Todo: check estimate_required, ***
+
+Rule[, "rcv1"] = Rule[cbind(Yn, Rubella[, "rcv1"])]
+Info[, "rcv1"] = ifelse(Rubella[, "rcv1"] == "mcv2", 
+  "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate",
+  "unclear when first dose of rubella vaccine has been given")
+Cov[, "rcv1"] = Cov[cbind(Yn, Rubella[, "rcv1"])]
+
+# % If DTP1 not reported: estimate using equation
+# % If DTP3 > DTP1 (which is impossible), estimate coverage using equation
+# wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
+#   wuenic_II(C, dtp3, Y, _, _, DTP3),
+#   !,
+#   Rule = 'RMF:',
+#   concat_atom(['Estimate based on DTP3 coverage of ', DTP3, '. '], Expl),
+#   Coverage is round(-0.0058 * DTP3 * DTP3 + 1.3912 * DTP3 + 18.258).
+
+index = !is.na(Cov[, "dtp1"]) & !is.na(Cov[, "dtp3"]) & Cov[, "dtp3"] > Cov[, "dtp1"]
+index = index | is.na(Cov[, "dtp1"]) & !is.na(Cov[, "dtp3"])
+Rule[index, "dtp1"] = "RMF:"
+Info[index, "dtp1"] = sprintf("Estimate based on DTP3 coverage of %s. ",
+  Cov[index, "dtp3"])
+Cov[index, "dtp1"] =
+  round(-0.0058 * Cov[index, "dtp3"]^2 + 1.3912 * Cov[index, "dtp3"] + 18.258)
+
+# % Assigned by working group
+# wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
+#   decision(C, V, Y, assignWUENIC, Expl0, _, Cov0),
+#   !,
+#   Rule = 'W:',
+#   Expl = Expl0,
+#   Coverage = Cov0.
+
+index = Decisions[Decisions$Dec == "assignWUENIC", ]
+Rule[cbind(index$Y, index$V)] = "W:"
+Info[cbind(index$Y, index$V)] = index$Info
+Cov[cbind(index$Y, index$V)] = index$Cov
