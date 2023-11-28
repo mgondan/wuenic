@@ -1,3 +1,4 @@
+library(zoo)
 library(rolog)
 consult("xsb/bgd.pl")
 
@@ -6,21 +7,27 @@ Vn = c("bcg", "dtp1", "dtp3", "hepb3", "hib3", "ipv1", "mcv1", "mcv2", "pcv3",
 Yn = 1997:2022
 
 sawtooth = 10
-svy.threshold = 10
+svy.thrs = 10
 
-# Change atoms to character strings
-# Change list elements of type name:elem to named list elements
+YV = list(Yn, Vn)
+YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+
+# Prolog atoms to R character strings
+# Prolog variables to R character strings
+# Prolog list elements name:elem to named list elements in R
+#
 atom2char = function(q)
-{
-  if(is.expression(q))
+{ if(is.expression(q))
     return(as.character(q))
   
   if(is.symbol(q))
     return(as.character(q))
   
   if(is.call(q))
-  {
-    args <- as.list(q)
+  { args <- as.list(q)
     args[-1] <- lapply(args[-1], FUN=atom2char)
     return(as.call(args))
   }
@@ -29,11 +36,9 @@ atom2char = function(q)
     return(lapply(q, atom2char))
   
   if(is.list(q))
-  {
-    n = NULL
+  { n = NULL
     for(i in 1:length(q))
-    {
-      item = as.list(q[[i]])
+    { item = as.list(q[[i]])
       q[[i]] = atom2char(item[[3]])
       n = c(n, atom2char(item[[2]]))
     }
@@ -44,157 +49,152 @@ atom2char = function(q)
   return(q)
 }
 
-padNA = function(q, v)
-{
-  qq = q[v]
-  names(qq) = v
-  qq[] = ifelse(lapply(qq, is.null), NA, qq)
-  return(qq)
-}
-
-once1 = function(pred="date")
-{
-  s = once(call(pred, expression(Date)))
-  atom2char(s$Date)
-}
-
-once2 = function(pred="country")
-{
-  s = once(call(pred, expression(Code), expression(Name)))
-  lapply(s, atom2char)
-}
-
+# Read all pred(C, Y, Out) and save Out in a vector
 rep3 = function(pred="births_UNPD")
-{
-  q = call(pred, expression(C), expression(Y), expression(Children))
-  
+{ q = call(pred, expression(C), expression(Y), expression(Out))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
-  
-  m = numeric(length(Yn))
+  s$Y = as.character(s$Y)
+
+  m = NA + numeric(length(Yn))
   names(m) = Yn
-  m[] = NA_real_
-  m[as.character(s$Y)] = s$Children
+  m[s$Y] = s$Out
   return(m)
 }
 
+# Read all pred(C, V, Y, Out) and save Out in a matrix
 rep4 = function(pred="admin")
-{
-  q = call(pred, expression(C), expression(V), expression(Y), expression(Cov))
-
+{ q = call(pred, expression(C), expression(V), expression(Y), expression(Out))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
+  s$Y = as.character(s$Y)
+
   index = which(!(s$V %in% Vn))
   if(length(index))
-  {
-    warning("Unknown vaccine name(s): ", 
-      paste(levels(as.factor(s$V[index])), collapse=", "))
-    s = s[-index, ]    
+  { warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
+    s = s[-index, ]
   }
-    
-  m = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), 
-    dimnames=list(Yn, Vn))
-  m[cbind(as.character(s$Y), s$V)] = s$Cov
+
+  m = YV_int
+  m[cbind(s$Y, s$V)] = s$Out
   return(m)
 }
 
-estimate_required = function()
+est_req = function()
 {
   q = call("estimate_required", expression(C), expression(V), expression(Y), 
-           expression(Comb), expression(A5))
+    expression(Comb), expression(A5))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
+  s$Y = as.character(s$Y)
 
-  m = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=list(Yn, Vn))
-  m[cbind(as.character(s$Y), s$V)] = TRUE
+  m = YV_bool
+  m[cbind(s$Y, s$V)] = TRUE
   return(m)
 }
 
+# Multiple surveys per year, therefore no YV-matrix, but a long data frame
 survey_results = function()
-{
-  q = call("survey_results", expression(C), expression(V), expression(Y), 
-           expression(Id), expression(Info), expression(Cov))
+{ q = call("survey_results", expression(C), expression(V), expression(Y), 
+    expression(Id), expression(Info), expression(Cov))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
+
   index = which(!(s$V %in% Vn))
   if(length(index))
-  {
-    warning("Unknown vaccine name(s): ", 
-      paste(levels(as.factor(s$V[index])), collapse=", "))
+  { warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
     s = s[-index, ]    
   }
 
   return(s)
 }
 
-decisions = function()
+# Multiple decisions per year, therefore no YV-matrix, but a long data frame
+wgd = function()
 {
+  # Convenience function: Replace NULL by NA in lists
+  padNA = function(q, v)
+  { qq = q[v]
+    names(qq) = v
+    qq[] = ifelse(lapply(qq, is.null), NA, qq)
+    return(qq)
+  }
+  
   q = call("wgd", expression(C), expression(V), expression(Y0), expression(Y1),
-           expression(Dec), expression(Info), 
+           expression(Dec), expression(Info),
            expression(A1), expression(Cov), expression(A3), expression(A4))
   s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, padNA,
-             v=c("C", "V", "Y0", "Y1", "Dec", "Info", "Id", "Cov", "A3", "A4"))
+    v=c("C", "V", "Y0", "Y1", "Dec", "Info", "Id", "Cov", "A3", "A4"))
   s = lapply(s, as.data.frame)
-
-  # Handle V = NA
   s = do.call("rbind", s)
-  s = apply(s, MARGIN=1, simplify=FALSE,
-    FUN=function(d)
-      if(is.na(d['V']))
-        data.frame(V=Vn, Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL)
-      else 
-        data.frame(V=d['V'], Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], Id=d['Id'], Info=d['Info'], Cov=d['Cov']))
+
+  # V = NA means that a decision applies to all vaccines
+  V.na = function(d)
+  { if(is.na(d['V']))
+      return(data.frame(V=Vn, Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], 
+        Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+
+    data.frame(V=d['V'], Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'],
+      Id=d['Id'], Info=d['Info'], Cov=d['Cov'])
+  }
+
+  s = apply(s, MARGIN=1, simplify=FALSE, FUN=V.na)
+  s = do.call("rbind", s)
   
-  # Handle Year range
-  s = do.call("rbind", s)
-  s = apply(s, MARGIN=1, simplify=FALSE,
-    FUN=function(d)
-      data.frame(V=d['V'], Y=d['Y0']:min(2022, d['Y1']), Dec=d['Dec'], Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+  # If a year range is given, apply decision to each included year
+  Y.range = function(d)
+  { data.frame(V=d['V'], Y=d['Y0']:min(2022, d['Y1']),
+      Dec=d['Dec'], Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL)
+  }
 
-  # Used mainly for indexing
+  s = apply(s, MARGIN=1, simplify=FALSE, FUN=Y.range)
   s = do.call("rbind", s)
   s$Cov = as.integer(s$Cov)
   s$Y = as.character(s$Y)
   return(s)
 }
 
-# Read country file
-country = once2("country")
-code = country$Code
-country = country$Name
-date = once1("date")
+# 1. Load country-specific information
+s = once(call("country", expression(Code), expression(Country)))
+Code = atom2char(s$Code)
+Country = atom2char(s$Country)
 
-est = estimate_required()
-adm = rep4("admin")
-gov = rep4("gov")
-lgc = rep4("legacy")
-vac = rep4("vaccinated")
-tgt = rep4("target")
-bth = rep3("births_UNPD")
-svi = rep3("si_UNPD")
-svy = survey_results()
-wgd = decisions()
+s = once(call("date", expression(Date)))
+Date = atom2char(s$Date)
 
-# % Reported to WHO and UNICEF is government estimate. If government
-# % estimate missing, then reported is administrative data. If both
-# % missing, fail.
-# reported(C, V, Y, Source, Coverage) :-
-#    gov(C, V, Y, Cov0),
-#    not(decision(C, V, Y, ignoreGov, _, _, _)),
-#    !,
-#    Source = gov,
-#    Coverage = Cov0.
+Ereq = est_req()
+Admin = rep4("admin")
+Gov = rep4("gov")
+Legacy = rep4("legacy")
+Vaccinated = rep4("vaccinated")
+Target = rep4("target")
+Births = rep3("births_UNPD")
+Surviving = rep3("si_UNPD")
+Survey = survey_results()
+Decisions = wgd()
+
+# 2. Add information from government and administration.
 #
+# Reported to WHO and UNICEF is government estimate. If government
+# estimate missing, then reported is administrative data. If both
+# missing, fail.
+#
+# R implementation is in reverse order, with the higher-order predicate
+# eventually overwriting the lower predicate.
+
+Rep.Cov = YV_real
+Rep.Src = YV_char
+
 # reported(C, V, Y, Source, Coverage) :-
 #     admin0(C, V, Y, Cov0),
 #     (   decision(C, V, Y, ignoreGov, _, _, _)
@@ -205,49 +205,84 @@ wgd = decisions()
 #     Source = admin,
 #     Coverage = Cov0.
 
-reported = matrix(NA_real_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
+Rep.Cov = Admin
+Rep.Src = ifelse(is.na(Admin), NA, "admin")
 
-source = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
+# Working group decides to ignore admin data
+ignore = Decisions$Dec == "ignoreAdmin"
+index = cbind(Decisions$Y[ignore], Decisions$V[ignore])
+Rep.Cov[index] = NA
+Rep.Src[index] = NA
 
-# Fill with admin data
-index = !is.na(adm)
-gov.na = is.na(gov)
-gov.na[cbind(wgd$Y[wgd$Dec == "ignoreGov"], wgd$V[wgd$Dec == "ignoreGov"])] = TRUE
-index = index & gov.na
-index[cbind(wgd$Y[wgd$Dec == "ignoreAdmin"], wgd$V[wgd$Dec == "ignoreAdmin"])] = FALSE
-reported[index] = adm[index]
-source[index] = "adm"
+# Use admin data only if government data is invalid
+# Todo: This code can be removed, data will be overwritten below
 
-# Fill with gov data
-index = !is.na(gov)
-index[cbind(wgd$Y[wgd$Dec == "ignoreGov"], wgd$V[wgd$Dec == "ignoreGov"])] = FALSE
-reported[index] = gov[index]
-source[index] = "gov"
+gov = !is.na(Gov)
+ignore = Decisions$Dec == "ignoreGov"
+gov[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
+Rep.Cov[gov] = NA
+Rep.Src[gov] = NA
 
-# % Reasons to exclude reported data are:
-# % * Working group decision.
-# % * Coverage > 100%
-# % * Inconsistent temporal changes (sawtooth or sudden change)
+# reported(C, V, Y, Source, Coverage) :-
+#    gov(C, V, Y, Cov0),
+#    not(decision(C, V, Y, ignoreGov, _, _, _)),
+#    !,
+#    Source = gov,
+#    Coverage = Cov0.
+
+gov = !is.na(Gov)
+ignore = Decisions$Dec == "ignoreGov"
+gov[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
+Rep.Cov[gov] = Gov[gov]
+Rep.Src[gov] = "gov"
+
+# 3. Check reported data
 #
-# % Rejection dominates accepted, see below
-# reported_rejected(C, V, Y) :-
-#     decision(C, V, Y, ignoreReported, _Expl0, _, _),
-#     !.
-# % See above
-# reported_rejected(C, V, Y) :-
-#     decision(C, V, Y, acceptReported, _, _, _),
-#     !,
-#     fail.
+# Reasons to exclude reported data are working group decisions, coverage > 100%
+# or temporal inconsistency.
 #
-# % Implausible coverage
+reject = YV_bool
+
 # reported_rejected(C, V, Y) :-
 #     reported(C, V, Y, _, Coverage),
-#     Coverage > 100,
-#     !.
-#
-# % Sudden jumps
+#     not(reported_later(C, V, Y)),
+#     Prec is Y - 1,
+#     reported(C, V, Prec, _, PrecCov),
+#     sawtooth_threshold(Threshold),
+#     (   member(V, [pcv3, rotac])
+#     ->  PrecCov - Coverage > Threshold
+#     ;   abs(PrecCov - Coverage) > Threshold
+#     ), !.
+
+# Sudden decline in most recently reported data for new vaccines
+V.new = Rep.Cov[, Vn %in% c("pcv3", "rotac"), drop=FALSE]
+
+# Search for last reported data
+Diff = apply(V.new, 2, diff, simplify=FALSE)                 # jumps
+Diff = lapply(Diff, na.trim, sides="right")                  # last reported
+Diff = lapply(Diff, rev)                                     # -> first
+Diff = lapply(Diff, `[`, 1)                                  # jump of interest
+
+Y = sapply(Diff, names)
+V = names(Diff)
+J = sapply(Diff, `<`, sawtooth)                              # check for decline
+
+# Skip if J is NA (for vaccines with only NA reported)
+reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
+
+# Sudden change in most recently reported data for classic vaccines
+V.new = Rep.Cov[, !(Vn %in% c("pcv3", "rotac")), drop=FALSE]
+Diff = apply(V.new, 2, diff, simplify=FALSE)
+Diff = lapply(Diff, na.trim, sides="right")
+Diff = lapply(Diff, rev)
+Diff = lapply(Diff, `[`, 1)
+Diff = lapply(Diff, abs)                                     # up or down
+
+Y = sapply(Diff, names)
+V = names(Diff)
+J = sapply(Diff, `>`, sawtooth)
+reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
+
 # reported_rejected(C, V, Y) :-
 #     reported(C, V, Y, _, Coverage),
 #     Prec is Y - 1,
@@ -260,66 +295,47 @@ source[index] = "gov"
 #     ;   PrecCov - Coverage > Threshold,
 #         SuccCov - Coverage > Threshold
 #     ), !.
-#
-# % Sudden change in most recently reported data for classic vaccines, or
-# % sudden decline in most recently reported data for new vaccines
+
+up    = apply(rbind(NA, Rep.Cov), 2, diff) > sawtooth
+down  = apply(rbind(Rep.Cov, NA), 2, diff) < -sawtooth
+index = which(up & down, arr.ind=TRUE)
+reject[index] = TRUE
+
+down  = apply(rbind(NA, Rep.Cov), 2, diff) < -sawtooth
+up    = apply(rbind(Rep.Cov, NA), 2, diff) > sawtooth
+index = which(down & up, arr.ind=TRUE)
+reject[index] = TRUE
+
+# % Implausible coverage
 # reported_rejected(C, V, Y) :-
 #     reported(C, V, Y, _, Coverage),
-#     not(reported_later(C, V, Y)),
-#     Prec is Y - 1,
-#     reported(C, V, Prec, _, PrecCov),
-#     sawtooth_threshold(Threshold),
-#     (   member(V, [pcv3, rotac])
-#     ->  PrecCov - Coverage > Threshold
-#     ;   abs(PrecCov - Coverage) > Threshold
-#     ), !.
+#     Coverage > 100,
+#     !.
 
-# Todo: Set reported directly to NA instead
-rep_rejected = matrix(FALSE, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
+index = which(Rep.Cov > 100, arr.ind=TRUE)
+reject[index] = TRUE
 
-index = !apply(reported, 2, is.na)
-index = apply(index, 2, which)
-index = lapply(index, rev)
-index = sapply(index, "[", 1)
-index = cbind(index, 1:length(Vn))
-index = index[!(Vn %in% c("pcv3", "rotac")), , drop=FALSE]
-index = na.exclude(index)
-jump = apply(rbind(NA, reported), 2, diff)
-rep_rejected[index] = abs(jump[index]) > sawtooth
+# reported_rejected(C, V, Y) :-
+#     decision(C, V, Y, acceptReported, _, _, _),
+#     !,
+#     fail.
 
-index = !apply(reported, 2, is.na)
-index = apply(index, 2, which)
-index = lapply(index, rev)
-index = sapply(index, "[", 1)
-index = cbind(index, 1:length(Vn))
-index = index[Vn %in% c("pcv3", "rotac"), , drop=FALSE]
-index = na.exclude(index)
-jump = apply(rbind(NA, reported), 2, diff)
-rep_rejected[index] = jump[index] < -sawtooth
+index = Decisions[Decisions$Dec == "acceptReported", ]
+reject[cbind(index$Y, index$V)] = FALSE
 
-up = rbind(0, diff(reported)) > sawtooth
-down = rbind(diff(reported), 0) < -sawtooth
-index = which(up & down, arr.ind=TRUE)
-rep_rejected[index] = TRUE
+# % Ignore dominates accept
+# reported_rejected(C, V, Y) :-
+#     decision(C, V, Y, ignoreReported, _Expl0, _, _),
+#     !.
 
-down = rbind(0, diff(reported)) < -sawtooth
-up = rbind(diff(reported), 0) > sawtooth
-index = which(down & up, arr.ind=TRUE)
-rep_rejected[index] = TRUE
+index = Decisions[Decisions$Dec == "ignoreReported", ]
+reject[cbind(index$Y, index$V)] = TRUE
 
-index = !is.na(reported)
-index = index & reported > 100
-rep_rejected[index] = TRUE
+Rep.Cov[reject] = NA
+Rep.Src[reject] = NA
 
-index = wgd[wgd$Dec == "acceptReported", c("Y", "V")]
-rep_rejected[as.matrix(index)] = FALSE
-
-index = wgd[wgd$Dec == "ignoreReported", c("Y", "V")]
-rep_rejected[as.matrix(index)] = TRUE
-
-# % Time series of reported data
-# %
+# 4. Time series of reported data
+#
 # % Reported data available
 # reported_time_series(C, V, Y, Source, Coverage) :-
 #     estimate_required(C, V, Y, _, _),
@@ -328,7 +344,11 @@ rep_rejected[as.matrix(index)] = TRUE
 #     !,
 #     Source = Source0,
 #     Coverage = Cov0.
-#
+
+index = Ereq
+Rep.Cov[!index] = NA
+Rep.Src[!index] = NA
+
 # % Interpolation, no data/reported data excluded between two years
 # reported_time_series(C, V, Y, Source, Coverage) :-
 #     estimate_required(C, V, Y, _, _),
@@ -340,7 +360,12 @@ rep_rejected[as.matrix(index)] = TRUE
 #     !,
 #     Source = interpolated,
 #     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
-#
+
+inter = apply(Rep.Cov, 2, zoo::na.approx, na.rm=FALSE)
+index = Ereq & is.na(Rep.Cov) & !is.na(inter)
+Rep.Cov[index] = round(inter[index])
+Rep.Src[index] = "interpolated"
+
 # % Extrapolation, latest required estimate
 # reported_time_series(C, V, Y, Source, Coverage) :-
 #     estimate_required(C, V, Y, _, _),
@@ -352,45 +377,29 @@ rep_rejected[as.matrix(index)] = TRUE
 #     Source = extrapolated,
 #     Coverage = Cov0.
 
-rep_ts = matrix(NA_integer_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-rep_src = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
+extra = apply(Rep.Cov, 2, zoo::na.locf, na.rm=FALSE)
+index = Ereq & is.na(Rep.Cov) & !is.na(extra)
+Rep.Cov[index] = round(extra[index])
+Rep.Src[index] = "extrapolated"
 
-itp = reported
-itp[rep_rejected] = NA
-itp = apply(itp, 2, zoo::na.approx, na.rm=FALSE)
-index = est
-index = index & (is.na(reported) | rep_rejected)
-index = index & !is.na(itp)
-rep_ts[index] = itp[index]                   # todo: consider rounding numbers
-rep_src[index] = "interpolated"
+extra = apply(Rep.Cov, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
+index = Ereq & is.na(Rep.Cov) & !is.na(extra)
+Rep.Cov[index] = round(extra[index])
+Rep.Src[index] = "extrapolated"
 
-etp = apply(itp, 2, zoo::na.locf, na.rm=FALSE)
-etp = apply(etp, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
-index = est
-index = index & (is.na(reported) | rep_rejected)
-index = index & is.na(itp) & !is.na(etp)
-rep_ts[index] = etp[index]
-rep_src[index] = "extrapolated"
-
-index = est
-index = index & !is.na(reported)
-index = index & !rep_rejected
-rep_ts[index] = reported[index]
-rep_src[index] = source[index]
-
+# 5. Survey data
+#
 # % Survey results passed for inclusion in the analysis include:
-# % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months
-# % of age
+# % card or history results for cohorts 12-23, 18-29, 15-26, 24-35 months of age
 # survey_for_analysis(C, V, Y, ID, Description, Coverage) :-
 #     survey_results0(C, V, Y, ID, Description, Coverage),
 #     member(confirm:'card or history', Description),
 #     member(age:AgeCohort, Description),
 #     member(AgeCohort, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']).
-index = svy$Info.confirm == "card or history"
-index = index & svy$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-svy.ana = svy[index, ]
+
+cnf = Survey$Info.confirm == "card or history"
+age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+Svy.Ana = Survey[cnf & age, ]
 
 # % Reasons to exclude a survey include:
 # %    Sample size < 300,
@@ -409,14 +418,66 @@ svy.ana = svy[index, ]
 #     ;   Coverage = Cov0
 #     ).
 
-index = svy.ana$Info.ss >= 300
-index = index & !(svy.ana$Id %in% wgd$Id[wgd$Dec == "ignoreSurvey"])
-index = index & !(svy.ana$Y %in% wgd$Y[wgd$Dec == "ignoreSurvey" & is.na(wgd$Id)])
-index = index | svy.ana$Id %in% wgd$Id[wgd$Dec == "acceptSurvey"]
+size   = Svy.Ana$Info.ss >= 300
+ignore = Svy.Ana$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
+year   = Svy.Ana$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+accept = Svy.Ana$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
+index  = (size & !ignore & !year) | accept
+Svy.Ana = Svy.Ana[index, ]
 
-# Todo: modify survey (recall bias etc.)
+# % Recall bias is estimated by comparing the first and third dose of a vaccine
+#
+# vaccine(dtp3, dtp1).
+# vaccine(pol3, pol1).
+# vaccine(hib3, hib1).
+# vaccine(hepb3, hepb1).
+# vaccine(pcv3, pcv1).
+#
+# survey_modified(C, V, Y, ID, Expl, Coverage) :-
+#     member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
+#
+#     % Third dose, card only
+#     survey_results0(C, V, Y, ID, DescriptionCard3Dose, C3Cov),
+#     member(confirm:card, DescriptionCard3Dose),
+#     member(age:AgeCohortCard3Dose, DescriptionCard3Dose),
+#     member(AgeCohortCard3Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
+#
+#     % First dose, card or history
+#     vaccine(V, First),
+#     survey_results0(C, First, Y, ID, DescriptionCoH1Dose, CoH1Cov),
+#     member(confirm:'card or history', DescriptionCoH1Dose),
+#     member(age:AgeCohortCoH1, DescriptionCoH1Dose),
+#     member(AgeCohortCoH1, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
+#
+#     % First dose, card only
+#     survey_results0(C, First, Y, ID, DescriptionCard1Dose, C1Cov),
+#     C1Cov > 0,
+#     member(confirm:card, DescriptionCard1Dose),
+#     member(age:AgeCohortCard1Dose, DescriptionCard1Dose),
+#     member(AgeCohortCard1Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
+#
+#     Adj is C3Cov / C1Cov,
+#     ThirdHistoryAdj is (CoH1Cov - C1Cov) * Adj,
+#     CovAdjusted is C3Cov + ThirdHistoryAdj,
+#     bound_0_100(CovAdjusted, Cov0),
+#
+#     survey_for_analysis(C, V, Y, ID, Description, SurveyCoverage),
+#     Cov0 \= SurveyCoverage,
+#
+#     SurveyCovRounded is round(SurveyCoverage),
+#     CH1 is round(CoH1Cov),
+#     C1 is round(C1Cov),
+#     C3 is round(C3Cov),
+#     member(title:Title, Description),
+#     concat_atom([Title, ' card or history results of ', SurveyCovRounded,
+#         ' percent modifed for recall bias to ', Cov0,
+#         ' percent based on 1st dose card or history coverage of ',
+#         CH1, ' percent, 1st dose card only coverage of ',
+#         C1, ' percent and 3rd dose card only coverage of ',
+#         C3, ' percent. '], Expl),
+#         Coverage = Cov0.
 
-svy.ana = svy.ana[index, ]
+# Todo... (nicht vergnügungssteuerpflichtig = not subject to entertainment tax)
 
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
@@ -427,41 +488,42 @@ svy.ana = svy.ana[index, ]
 #     concat_atom(['Survey evidence of ', Coverage, ' percent based on ',
 #         N, ' survey(s). '], Expl).
 
-svy.cov = matrix(NA_integer_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-i.cov = with(svy.ana, aggregate(Cov, by=list(Y=Y, V=V), FUN=mean))
-svy.cov[cbind(i.cov$Y, i.cov$V)] = i.cov$x
+Svy.Cov = YV_int
+index = with(Svy.Ana, aggregate(Cov, by=list(Y=Y, V=V), FUN=mean))
+Svy.Cov[cbind(index$Y, index$V)] = round(index$x)
 
-svy.inf = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-i.inf = with(svy.ana, aggregate(Cov, by=list(Y=Y, V=V), FUN=length))
-svy.inf[cbind(i.inf$Y, i.inf$V)] = 
-  sprintf("Survey evidence of %s percent based on %i survey(s). ",
-          svy.cov[cbind(i.inf$Y, i.inf$V)], i.inf$x)
+Svy.Info = YV_char
+index = with(Svy.Ana, aggregate(Cov, by=list(Y=Y, V=V), FUN=length))
+Svy.Info[cbind(index$Y, index$V)] = sprintf(
+  "Survey evidence of %g percent based on %i survey(s).", 
+  Svy.Cov[cbind(index$Y, index$V)], index$x)
 
-# % Determine coverage value at anchor points defined as years where there
-# % are multiple data points (reported | survey | wgd).
-# %
-# % Reported value "anchored" by working group
-# anchor(C, V, Y, Rule, Expl, Coverage) :-
-#     reported_time_series(C, V, Y, _, Cov0),
-#     decision(C, V, Y, assignAnchor, Expl0, _, Cov0), % same Cov0
-#     !,
-#     Rule = 'R: AP',
-#     Expl = Expl0,
-#     Coverage = Cov0.
-#
-# % Working group assigns anchor point value.
+# 6. Determine coverage value at anchor points defined as years with multiple
+#    data points (reported | survey | wgd).
+
+Anchor.Rule = YV_char
+Anchor.Info = YV_char
+Anchor.Cov = YV_int
+
+# % Survey results challenge reported
 # anchor(C, V, Y, Rule, Expl, Coverage) :-
 #     reported_time_series(C, V, Y, _, _Cov0),
-#     decision(C, V, Y, assignAnchor, Expl0, _, Assigned),
-#     % Cov0 \= Assigned,
+#     survey(C, V, Y, Expl0, Survey),
+#     % survey_reported_threshold(Threshold),
+#     % abs(Cov0 - Survey) > Threshold,
 #     !,
-#     Rule = 'W: AP',
-#     concat_atom(['Estimate of ', Assigned, ' percent assigned by working group. ',
-#         Expl0], Expl),
-#     Coverage = Assigned.
-#
+#     Rule = 'S: AP',
+#     concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',
+#     Expl0, ' '], Expl),
+#     Coverage = Survey.
+
+index = which(abs(Svy.Cov - Rep.Cov) > svy.thrs, arr.ind=TRUE)
+Anchor.Rule[index] = "S: AP"
+Anchor.Info[index] = sprintf(
+  "Survey evidence does not support reported data. Estimate based on survey results. %s",
+  Svy.Info[index])
+Anchor.Cov[index] = Svy.Cov[index]
+
 # % Survey results support reported
 # anchor(C, V, Y, Rule, Expl, Coverage) :-
 #     reported_time_series(C, V, Y, Source, Cov0),
@@ -478,38 +540,6 @@ svy.inf[cbind(i.inf$Y, i.inf$V)] =
 #       ]),
 #     concat_atom([Expl1, Expl0], Expl),
 #     Coverage = Cov0.
-#
-# % Survey results challenge reported
-# anchor(C, V, Y, Rule, Expl, Coverage) :-
-#     reported_time_series(C, V, Y, _, _Cov0),
-#     survey(C, V, Y, Expl0, Survey),
-#     % survey_reported_threshold(Threshold),
-#     % abs(Cov0 - Survey) > Threshold,
-#     !,
-#     Rule = 'S: AP',
-#     concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',
-#     Expl0, ' '], Expl),
-#     Coverage = Survey.
-
-anchor.rul = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-anchor.inf = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-anchor.cov = matrix(NA_integer_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-
-index = abs(svy.cov - rep_ts) > svy.threshold
-index[is.na(index)] = FALSE
-anchor.rul[index] = "S: AP"
-
-anchor.inf[index] = 
-  paste("Survey evidence does not support reported data. Estimate based on survey results.", 
-        svy.inf[index], collapse=" ")
-anchor.cov[index] = svy.cov[index]
-
-index = abs(svy.cov - rep_ts) <= svy.threshold
-index[is.na(index)] = FALSE
-anchor.rul[index] = "R: AP"
 
 info = c(
   gov="Estimate informed by reported data supported by survey. ",
@@ -517,29 +547,303 @@ info = c(
   interpolated="Estimate informed by interpolation between reported data supported by survey. ",
   extrapolated="Estimate based on extrapolation from data reported by national government supported by survey. ")
 
-anchor.inf[index] = paste(info[source[index]], svy.inf[index], collapse=" ")
-anchor.cov[index] = rep_ts[index]
+index = which(abs(Svy.Cov - Rep.Cov) <= svy.thrs, arr.ind=TRUE)
+Anchor.Rule[index] = "R: AP"
+Anchor.Cov[index] = Rep.Cov[index]
+Anchor.Info[index] = sprintf("%s %s", info[Rep.Src[index]], Svy.Info[index])
 
-index = wgd[wgd$Dec == "assignAnchor", c("Y", "V", "Cov", "Info")]
+# % Reported value "anchored" by working group
+# anchor(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, _, Cov0),
+#     decision(C, V, Y, assignAnchor, Expl0, _, Cov0), % same Cov0
+#     !,
+#     Rule = 'R: AP',
+#     Expl = Expl0,
+#     Coverage = Cov0.
 
-anchor = matrix(NA_integer_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-anchor[cbind(index$Y, index$V)] = round(index$Cov)
+index = Decisions[Decisions$Dec == "assignAnchor", ]
+equal = which(Rep.Cov[cbind(index$Y, index$V)] == index$Cov, arr.ind=TRUE)
+index = index[equal, ]
+Anchor.Rule[cbind(index$Y, index$V)] = "R: AP"
+Anchor.Info[cbind(index$Y, index$V)] = index$Info
+Anchor.Cov[cbind(index$Y, index$V)] = index$Cov
 
-info = matrix(NA_character_, nrow=nrow(est), ncol=ncol(est),
-  dimnames=dimnames(est))
-info[cbind(index$Y, index$V)] = index$Info
+# % Working group assigns anchor point value.
+# anchor(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, _, _Cov0),
+#     decision(C, V, Y, assignAnchor, Expl0, _, Assigned),
+#     % Cov0 \= Assigned,
+#     !,
+#     Rule = 'W: AP',
+#     concat_atom(['Estimate of ', Assigned, ' percent assigned by working group. ',
+#         Expl0], Expl),
+#     Coverage = Assigned.
 
-index = anchor == rep_ts
-index[is.na(index)] = FALSE
-anchor.rul[index] = "R: AP"
-anchor.inf[index] = info[index]
-anchor.cov[index] = anchor[index]
+index = Decisions[Decisions$Dec == "assignAnchor", ]
+neq = which(Rep.Cov[cbind(index$Y, index$V)] != index$Cov, arr.ind=TRUE)
+index = index[neq, ]
+Anchor.Rule[cbind(index$Y, index$V)] = "W: AP"
+Anchor.Cov[cbind(index$Y, index$V)] = index$Cov
+Anchor.Info[cbind(index$Y, index$V)] = sprintf(
+  "Estimate of %g percent assigned by working group. ", index$Cov)
 
-index = anchor != rep_ts
-index[is.na(index)] = FALSE
-anchor.rul[index] = "W: AP"
-anchor.inf[index] =
-  sprintf("Estimate of %g percent assigned by working group. ", anchor[index])
-anchor.cov[index] = anchor[index]
+# % Level II: Estimate coverage by distinguishing different cases
+# %
+# % * Estimate at anchor point
+# % * Estimate between anchor points
+# % * Estimate before anchor point
+# % * Estimate after anchor point
+# % * No anchor points
+# %
+# % At anchor points
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     anchor(C, V, Y, Rule0, Expl0, Cov0),
+#     !,
+#     Rule = Rule0,
+#     Expl = Expl0,
+#     Coverage = Cov0.
+#
+# % Between anchor points: interpolation forced by working group
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     decision(C, V, Y, interpolate, Expl0, _, _),
+#     prec_anchor(C, V, Y, Prec, _, PrecCov),
+#     succ_anchor(C, V, Y, Succ, _, SuccCov),
+#     !,
+#     Rule = 'W-I:',
+#     concat_atom(['Estimate informed by interpolation between ', Prec,
+#         ' and ', Succ, ' levels. ', Expl0], Expl),
+#     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
+#
+# % Between anchor points: between two reported anchors
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, Source, Cov0),
+#     prec_anchor(C, V, Y, _Prec, PrecRule, _),
+#     PrecRule = 'R: AP',
+#     succ_anchor(C, V, Y, _Succ, SuccRule, _),
+#     SuccRule = 'R: AP',
+#     !,
+#     Rule = 'R:',
+#     member(Source-Expl,
+#       [ gov-'Estimate informed by reported data. ',
+#         admin-'Estimate informed by reported administrative data. ',
+#         interpolated-'Estimate informed by interpolation between reported data. '
+#       ]),
+#     Coverage = Cov0.
+#
+# % No anchor points for any year, use reported
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, Source, Cov0),
+#     !,
+#     Rule = 'R:',
+#     member(Source-Expl,
+#       [ gov-'Estimate informed by reported data. ',
+#         admin-'Estimate informed by reported administrative data. ',
+#         interpolated-'Estimate informed by interpolation between reported data. ',
+#         extrapolated-'Estimate informed by extrapolation from reported data. '
+#       ]),
+#     Coverage = Cov0.
 
+info = c(
+  gov="Estimate informed by reported data. ",
+  admin="Estimate informed by reported administrative data. ",
+  interpolated="Estimate informed by interpolation between reported data. ",
+  extrapolated="Estimate informed by extrapolation from reported data. ")
+W2.Cov = Rep.Cov
+
+W2.Info = YV_char
+W2.Info[] = info[Rep.Src]
+
+W2.Rule = YV_char
+W2.Rule[!is.na(Rep.Cov)] = "R:"
+
+# % Before earliest/after latest anchor (not of type reported): calibrated
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, _, Cov0),
+#     (   succ_anchor(C, V, Y, Anchor, AnchorRule, AnchorCov),
+#         AnchorRule \= 'R: AP'
+#     ;   prec_anchor(C, V, Y, Anchor, AnchorRule, AnchorCov),
+#         AnchorRule \= 'R: AP'
+#     ), !,
+#     Rule = 'C:',
+#     concat_atom(['Reported data calibrated to ', Anchor, ' levels. '], Expl),
+#     reported_time_series(C, V, Anchor, _, ReportedAtAnchor),
+#     Adj is AnchorCov - ReportedAtAnchor,
+#     Coverage is round(Cov0 + Adj).
+
+# Search for preceding anchor
+index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
+index = index & !is.na(Prec.Rule) & Prec.Rule != "R: AP"
+
+Prec.Cov = apply(Anchor.Cov, 2, FUN=na.locf, na.rm=FALSE)
+
+Prec.Year = YV_char
+Prec.Year[] = Yn
+Prec.Year[index] = NA
+Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
+
+Rule = YV_char
+Rule[index] = "C:"
+
+Info = YV_char
+Info[index] = sprintf("Reported data calibrated to %s levels. ", 
+    Prec.Year[index])
+
+yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+Adj = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - Rep.Cov[cbind(c(Prec.Year), yv$V)]
+Cov = YV_int
+Cov[index] = Rep.Cov[index] + Adj[index]
+
+# Search for next anchor
+index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+index = index & !is.na(Succ.Rule) & Succ.Rule != "R: AP"
+
+Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+
+Succ.Year[] = Yn
+Succ.Year[index] = NA
+Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+
+Rule[index] = "C:"
+
+Info[index] = sprintf("Reported data calibrated to %s levels. ", 
+    Succ.Year[index])
+
+yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+Adj = Anchor.Cov[cbind(c(Succ.Year), yv$V)] - Rep.Cov[cbind(c(Succ.Year), yv$V)]
+Cov[index] = Rep.Cov[index] + Adj[index]
+
+# % Before earliest/after latest anchor (of type reported)
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, Source, Cov0),
+#     (   succ_anchor(C, V, Y, _Anchor, AnchorRule, _AnchorCov),
+#         AnchorRule = 'R: AP'
+#     ;   prec_anchor(C, V, Y, _Anchor, AnchorRule, _AnchorCov),
+#         AnchorRule = 'R: AP'
+#     ), !,
+#     Rule = 'R:',
+#     member(Source-Expl,
+#       [ gov-'Estimate informed by reported data. ',
+#         admin-'Estimate informed by reported data. ',
+#         interpolated-'Estimate informed by interpolation between reported data. ',
+#         extrapolated-'Estimate based on extrapolation from data reported by national government. '
+#       ]),
+#     Coverage = Cov0.
+
+# Search for preceding anchor
+index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
+index = index & !is.na(Prec.Rule) & Prec.Rule == "R: AP"
+
+info = c(gov="Estimate informed by reported data. ",
+    admin="Estimate informed by reported data. ",
+    interpolated="Estimate informed by interpolation between reported data. ",
+    extrapolated="Estimate based on extrapolation from data reported by national government. ")
+
+Rule[index] = "R:"
+Info[index] = info[Rep.Src[index]]
+Cov[index] = Rep.Cov[index]
+
+# Search for next anchor
+index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+index = index & !is.na(Succ.Rule) & Succ.Rule == "R: AP"
+
+Rule[index] = "R:"
+Info[index] = info[Rep.Src[index]]
+Cov[index] = Rep.Cov[index]
+
+# % Between other anchor points (not both of type "reported"): calibrate
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, _Source, _Cov0),
+#     prec_anchor(C, V, Y, Prec, PrecRule, _),
+#     succ_anchor(C, V, Y, Succ, SuccRule, _),
+#     ( PrecRule \= 'R: AP' ; SuccRule \= 'R: AP' ),
+#     !,
+#     Rule = 'C:',
+#     concat_atom(['Reported data calibrated to ', Prec,
+#         ' and ', Succ, ' levels. '], Expl),
+#     calibrate(C, V, Prec, Succ, Y, Coverage).
+
+# Todo
+
+
+
+# Previous anchor
+prev.cov = na.locf(anchor)
+prev.cov = ifelse(is.na(anchor) & !is.na(prev.cov), prev.cov, NA)
+
+# Distance to previous anchor
+prev = function(x)
+{
+  r = rle(x)
+  d = lapply(r$lengths, FUN=seq, from=1)
+  d[!r$values] = lapply(d[!r$values], `+`, NA)
+  unlist(d)
+}
+
+locf = is.na(anchor) & !is.na(prev.cov)
+prev.yr = apply(locf, 2, prev)
+
+# Following anchor
+foll.cov = na.locf(anchor, fromLast=TRUE, na.rm=FALSE)
+foll.cov = ifelse(is.na(anchor), foll.cov, NA)
+
+# Distance to following anchor
+foll = function(x)
+{
+  r = rle(x)
+  d = lapply(r$lengths, FUN=seq, to=1)
+  d[!r$values] = lapply(d[!r$values], `+`, NA)
+  unlist(d)
+}
+
+nocf = is.na(anchor) & !is.na(foll.cov)
+foll.yr = apply(nocf, 2, foll)
+
+# Rule of next anchor point
+index = which(!is.na(foll.yr), arr.ind=TRUE) + cbind(foll.yr[!is.na(foll.yr)], 0)
+index[anchor.rul[index] != "R: AP", ] = NA
+
+a.rul = anchor.rul[index]
+a.cov = anchor.cov[index]
+a.rep = rep_ts[index]
+
+#     Rule = 'C:',
+#     concat_atom(['Reported data calibrated to ', Anchor, ' levels. '], Expl),
+#     reported_time_series(C, V, Anchor, _, ReportedAtAnchor),
+#     Adj is AnchorCov - ReportedAtAnchor,
+#     Coverage is round(Cov0 + Adj).
+
+w2.Cov[index] = round(w2.Cov[index] + a.cov - a.rep)
+w2.Rule[index] = "C:"
+w2.Info[index] = sprintf("Reported data calibrated to %i levels. ", Yn[index[, 1]])
+
+# TS: 50 51 RP=49  50  NA NA NA
+# AP: NA NA WA=51  NA  NA NA NA
+# C:  NA NA WA=51 *52* NA NA NA
+# C:  NA NA WA=2    2   2 NA NA
+
+foll = function(x)
+{
+  r = rle(x)
+  d = lapply(r$lengths, FUN=seq, to=1)
+  d[!r$values] = lapply(d[!r$values], `+`, NA)
+  unlist(d)
+}
+
+anchor.cov
+cal = rep_ts - anchor.cov
+cal.fwd = na.locf(cal, na.rm=FALSE) # cal nach vorne fortschreiben
+
+# Punkte nach W: AP markieren
+anchor.rul != "R: AP"
+
+
+wap = anchor.rul != "R: AP" & !is.na(rep_ts)
+wap.fwd = na.locf(wap, na.rm=FALSE) # cal nach vorne fortschreiben
+wap.fwd[!is.na(wap)] = FALSE
+wap.fwd[!wap.fwd] = FALSE
+wap.fwd[wap.fwd] = cal.fwd[wap.fwd]
+wap.fwd
