@@ -361,7 +361,7 @@ Rep.Src[!index] = NA
 #     Source = interpolated,
 #     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
-inter = apply(Rep.Cov, 2, zoo::na.approx, na.rm=FALSE)
+inter = apply(Rep.Cov, 2, na.approx, na.rm=FALSE)
 index = Ereq & is.na(Rep.Cov) & !is.na(inter)
 Rep.Cov[index] = round(inter[index])
 Rep.Src[index] = "interpolated"
@@ -594,41 +594,6 @@ Anchor.Info[cbind(index$Y, index$V)] = sprintf(
 # % * Estimate before anchor point
 # % * Estimate after anchor point
 # % * No anchor points
-# %
-# % At anchor points
-# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-#     anchor(C, V, Y, Rule0, Expl0, Cov0),
-#     !,
-#     Rule = Rule0,
-#     Expl = Expl0,
-#     Coverage = Cov0.
-#
-# % Between anchor points: interpolation forced by working group
-# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-#     decision(C, V, Y, interpolate, Expl0, _, _),
-#     prec_anchor(C, V, Y, Prec, _, PrecCov),
-#     succ_anchor(C, V, Y, Succ, _, SuccCov),
-#     !,
-#     Rule = 'W-I:',
-#     concat_atom(['Estimate informed by interpolation between ', Prec,
-#         ' and ', Succ, ' levels. ', Expl0], Expl),
-#     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
-#
-# % Between anchor points: between two reported anchors
-# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-#     reported_time_series(C, V, Y, Source, Cov0),
-#     prec_anchor(C, V, Y, _Prec, PrecRule, _),
-#     PrecRule = 'R: AP',
-#     succ_anchor(C, V, Y, _Succ, SuccRule, _),
-#     SuccRule = 'R: AP',
-#     !,
-#     Rule = 'R:',
-#     member(Source-Expl,
-#       [ gov-'Estimate informed by reported data. ',
-#         admin-'Estimate informed by reported administrative data. ',
-#         interpolated-'Estimate informed by interpolation between reported data. '
-#       ]),
-#     Coverage = Cov0.
 #
 # % No anchor points for any year, use reported
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -701,6 +666,7 @@ index = index & !is.na(Succ.Rule) & Succ.Rule != "R: AP"
 
 Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
+Succ.Year = YV_char
 Succ.Year[] = Yn
 Succ.Year[index] = NA
 Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
@@ -757,93 +723,133 @@ Cov[index] = Rep.Cov[index]
 # % Between other anchor points (not both of type "reported"): calibrate
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 #     reported_time_series(C, V, Y, _Source, _Cov0),
-#     prec_anchor(C, V, Y, Prec, PrecRule, _),
-#     succ_anchor(C, V, Y, Succ, SuccRule, _),
+#     prec_anchor(C, V, Y, Prec, PrecRule, PrecCov),
+#     succ_anchor(C, V, Y, Succ, SuccRule, SuccCov),
 #     ( PrecRule \= 'R: AP' ; SuccRule \= 'R: AP' ),
 #     !,
 #     Rule = 'C:',
 #     concat_atom(['Reported data calibrated to ', Prec,
 #         ' and ', Succ, ' levels. '], Expl),
-#     calibrate(C, V, Prec, Succ, Y, Coverage).
+#     reported_time_series(C, V, Prec, _, PrecRep),
+#     reported_time_series(C, V, Succ, _, SuccRep),
+#     interpolate(Prec, PrecRep, Succ, SuccRep, Y, RepInterp),
+#     interpolate(Prec, PrecCov, Succ, SuccCov, Y, AnchInterp),
+#     Adj is AnchInterp - RepInterp,
+#     Coverage is round(Reported + Adj).
 
-# Todo
+index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
+Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+index = index & !is.na(Prec.Rule) & !is.na(Succ.Rule)
+index = index & (Prec.Rule != "R: AP" | Succ.Rule != "R: AP")
 
+Prec.Cov = apply(Anchor.Cov, 2, FUN=na.locf, na.rm=FALSE)
+Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
+Rule[index] = "C:"
 
-# Previous anchor
-prev.cov = na.locf(anchor)
-prev.cov = ifelse(is.na(anchor) & !is.na(prev.cov), prev.cov, NA)
+Prec.Year = YV_char
+Prec.Year[] = Yn
+Prec.Year[index] = NA
+Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
-# Distance to previous anchor
-prev = function(x)
-{
-  r = rle(x)
-  d = lapply(r$lengths, FUN=seq, from=1)
-  d[!r$values] = lapply(d[!r$values], `+`, NA)
-  unlist(d)
-}
+Succ.Year = YV_char
+Succ.Year[] = Yn
+Succ.Year[index] = NA
+Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-locf = is.na(anchor) & !is.na(prev.cov)
-prev.yr = apply(locf, 2, prev)
+Info[index] = sprintf("Reported data calibrated to %s and %s levels. ", 
+    Prec.Year[index], Succ.Year[index])
 
-# Following anchor
-foll.cov = na.locf(anchor, fromLast=TRUE, na.rm=FALSE)
-foll.cov = ifelse(is.na(anchor), foll.cov, NA)
+# interpolate Anchor.Cov for year without anchor
+Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
-# Distance to following anchor
-foll = function(x)
-{
-  r = rle(x)
-  d = lapply(r$lengths, FUN=seq, to=1)
-  d[!r$values] = lapply(d[!r$values], `+`, NA)
-  unlist(d)
-}
+# interpolate Rep.Cov for year without anchor
+Itp2.Cov = Rep.Cov
+Itp2.Cov[index] = NA
+Itp2.Cov = apply(Itp2.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
-nocf = is.na(anchor) & !is.na(foll.cov)
-foll.yr = apply(nocf, 2, foll)
+yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+Adj = Itp1.Cov - Itp2.Cov
+Cov[index] = round(Rep.Cov[index] + Adj[index])
 
-# Rule of next anchor point
-index = which(!is.na(foll.yr), arr.ind=TRUE) + cbind(foll.yr[!is.na(foll.yr)], 0)
-index[anchor.rul[index] != "R: AP", ] = NA
+# % Between anchor points: between two reported anchors
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     reported_time_series(C, V, Y, Source, Cov0),
+#     prec_anchor(C, V, Y, _Prec, PrecRule, _),
+#     PrecRule = 'R: AP',
+#     succ_anchor(C, V, Y, _Succ, SuccRule, _),
+#     SuccRule = 'R: AP',
+#     !,
+#     Rule = 'R:',
+#     member(Source-Expl,
+#       [ gov-'Estimate informed by reported data. ',
+#         admin-'Estimate informed by reported administrative data. ',
+#         interpolated-'Estimate informed by interpolation between reported data. '
+#       ]),
+#     Coverage = Cov0.
 
-a.rul = anchor.rul[index]
-a.cov = anchor.cov[index]
-a.rep = rep_ts[index]
+index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
+Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+index = index & !is.na(Prec.Rule) & !is.na(Succ.Rule)
+index = index & Prec.Rule == "R: AP" & Succ.Rule == "R: AP"
 
-#     Rule = 'C:',
-#     concat_atom(['Reported data calibrated to ', Anchor, ' levels. '], Expl),
-#     reported_time_series(C, V, Anchor, _, ReportedAtAnchor),
-#     Adj is AnchorCov - ReportedAtAnchor,
-#     Coverage is round(Cov0 + Adj).
+info = c(gov="Estimate informed by reported data. ",
+    admin="Estimate informed by reported administrative data. ",
+    interpolated="Estimate informed by interpolation between reported data. ")
 
-w2.Cov[index] = round(w2.Cov[index] + a.cov - a.rep)
-w2.Rule[index] = "C:"
-w2.Info[index] = sprintf("Reported data calibrated to %i levels. ", Yn[index[, 1]])
+Rule[index] = "R:"
+Info[index] = info[Rep.Src[index]]
+Cov[index] = Rep.Cov[index]
 
-# TS: 50 51 RP=49  50  NA NA NA
-# AP: NA NA WA=51  NA  NA NA NA
-# C:  NA NA WA=51 *52* NA NA NA
-# C:  NA NA WA=2    2   2 NA NA
+# % Between anchor points: interpolation forced by working group
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     decision(C, V, Y, interpolate, Expl0, _, _),
+#     prec_anchor(C, V, Y, Prec, _, PrecCov),
+#     succ_anchor(C, V, Y, Succ, _, SuccCov),
+#     !,
+#     Rule = 'W-I:',
+#     concat_atom(['Estimate informed by interpolation between ', Prec,
+#         ' and ', Succ, ' levels. ', Expl0], Expl),
+#     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
-foll = function(x)
-{
-  r = rle(x)
-  d = lapply(r$lengths, FUN=seq, to=1)
-  d[!r$values] = lapply(d[!r$values], `+`, NA)
-  unlist(d)
-}
+index = Decisions[Decisions$Dec == "interpolate", ]
+index = cbind(index$Y, index$V)
 
-anchor.cov
-cal = rep_ts - anchor.cov
-cal.fwd = na.locf(cal, na.rm=FALSE) # cal nach vorne fortschreiben
+Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
+Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-# Punkte nach W: AP markieren
-anchor.rul != "R: AP"
+Prec.Cov = apply(Anchor.Cov, 2, FUN=na.locf, na.rm=FALSE)
+Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
+Prec.Year = YV_char
+Prec.Year[] = Yn
+Prec.Year[index] = NA
+Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
-wap = anchor.rul != "R: AP" & !is.na(rep_ts)
-wap.fwd = na.locf(wap, na.rm=FALSE) # cal nach vorne fortschreiben
-wap.fwd[!is.na(wap)] = FALSE
-wap.fwd[!wap.fwd] = FALSE
-wap.fwd[wap.fwd] = cal.fwd[wap.fwd]
-wap.fwd
+Succ.Year = YV_char
+Succ.Year[] = Yn
+Succ.Year[index] = NA
+Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
+
+Rule[index] = "W-I:"
+Info[index] = sprintf(
+  "Estimate informed by interpolation between %s and %s levels. ",
+  Prec.Year[index], Succ.Year[index])
+
+Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
+Cov[index] = round(Itp1.Cov)
+
+# % At anchor points
+# wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
+#     anchor(C, V, Y, Rule0, Expl0, Cov0),
+#     !,
+#     Rule = Rule0,
+#     Expl = Expl0,
+#     Coverage = Cov0.
+
+index = !is.na(Anchor.Cov)
+Rule[index] = Anchor.Rule[index]
+Info[index] = Anchor.Info[index]
+Cov[index] = Anchor.Cov[index]
