@@ -993,8 +993,7 @@ Cov[] = pmax(0, pmin(99, round(Cov)))
 # 10. Confidence depends on converging evidence from the different sources.
 # % 1 star = low confidence, ..., 3 stars = high confidence
 # %
-
-#% Low confidence
+# % Low confidence
 # confidence(_C, _V, _Y, Expl, Grade) :-
 #   !,
 #   Expl = 'GoC=No accepted empirical data',
@@ -1069,14 +1068,36 @@ index = which(Conf.Rep == "R+" & Conf.Den == "D+")
 GoC[index] = 2
 Expl[index] = "GoC=R+ D+"
 
+# % Check if any source is challenged
+# challenge(C, V, Y, 'R-') :-
+#   conf_reported(C, V, Y, 'R-').
+#
+# challenge(C, V, Y, 'S-') :-
+#   conf_survey(C, V, Y, 'S-').
+#
+# challenge(C, V, Y, 'D-') :-
+#   conf_denominator(C, V, Y, 'D-').
+Chall = YV_char
+Chall[] = ""
+
+index = which(Conf.Rep == "R-")
+Chall[index] = "R-"
+
+index = which(Conf.Srv == "S-")
+Chall[index] = sprintf("%s S-", Chall[index])
+
+index = which(Conf.Den == "D-")
+Chall[index] = sprintf("%s D-", Chall[index])
+
 # % If any estimate has been challenged, confidence is low
 # confidence(C, V, Y, Expl, Grade) :-
 #   setof(Expl0, challenge(C, V, Y, Expl0), List),
 #   !,
 #   concat_atom(['Estimate challenged by: ' | List], Expl),
 #   Grade = 1.
+#
 
-index = aggregate(Chall$Expl, by=list(Y=Chall$Y, V=Chall$V), FUN=paste, collapse="")
+index = Chall != ""
 GoC[cbind(index$Y, index$V)] = 1
 Expl[cbind(index$Y, index$V)] = sprintf("Estimate challenged by: ", index$x)
 
@@ -1128,16 +1149,6 @@ Expl[index, "rcv1"] = Expl[index, "mcv1"]
 
 
 
-% Check if any source is challenged
-challenge(C, V, Y, 'R-') :-
-  conf_reported(C, V, Y, 'R-').
-
-challenge(C, V, Y, 'S-') :-
-  conf_survey(C, V, Y, 'S-').
-
-challenge(C, V, Y, 'D-') :-
-  conf_denominator(C, V, Y, 'D-').
-
 % Confidence in reported coverage if it is an anchor point. Otherwise,
 % no confidence
 conf_reported(C, V, Y, Support) :-
@@ -1177,7 +1188,7 @@ Support = 'S+'.
 % 1. Simplify previous rule to a check for an anchor point
 %
 % supporting_survey_in_scope(C, V, Y, Rule) :-
-  %     survey(C, V, Y, _, _),
+%     survey(C, V, Y, _, _),
 %     wuenic_I(C, V, Y, 'S: AP', _, _).
 %
 % 2. Rewrite rule to look at relationship between estimate rule and
