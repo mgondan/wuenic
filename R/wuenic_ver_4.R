@@ -8,6 +8,7 @@ Yn = 1997:2022
 
 sawtooth = 10
 svy.thrs = 10
+unpd.thrs = 10
 
 # Default setting
 #
@@ -549,7 +550,6 @@ Svy.Info[index] = sprintf(
   Svy.Title[index], Svy.Ana[index], CovAdj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
 Svy.Ana[index] = CovAdj[index]
 
-
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
 #     findall(Cov, survey_accepted(C, V, Y, _, Cov), [H | T]),
@@ -990,6 +990,98 @@ Cov[cbind(index$Y, index$V)] = index$Cov
 #   Y is max(0, min(99, round(X))).
 Cov[] = pmax(0, pmin(99, round(Cov)))
 
+# % Confidence in reported coverage if it is an anchor point. Otherwise,
+# % no confidence
+# conf_reported(C, V, Y, Support) :-
+#   reported(C, V, Y, _, _),
+#   wuenic_I(C, V, Y, Rule, _, _),
+#   !,
+#   (   member(Rule, ['R:', 'R: AP'])
+#   ->  Support = 'R+'
+#   ;   Support = 'R-'
+# ).
+
+Conf.Rep = YV_char
+index = !is.na(Rep.Cov) & Rule %in% c("R:", "R: AP")
+Conf.Rep[index] = "R+"
+index = !is.na(Rep.Cov) & !(Rule %in% c("R:", "R: AP"))
+Conf.Rep[index] = "R-"
+
+# % No confidence in surveys if _any_ survey deviates too much from WUENIC
+# % coverage
+# conf_survey(C, V, Y, Support) :-
+#   wuenic_I(C, V, Y, _, _, Cov0),
+#   estimate_required(C, V, Year, _, _),
+#   survey(C, V, Year, _, Coverage),
+#   confidence_survey_scope(Scope),
+#   abs(Y - Year) =< Scope,
+#   confidence_survey_threshold(Threshold),
+#   abs(Cov0 - Coverage) > Threshold,
+#   !,
+#   Support = 'S-'.
+#
+# % Confidence only if all surveys are consistent with WUENIC coverage
+# conf_survey(C, V, Y, Support) :-
+#   wuenic_I(C, V, Y, _, _, _Cov0),
+#   estimate_required(C, V, Year, _, _),
+#   survey(C, V, Year, _, _Coverage),
+#   confidence_survey_scope(Scope),
+#   abs(Y - Year) =< Scope,
+#   !,
+#   Support = 'S+'.
+
+Svy.Min = YV_int
+suppressWarnings({Svy.Min = round(apply(Svy.Ana, c(1, 2), min, na.rm=TRUE))})
+
+Svy.Max = YV_int
+suppressWarnings({Svy.Max = round(apply(Svy.Ana, c(1, 2), max, na.rm=TRUE))})
+
+index = which(!is.na(Cov) & Ereq & is.finite(Svy.Min) & is.finite(Svy.Max))
+Conf.Srv[index] = "S+"
+
+index = which(!is.na(Cov) & Ereq & Cov - Svy.Min > svy.thrs)
+Conf.Srv[index] = "S-"
+
+index = which(!is.na(Cov) & Ereq & Svy.Max - Cov > svy.thrs)
+Conf.Srv[index] = "S-"
+
+# % Births used for bcg and hepb birth dose
+# denominator(C, V, Y, Coverage) :-
+#   member(V, [bcg, hepbb]),
+#   !,
+#   vaccinated0(C, V, Y, Vaccinated),
+#   births_UNPD(C, Y, Births),
+#   Coverage is Vaccinated / Births * 100.
+#
+# % Surviving infants for remaining vaccines
+# denominator(C, V, Y, Coverage) :-
+#   vaccinated0(C, V, Y, Vaccinated),
+#   si_UNPD(C, Y, SI),
+#   Coverage is Vaccinated / SI * 100.
+
+Todo
+
+# % Recalculate coverage using reported number of children vaccinated and
+# % births and surviving infants from UNPD estimates.
+# conf_denominator(C, V, Y, Support) :-
+#   vaccinated0(C, V, Y, _),
+#   births_UNPD(C, Y, _),
+#   si_UNPD(C, Y, _),
+#   wuenic_I(C, V, Y, _Rule, _Expl, Cov0),
+#   denominator(C, V, Y, Coverage),
+#   !,
+#   confidence_UNPD_threshold(Threshold),
+#   (   abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
+#   ->  Support = 'D+'
+#   ;   Support = 'D-'
+#   ).
+
+Conf.Den = YV_char
+index = which(abs(Cov - Den) < unpd.thrs)
+Conf.Den[index] = "D+"
+index = which(abs(Cov - Den) >= unpd.thrs)
+Conf.Den[index] = "D-"
+
 # 10. Confidence depends on converging evidence from the different sources.
 # % 1 star = low confidence, ..., 3 stars = high confidence
 # %
@@ -1077,6 +1169,20 @@ Expl[index] = "GoC=R+ D+"
 #
 # challenge(C, V, Y, 'D-') :-
 #   conf_denominator(C, V, Y, 'D-').
+#
+# % Todo list from V3
+# %
+# % 1. Simplify previous rule to a check for an anchor point
+# %
+# % supporting_survey_in_scope(C, V, Y, Rule) :-
+# %     survey(C, V, Y, _, _),
+# %     wuenic_I(C, V, Y, 'S: AP', _, _).
+# %
+# % 2. Rewrite rule to look at relationship between estimate rule and
+# % surveys in scope rule. For example, take randomness into account,
+# % e.g. probability for inconsistent results increases with the number of
+# % surveys and decreases with the sample size of the surveys.
+
 Chall = YV_char
 Chall[] = ""
 
@@ -1098,8 +1204,8 @@ Chall[index] = sprintf("%s D-", Chall[index])
 #
 
 index = Chall != ""
-GoC[cbind(index$Y, index$V)] = 1
-Expl[cbind(index$Y, index$V)] = sprintf("Estimate challenged by: ", index$x)
+GoC[index] = 1
+Expl[index] = sprintf("Estimate challenged by: %s", Chall[index])
 
 # % Confidence in both reported, surveys, and sold vaccines
 # confidence(C, V, Y, Expl, Grade) :-
@@ -1143,84 +1249,3 @@ Expl[index, "rcv1"] = Expl[index, "mcv2"]
 index = Ereq[, "rcv1"] & is.na(Rubella[, "rcv1"])
 GoC[index, "rcv1"] = GoC[index, "mcv1"]
 Expl[index, "rcv1"] = Expl[index, "mcv1"]
-
-
-
-
-
-
-% Confidence in reported coverage if it is an anchor point. Otherwise,
-% no confidence
-conf_reported(C, V, Y, Support) :-
-  reported(C, V, Y, _, _),
-wuenic_I(C, V, Y, Rule, _, _),
-!,
-(	member(Rule, ['R:', 'R: AP'])
-  ->	Support = 'R+'
-  ;	Support = 'R-'
-).
-
-% No confidence in surveys if _any_ survey deviates too much from WUENIC
-% coverage
-conf_survey(C, V, Y, Support) :-
-  wuenic_I(C, V, Y, _, _, Cov0),
-estimate_required(C, V, Year, _, _),
-survey(C, V, Year, _, Coverage),
-confidence_survey_scope(Scope),
-abs(Y - Year) =< Scope,
-confidence_survey_threshold(Threshold),
-abs(Cov0 - Coverage) > Threshold,
-!,
-Support = 'S-'.
-
-% Confidence only if all surveys are consistent with WUENIC coverage
-conf_survey(C, V, Y, Support) :-
-  wuenic_I(C, V, Y, _, _, _Cov0),
-estimate_required(C, V, Year, _, _),
-survey(C, V, Year, _, _Coverage),
-confidence_survey_scope(Scope),
-abs(Y - Year) =< Scope,
-!,
-Support = 'S+'.
-
-% Todo list from V3
-%
-% 1. Simplify previous rule to a check for an anchor point
-%
-% supporting_survey_in_scope(C, V, Y, Rule) :-
-%     survey(C, V, Y, _, _),
-%     wuenic_I(C, V, Y, 'S: AP', _, _).
-%
-% 2. Rewrite rule to look at relationship between estimate rule and
-% surveys in scope rule. For example, take randomness into account,
-% e.g. probability for inconsistent results increases with the number of
-% surveys and decreases with the sample size of the surveys.
-
-% Recalculate coverage using reported number of children vaccinated and
-% births and surviving infants from UNPD estimates.
-conf_denominator(C, V, Y, Support) :-
-  vaccinated0(C, V, Y, _),
-births_UNPD(C, Y, _),
-si_UNPD(C, Y, _),
-wuenic_I(C, V, Y, _Rule, _Expl, Cov0),
-denominator(C, V, Y, Coverage),
-!,
-confidence_UNPD_threshold(Threshold),
-(	abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
-  ->	Support = 'D+'
-  ;	Support = 'D-'
-).
-
-% Births used for bcg and hepb birth dose
-denominator(C, V, Y, Coverage) :-
-  member(V, [bcg, hepbb]),
-!,
-vaccinated0(C, V, Y, Vaccinated),
-births_UNPD(C, Y, Births),
-Coverage is Vaccinated / Births * 100.
-
-% Surviving infants for remaining vaccines
-denominator(C, V, Y, Coverage) :-
-  vaccinated0(C, V, Y, Vaccinated),
-si_UNPD(C, Y, SI),
-Coverage is Vaccinated / SI * 100.
