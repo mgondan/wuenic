@@ -1059,7 +1059,12 @@ Conf.Srv[index] = "S-"
 #   si_UNPD(C, Y, SI),
 #   Coverage is Vaccinated / SI * 100.
 
-Todo
+Den = YV_int
+Den[, c("bcg", "hepbb")]
+
+Births = rep3("births_UNPD")
+Surviving = rep3("si_UNPD")
+
 
 # % Recalculate coverage using reported number of children vaccinated and
 # % births and surviving infants from UNPD estimates.
