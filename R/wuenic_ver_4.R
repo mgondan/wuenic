@@ -656,7 +656,7 @@ Anchor.Cov[cbind(index$Y, index$V)] = index$Cov
 Anchor.Info[cbind(index$Y, index$V)] = sprintf(
   "Estimate of %g percent assigned by working group. ", index$Cov)
 
-# % Level II: Estimate coverage by distinguishing different cases
+# % 7. Estimate coverage by distinguishing different cases
 # %
 # % * Estimate at anchor point
 # % * Estimate between anchor points
@@ -983,3 +983,233 @@ index = Decisions[Decisions$Dec == "assignWUENIC", ]
 Rule[cbind(index$Y, index$V)] = "W:"
 Info[cbind(index$Y, index$V)] = index$Info
 Cov[cbind(index$Y, index$V)] = index$Cov
+
+# 9. Force between 0 and 99%
+#
+# bound_0_100(X, Y) :-
+#   Y is max(0, min(99, round(X))).
+Cov[] = pmax(0, pmin(99, round(Cov)))
+
+# 10. Confidence depends on converging evidence from the different sources.
+# % 1 star = low confidence, ..., 3 stars = high confidence
+# %
+
+#% Low confidence
+# confidence(_C, _V, _Y, Expl, Grade) :-
+#   !,
+#   Expl = 'GoC=No accepted empirical data',
+#   Grade = 1.
+
+GoC = YV_int
+Expl = YV_char
+GoC[] = 1
+Expl[] = "GoC=No accepted empirical data"
+
+# % Confidence in one or two sources, two stars
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_reported(C, V, Y, 'R+'),
+#   conf_survey(C, V, Y, 'S+'),
+#   !,
+#   Expl = 'GoC=R+ S+',
+#   Grade = 2.
+#
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_survey(C, V, Y, 'S+'),
+#   conf_denominator(C, V, Y, 'D+'),
+#   !,
+#   Expl = 'GoC=S+ D+',
+#   Grade = 2.
+#
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_reported(C, V, Y, 'R+'),
+#   conf_denominator(C, V, Y, 'D+'),
+#   !,
+#   Expl = 'GoC=R+ D+',
+#   Grade = 2.
+#
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_reported(C, V, Y, 'R+'),
+#   !,
+#   Expl = 'GoC=R+',
+#   Grade = 2.
+#
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_survey(C, V, Y, 'S+'),
+#   !,
+#   Expl = 'GoC=S+',
+#   Grade = 2.
+#
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_denominator(C, V, Y, 'D+'),
+#   !,
+#   Expl = 'GoC=D+',
+#   Grade = 2.
+
+index = which(Conf.Rep == "R+")
+GoC[index] = 2
+Expl[index] = "GoC=R+"
+
+index = which(Conf.Srv == "S+")
+GoC[index] = 2
+Expl[index] = "GoC=S+"
+
+index = which(Conf.Den == "D+")
+GoC[index] = 2
+Expl[index] = "GoC=D+"
+
+index = which(Conf.Rep == "R+" & Conf.Srv == "S+")
+GoC[index] = 2
+Expl[index] = "GoC=R+ S+"
+
+index = which(Conf.Srv == "S+" & Conf.Den == "D+")
+GoC[index] = 2
+Expl[index] = "GoC=S+ D+"
+
+index = which(Conf.Rep == "R+" & Conf.Den == "D+")
+GoC[index] = 2
+Expl[index] = "GoC=R+ D+"
+
+# % If any estimate has been challenged, confidence is low
+# confidence(C, V, Y, Expl, Grade) :-
+#   setof(Expl0, challenge(C, V, Y, Expl0), List),
+#   !,
+#   concat_atom(['Estimate challenged by: ' | List], Expl),
+#   Grade = 1.
+
+index = aggregate(Chall$Expl, by=list(Y=Chall$Y, V=Chall$V), FUN=paste, collapse="")
+GoC[cbind(index$Y, index$V)] = 1
+Expl[cbind(index$Y, index$V)] = sprintf("Estimate challenged by: ", index$x)
+
+# % Confidence in both reported, surveys, and sold vaccines
+# confidence(C, V, Y, Expl, Grade) :-
+#   conf_reported(C, V, Y, 'R+'),
+#   conf_survey(C, V, Y, 'S+'),
+#   conf_denominator(C, V, Y, 'D+'),
+#   !,
+#   Expl = 'GoC=R+ S+ D+',
+#   Grade = 3.
+
+index = which(Conf.Rep == "R+" & Conf.Srv == "S+" & Conf.Den =="D+")
+GoC[index] = 3
+Expl[index] = "GoC=R+ S+ D+"
+
+# % Confidence rated by working group
+# confidence(C, V, Y, Expl, Grade) :-
+#   decision(C, V, Y, assignGoC, Expl0, _, Grade0),
+#   !,
+#   concat_atom(['GoC=Assigned by working group. ', Expl0], Expl),
+#   Grade = Grade0.
+
+index = Decisions[Decisions$Dec == "assignGoC", ]
+GoC[cbind(index$Y, index$V)] = index$Cov # Cov is GoC here
+Expl[cbind(index$Y, index$V)] =
+  sprintf("GoC=Assigned by working group. ", index$Info)
+
+# % Copy rcv1 from mcv2
+# confidence(C, rcv1, Y, Expl, Grade) :-
+#   estimate_required(C, rcv1, Y, _, mcv2),
+#   !,
+#   confidence(C, mcv2, Y, Expl, Grade).
+index = which(Ereq[, "rcv1"] & Rubella[, "rcv1"] == "mcv2")
+GoC[index, "rcv1"] = GoC[index, "mcv2"]
+Expl[index, "rcv1"] = Expl[index, "mcv2"]
+
+# % Copy rcv1 from mcv1
+# confidence(C, rcv1, Y, Expl, Grade) :-
+#   estimate_required(C, rcv1, Y, _, na),
+#   !,
+#   confidence(C, mcv1, Y, Expl, Grade).
+index = Ereq[, "rcv1"] & is.na(Rubella[, "rcv1"])
+GoC[index, "rcv1"] = GoC[index, "mcv1"]
+Expl[index, "rcv1"] = Expl[index, "mcv1"]
+
+
+
+
+
+
+% Check if any source is challenged
+challenge(C, V, Y, 'R-') :-
+  conf_reported(C, V, Y, 'R-').
+
+challenge(C, V, Y, 'S-') :-
+  conf_survey(C, V, Y, 'S-').
+
+challenge(C, V, Y, 'D-') :-
+  conf_denominator(C, V, Y, 'D-').
+
+% Confidence in reported coverage if it is an anchor point. Otherwise,
+% no confidence
+conf_reported(C, V, Y, Support) :-
+  reported(C, V, Y, _, _),
+wuenic_I(C, V, Y, Rule, _, _),
+!,
+(	member(Rule, ['R:', 'R: AP'])
+  ->	Support = 'R+'
+  ;	Support = 'R-'
+).
+
+% No confidence in surveys if _any_ survey deviates too much from WUENIC
+% coverage
+conf_survey(C, V, Y, Support) :-
+  wuenic_I(C, V, Y, _, _, Cov0),
+estimate_required(C, V, Year, _, _),
+survey(C, V, Year, _, Coverage),
+confidence_survey_scope(Scope),
+abs(Y - Year) =< Scope,
+confidence_survey_threshold(Threshold),
+abs(Cov0 - Coverage) > Threshold,
+!,
+Support = 'S-'.
+
+% Confidence only if all surveys are consistent with WUENIC coverage
+conf_survey(C, V, Y, Support) :-
+  wuenic_I(C, V, Y, _, _, _Cov0),
+estimate_required(C, V, Year, _, _),
+survey(C, V, Year, _, _Coverage),
+confidence_survey_scope(Scope),
+abs(Y - Year) =< Scope,
+!,
+Support = 'S+'.
+
+% Todo list from V3
+%
+% 1. Simplify previous rule to a check for an anchor point
+%
+% supporting_survey_in_scope(C, V, Y, Rule) :-
+  %     survey(C, V, Y, _, _),
+%     wuenic_I(C, V, Y, 'S: AP', _, _).
+%
+% 2. Rewrite rule to look at relationship between estimate rule and
+% surveys in scope rule. For example, take randomness into account,
+% e.g. probability for inconsistent results increases with the number of
+% surveys and decreases with the sample size of the surveys.
+
+% Recalculate coverage using reported number of children vaccinated and
+% births and surviving infants from UNPD estimates.
+conf_denominator(C, V, Y, Support) :-
+  vaccinated0(C, V, Y, _),
+births_UNPD(C, Y, _),
+si_UNPD(C, Y, _),
+wuenic_I(C, V, Y, _Rule, _Expl, Cov0),
+denominator(C, V, Y, Coverage),
+!,
+confidence_UNPD_threshold(Threshold),
+(	abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
+  ->	Support = 'D+'
+  ;	Support = 'D-'
+).
+
+% Births used for bcg and hepb birth dose
+denominator(C, V, Y, Coverage) :-
+  member(V, [bcg, hepbb]),
+!,
+vaccinated0(C, V, Y, Vaccinated),
+births_UNPD(C, Y, Births),
+Coverage is Vaccinated / Births * 100.
+
+% Surviving infants for remaining vaccines
+denominator(C, V, Y, Coverage) :-
+  vaccinated0(C, V, Y, Vaccinated),
+si_UNPD(C, Y, SI),
+Coverage is Vaccinated / SI * 100.
