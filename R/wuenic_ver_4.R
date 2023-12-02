@@ -3,12 +3,18 @@ library(rolog)
 consult("xsb/bgd.pl")
 
 Vn = c("bcg", "dtp1", "dtp3", "hepb3", "hib3", "ipv1", "mcv1", "mcv2", "pcv3",
-  "pol1", "pol3", "rcv1")
+  "pol1", "pol3", "rcv1", "hepbb")
 Yn = 1997:2022
 
 sawtooth = 10
 svy.thrs = 10
 unpd.thrs = 10
+
+YV = list(Yn, Vn)
+YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 
 # Default setting
 #
@@ -16,12 +22,6 @@ unpd.thrs = 10
 
 Rubella = YV_char
 Rubella[, "rcv1"] = "mcv2"
-
-YV = list(Yn, Vn)
-YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 
 # Prolog atoms to R character strings, variables to R character strings, list
 # elements of type name:elem to named list elements
@@ -201,8 +201,8 @@ Gov = rep4("gov")
 Legacy = rep4("legacy")
 Vaccinated = rep4("vaccinated")
 Target = rep4("target")
-Births = rep3("births_UNPD")
-Surviving = rep3("si_UNPD")
+Births = rep3("births_UNPD")[as.character(Yn)]
+Surviving = rep3("si_UNPD")[as.character(Yn)]
 Survey = survey_results()
 Decisions = wgd()
 
@@ -544,6 +544,7 @@ index = which(Svy.Ana != CovAdj)
 #         C3, ' percent. '], Expl),
 #         Coverage = Cov0.
 
+Svy.Info = YV_char
 Svy.Info[index] = sprintf(
   "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i 
   percent, 1st dose card only coverage of %d percent and 3rd dose card only coverage of %d percent. ", 
@@ -562,7 +563,6 @@ Svy.Ana[index] = CovAdj[index]
 Svy.Cov = YV_int
 Svy.Cov = round(apply(Svy.Ana, c(1, 2), mean, na.rm=TRUE))
 
-Svy.Info = YV_char
 Svy.Info[] = sprintf(
   "Survey evidence of %g percent based on %i survey(s).", 
   Svy.Cov, apply(Svy.Ana, c(1, 2), length))
@@ -1036,14 +1036,15 @@ suppressWarnings({Svy.Min = round(apply(Svy.Ana, c(1, 2), min, na.rm=TRUE))})
 Svy.Max = YV_int
 suppressWarnings({Svy.Max = round(apply(Svy.Ana, c(1, 2), max, na.rm=TRUE))})
 
+Conf.Svy = YV_char
 index = which(!is.na(Cov) & Ereq & is.finite(Svy.Min) & is.finite(Svy.Max))
-Conf.Srv[index] = "S+"
+Conf.Svy[index] = "S+"
 
 index = which(!is.na(Cov) & Ereq & Cov - Svy.Min > svy.thrs)
-Conf.Srv[index] = "S-"
+Conf.Svy[index] = "S-"
 
 index = which(!is.na(Cov) & Ereq & Svy.Max - Cov > svy.thrs)
-Conf.Srv[index] = "S-"
+Conf.Svy[index] = "S-"
 
 # % Births used for bcg and hepb birth dose
 # denominator(C, V, Y, Coverage) :-
@@ -1059,12 +1060,12 @@ Conf.Srv[index] = "S-"
 #   si_UNPD(C, Y, SI),
 #   Coverage is Vaccinated / SI * 100.
 
-Den = YV_int
-Den[, c("bcg", "hepbb")]
+Den = YV_real
+index = c("bcg", "hepbb")
+Den[, index] = Vaccinated[, index] / Births * 100
 
-Births = rep3("births_UNPD")
-Surviving = rep3("si_UNPD")
-
+index = setdiff(Vn, c("bcg", "hepbb"))
+Den[, index] = Vaccinated[, index] / Surviving * 100
 
 # % Recalculate coverage using reported number of children vaccinated and
 # % births and surviving infants from UNPD estimates.
@@ -1145,7 +1146,7 @@ index = which(Conf.Rep == "R+")
 GoC[index] = 2
 Expl[index] = "GoC=R+"
 
-index = which(Conf.Srv == "S+")
+index = which(Conf.Svy == "S+")
 GoC[index] = 2
 Expl[index] = "GoC=S+"
 
@@ -1153,11 +1154,11 @@ index = which(Conf.Den == "D+")
 GoC[index] = 2
 Expl[index] = "GoC=D+"
 
-index = which(Conf.Rep == "R+" & Conf.Srv == "S+")
+index = which(Conf.Rep == "R+" & Conf.Svy == "S+")
 GoC[index] = 2
 Expl[index] = "GoC=R+ S+"
 
-index = which(Conf.Srv == "S+" & Conf.Den == "D+")
+index = which(Conf.Svy == "S+" & Conf.Den == "D+")
 GoC[index] = 2
 Expl[index] = "GoC=S+ D+"
 
@@ -1194,7 +1195,7 @@ Chall[] = ""
 index = which(Conf.Rep == "R-")
 Chall[index] = "R-"
 
-index = which(Conf.Srv == "S-")
+index = which(Conf.Svy == "S-")
 Chall[index] = sprintf("%s S-", Chall[index])
 
 index = which(Conf.Den == "D-")
@@ -1221,7 +1222,7 @@ Expl[index] = sprintf("Estimate challenged by: %s", Chall[index])
 #   Expl = 'GoC=R+ S+ D+',
 #   Grade = 3.
 
-index = which(Conf.Rep == "R+" & Conf.Srv == "S+" & Conf.Den =="D+")
+index = which(Conf.Rep == "R+" & Conf.Svy == "S+" & Conf.Den =="D+")
 GoC[index] = 3
 Expl[index] = "GoC=R+ S+ D+"
 
