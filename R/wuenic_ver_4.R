@@ -1255,3 +1255,22 @@ Expl[index, "rcv1"] = Expl[index, "mcv2"]
 index = Ereq[, "rcv1"] & is.na(Rubella[, "rcv1"])
 GoC[index, "rcv1"] = GoC[index, "mcv1"]
 Expl[index, "rcv1"] = Expl[index, "mcv1"]
+
+# % Flag modifications in the program code that change the coverage
+# % estimates
+# change_from_previous(C, V, Y, Coverage, Change) :-
+#     legacy(C, V, Y, Legacy),
+#     Legacy \= Coverage,
+#     !,
+#     concat_atom(['Estimate of ', Coverage,
+#         ' percent changed from previous revision value of ',
+#         Legacy,' percent. '], Change).
+#
+# change_from_previous(_C, _V, _Y, _, '').
+
+Change = YV_char
+index = which(Cov != Legacy)
+Change[index] = sprintf(
+  "Estimate of %i percent changed from previous revision value of %i percent. ",
+  Cov[index], Legacy[index])
+
