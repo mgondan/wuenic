@@ -2,26 +2,30 @@ library(zoo)
 library(rolog)
 consult("xsb/bgd.pl")
 
-Vn = c("bcg", "dtp1", "dtp3", "hepb3", "hib3", "ipv1", "mcv1", "mcv2", "pcv3",
-  "pol1", "pol3", "rcv1", "hepbb")
+Vn = c("bcg", "dtp1", "dtp3", "hepb1", "hepb3", "hib1", "hib3", "ipv1", "mcv1",
+       "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "hepbb")
 Yn = 1997:2022
 
 sawtooth = 10
 svy.thrs = 10
 unpd.thrs = 10
 
-YV = list(Yn, Vn)
+YV = list(Y=Yn, V=Vn)
 YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 
+# Simulate Prolog's "outward" rounding
+tround <- function(number)
+  sign(number) * trunc(abs(number) + 0.5 + sqrt(.Machine$double.eps))
+
 # Default setting
 #
 # firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 
-Rubella = YV_char
-Rubella[, "rcv1"] = "mcv2"
+firstRubellaAtSecondMCV = YV_char
+firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
 
 # Prolog atoms to R character strings, variables to R character strings, list
 # elements of type name:elem to named list elements
@@ -129,6 +133,7 @@ survey_results = function()
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
+  s$Yn = as.character(s$Y)
 
   index = which(!(s$V %in% Vn))
   if(length(index))
@@ -293,6 +298,11 @@ J = sapply(Diff, `<`, sawtooth)                              # check for decline
 # Skip if J is NA (for vaccines with only NA reported)
 reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
 
+Rej.Info = YV_char
+Rej.Info[reject] = sprintf(
+    "Reported data excluded due to decline in reported coverage from %i level to %i percent. ",
+    rbind(NA, Rep.Cov)[reject], Rep.Cov[reject])
+
 # Sudden change in most recently reported data for classic vaccines
 V.new = Rep.Cov[, !(Vn %in% c("pcv3", "rotac")), drop=FALSE]
 Diff = apply(V.new, 2, diff, simplify=FALSE)
@@ -305,6 +315,10 @@ Y = sapply(Diff, names)
 V = names(Diff)
 J = sapply(Diff, `>`, sawtooth)
 reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
+
+Rej.Info[reject] = sprintf(
+    "Reported data excluded due to sudden change in reported coverage from %i level to %i percent. ",
+    rbind(NA, Rep.Cov)[reject], Rep.Cov[reject])
 
 # reported_rejected(C, V, Y) :-
 #     reported(C, V, Y, _, Coverage),
@@ -324,10 +338,26 @@ down  = apply(rbind(Rep.Cov, NA), 2, diff) < -sawtooth
 index = which(up & down, arr.ind=TRUE)
 reject[index] = TRUE
 
+prev = index
+prev[, 1] = prev[, 1] - 1
+succ = index
+succ[, 1] = succ[, 1] + 1
+Rej.Info[index] = sprintf(
+    "Reported data excluded due to an increase from %i percent to %i percent with decrease %i percent. ",
+    Rep.Cov[prev], Rep.Cov[index], Rep.Cov[succ])
+
 down  = apply(rbind(NA, Rep.Cov), 2, diff) < -sawtooth
 up    = apply(rbind(Rep.Cov, NA), 2, diff) > sawtooth
 index = which(down & up, arr.ind=TRUE)
 reject[index] = TRUE
+
+prev = index
+prev[, 1] = prev[, 1] - 1
+succ = index
+succ[, 1] = succ[, 1] + 1
+Rej.Info[index] = sprintf(
+    "Reported data excluded due to a decrease from %i percent to %i percent with increase to %i percent. ",
+    Rep.Cov[prev], Rep.Cov[index], Rep.Cov[succ])
 
 # % Implausible coverage
 # reported_rejected(C, V, Y) :-
@@ -368,9 +398,12 @@ Rep.Src[reject] = NA
 #     Source = Source0,
 #     Coverage = Cov0.
 
+TS.Cov = Rep.Cov
+TS.Src = Rep.Src
+
 index = Ereq
-Rep.Cov[!index] = NA
-Rep.Src[!index] = NA
+TS.Cov[!index] = NA
+TS.Src[!index] = NA
 
 # % Interpolation, no data/reported data excluded between two years
 # reported_time_series(C, V, Y, Source, Coverage) :-
@@ -386,8 +419,8 @@ Rep.Src[!index] = NA
 
 inter = apply(Rep.Cov, 2, na.approx, na.rm=FALSE)
 index = Ereq & is.na(Rep.Cov) & !is.na(inter)
-Rep.Cov[index] = round(inter[index])
-Rep.Src[index] = "interpolated"
+TS.Cov[index] = tround(inter[index])
+TS.Src[index] = "interpolated"
 
 # % Extrapolation, latest required estimate
 # reported_time_series(C, V, Y, Source, Coverage) :-
@@ -402,13 +435,13 @@ Rep.Src[index] = "interpolated"
 
 extra = apply(Rep.Cov, 2, zoo::na.locf, na.rm=FALSE)
 index = Ereq & is.na(Rep.Cov) & !is.na(extra)
-Rep.Cov[index] = round(extra[index])
-Rep.Src[index] = "extrapolated"
+TS.Cov[index] = round(extra[index])
+TS.Src[index] = "extrapolated"
 
 extra = apply(Rep.Cov, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
 index = Ereq & is.na(Rep.Cov) & !is.na(extra)
-Rep.Cov[index] = round(extra[index])
-Rep.Src[index] = "extrapolated"
+TS.Cov[index] = round(extra[index])
+TS.Src[index] = "extrapolated"
 
 # 5. Survey data
 #
@@ -444,11 +477,11 @@ size   = Survey$Info.ss >= 300
 ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
 year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
 accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
-index  = Survey[(size & !ignore & !year) | accept, ]
+index  = Survey[cnf & age & ((size & !ignore & !year) | accept), ]
 
 Dn = levels(as.factor(Survey$Id))
 Svy.Ana = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
-    dimnames=list(Yn, Vn, Dn))
+    dimnames=list(Y=Yn, V=Vn, Id=Dn))
 Svy.Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
 
 Svy.Title = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)), 
@@ -478,9 +511,9 @@ age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
 vac = Survey$V %in% V13
 index = Survey[cnf & age & vac, ]
 
-Svy.C3 = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
-    dimnames=list(Yn, Vn, Dn))
-Svy.C3[cbind(index[, "Y"], index$V, index$Id)] = index$Cov
+Svy.C3 = array(NA_integer_, dim=c(length(Yn), length(V13), length(Dn)), 
+    dimnames=list(Y=Yn, V=V13, Id=Dn))
+Svy.C3[cbind(index$Y, index$V, index$Id)] = index$Cov
 
 #     % First dose, card or history
 #     vaccine(V, First),
@@ -493,11 +526,10 @@ cnf = Survey$Info.confirm == "card or history"
 age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
 vac = Survey$V %in% names(V13)
 index = Survey[cnf & age & vac, ]
-Svy.CH1 = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
-    dimnames=list(Yn, Vn, Dn))
+Svy.CH1 = array(NA_integer_, dim=c(length(Yn), length(names(V13)), length(Dn)), 
+    dimnames=list(Y=Yn, V=names(V13), Id=Dn))
 Svy.CH1[cbind(index$Y, index$V, index$Id)] = index$Cov
 
-#
 #     % First dose, card only
 #     survey_results0(C, First, Y, ID, DescriptionCard1Dose, C1Cov),
 #     C1Cov > 0,
@@ -510,27 +542,24 @@ age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
 vac = Survey$V %in% names(V13)
 cv0 = Survey$Cov > 0
 index = Survey[cnf & age & vac & cv0, ]
-Svy.C1 = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
-               dimnames=list(Yn, Vn, Dn))
+Svy.C1 = array(NA_integer_, dim=c(length(Yn), length(names(V13)), length(Dn)), 
+    dimnames=list(Y=Yn, V=names(V13), Id=Dn))
 Svy.C1[cbind(index$Y, index$V, index$Id)] = index$Cov
 
-#
 #     Adj is C3Cov / C1Cov,
 #     ThirdHistoryAdj is (CoH1Cov - C1Cov) * Adj,
 #     CovAdjusted is C3Cov + ThirdHistoryAdj,
 #     bound_0_100(CovAdjusted, Cov0),
 
 Adj = Svy.C3 / Svy.C1
-H3Adj = (Svy.CH1 - Svy.C1) * Adj
-CovAdj = pmin(99, pmax(0, round(Svy.C3 + H3Adj)))
+H3Adj = Adj * (Svy.CH1 - Svy.C1)
+H3Adj[] = pmin(99, pmax(0, tround(Svy.C3 + H3Adj)))
 
-#
 #     survey_for_analysis(C, V, Y, ID, Description, SurveyCoverage),
 #     Cov0 \= SurveyCoverage,
 
-index = which(Svy.Ana != CovAdj)
+index = which(Svy.Ana[, V13, ] != H3Adj, arr.ind=TRUE)
 
-#
 #     SurveyCovRounded is round(SurveyCoverage),
 #     CH1 is round(CoH1Cov),
 #     C1 is round(C1Cov),
@@ -544,12 +573,14 @@ index = which(Svy.Ana != CovAdj)
 #         C3, ' percent. '], Expl),
 #         Coverage = Cov0.
 
-Svy.Info = YV_char
+Svy.Info = array(NA_character_, dim=c(length(Yn), length(V13), length(Dn)),
+    dimnames=list(Y=Yn, V=V13, Id=Dn))
+
 Svy.Info[index] = sprintf(
   "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i 
   percent, 1st dose card only coverage of %d percent and 3rd dose card only coverage of %d percent. ", 
-  Svy.Title[index], Svy.Ana[index], CovAdj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
-Svy.Ana[index] = CovAdj[index]
+  Svy.Title[index], Svy.Ana[index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
+Svy.Ana[, V13, ][index] = H3Adj[index]
 
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
@@ -561,11 +592,12 @@ Svy.Ana[index] = CovAdj[index]
 #         N, ' survey(s). '], Expl).
 
 Svy.Cov = YV_int
-Svy.Cov = round(apply(Svy.Ana, c(1, 2), mean, na.rm=TRUE))
+Svy.Cov = tround(apply(Svy.Ana, c(1, 2), mean, na.rm=TRUE))
 
-Svy.Info[] = sprintf(
+Svy.Expl = YV_char
+Svy.Expl[] = sprintf(
   "Survey evidence of %g percent based on %i survey(s).", 
-  Svy.Cov, apply(Svy.Ana, c(1, 2), length))
+  Svy.Cov, apply(!is.na(Svy.Ana), c(1, 2), sum))
 
 # 6. Determine coverage value at anchor points defined as years with multiple
 #    data points (reported | survey | wgd).
@@ -586,11 +618,11 @@ Anchor.Cov = YV_int
 #     Expl0, ' '], Expl),
 #     Coverage = Survey.
 
-index = which(abs(Svy.Cov - Rep.Cov) > svy.thrs, arr.ind=TRUE)
+index = which(abs(Svy.Cov - TS.Cov) > svy.thrs, arr.ind=TRUE)
 Anchor.Rule[index] = "S: AP"
 Anchor.Info[index] = sprintf(
   "Survey evidence does not support reported data. Estimate based on survey results. %s",
-  Svy.Info[index])
+  Svy.Expl[index])
 Anchor.Cov[index] = Svy.Cov[index]
 
 # % Survey results support reported
@@ -616,10 +648,10 @@ info = c(
   interpolated="Estimate informed by interpolation between reported data supported by survey. ",
   extrapolated="Estimate based on extrapolation from data reported by national government supported by survey. ")
 
-index = which(abs(Svy.Cov - Rep.Cov) <= svy.thrs, arr.ind=TRUE)
+index = which(abs(Svy.Cov - TS.Cov) <= svy.thrs, arr.ind=TRUE)
 Anchor.Rule[index] = "R: AP"
-Anchor.Cov[index] = Rep.Cov[index]
-Anchor.Info[index] = sprintf("%s %s", info[Rep.Src[index]], Svy.Info[index])
+Anchor.Cov[index] = TS.Cov[index]
+Anchor.Info[index] = sprintf("%s %s", info[TS.Src[index]], Svy.Expl[index])
 
 # % Reported value "anchored" by working group
 # anchor(C, V, Y, Rule, Expl, Coverage) :-
@@ -631,7 +663,7 @@ Anchor.Info[index] = sprintf("%s %s", info[Rep.Src[index]], Svy.Info[index])
 #     Coverage = Cov0.
 
 index = Decisions[Decisions$Dec == "assignAnchor", ]
-equal = which(Rep.Cov[cbind(index$Y, index$V)] == index$Cov, arr.ind=TRUE)
+equal = which(TS.Cov[cbind(index$Y, index$V)] == index$Cov, arr.ind=TRUE)
 index = index[equal, ]
 Anchor.Rule[cbind(index$Y, index$V)] = "R: AP"
 Anchor.Info[cbind(index$Y, index$V)] = index$Info
@@ -649,12 +681,12 @@ Anchor.Cov[cbind(index$Y, index$V)] = index$Cov
 #     Coverage = Assigned.
 
 index = Decisions[Decisions$Dec == "assignAnchor", ]
-neq = which(Rep.Cov[cbind(index$Y, index$V)] != index$Cov, arr.ind=TRUE)
+neq = which(TS.Cov[cbind(index$Y, index$V)] != index$Cov, arr.ind=TRUE)
 index = index[neq, ]
 Anchor.Rule[cbind(index$Y, index$V)] = "W: AP"
 Anchor.Cov[cbind(index$Y, index$V)] = index$Cov
 Anchor.Info[cbind(index$Y, index$V)] = sprintf(
-  "Estimate of %g percent assigned by working group. ", index$Cov)
+  "Estimate of %g percent assigned by working group. %s", index$Cov, index$Info)
 
 # % 7. Estimate coverage by distinguishing different cases
 # %
@@ -682,13 +714,13 @@ info = c(
   admin="Estimate informed by reported administrative data. ",
   interpolated="Estimate informed by interpolation between reported data. ",
   extrapolated="Estimate informed by extrapolation from reported data. ")
-W2.Cov = Rep.Cov
+W2.Cov = TS.Cov
 
 W2.Info = YV_char
-W2.Info[] = info[Rep.Src]
+W2.Info[] = info[TS.Src]
 
 W2.Rule = YV_char
-W2.Rule[!is.na(Rep.Cov)] = "R:"
+W2.Rule[!is.na(TS.Cov)] = "R:"
 
 # % Before earliest/after latest anchor (not of type reported): calibrated
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -705,7 +737,7 @@ W2.Rule[!is.na(Rep.Cov)] = "R:"
 #     Coverage is round(Cov0 + Adj).
 
 # Search for preceding anchor
-index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+index = !is.na(TS.Cov) & is.na(Anchor.Cov)
 Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
 index = index & !is.na(Prec.Rule) & Prec.Rule != "R: AP"
 
@@ -724,12 +756,12 @@ Info[index] = sprintf("Reported data calibrated to %s levels. ",
     Prec.Year[index])
 
 yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
-Adj = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - Rep.Cov[cbind(c(Prec.Year), yv$V)]
+Adj = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - TS.Cov[cbind(c(Prec.Year), yv$V)]
 Cov = YV_int
-Cov[index] = Rep.Cov[index] + Adj[index]
+Cov[index] = TS.Cov[index] + Adj[index]
 
 # Search for next anchor
-index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+index = !is.na(TS.Cov) & is.na(Anchor.Cov)
 Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 index = index & !is.na(Succ.Rule) & Succ.Rule != "R: AP"
 
@@ -746,8 +778,8 @@ Info[index] = sprintf("Reported data calibrated to %s levels. ",
     Succ.Year[index])
 
 yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
-Adj = Anchor.Cov[cbind(c(Succ.Year), yv$V)] - Rep.Cov[cbind(c(Succ.Year), yv$V)]
-Cov[index] = Rep.Cov[index] + Adj[index]
+Adj = Anchor.Cov[cbind(c(Succ.Year), yv$V)] - TS.Cov[cbind(c(Succ.Year), yv$V)]
+Cov[index] = TS.Cov[index] + Adj[index]
 
 # % Before earliest/after latest anchor (of type reported)
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -767,7 +799,7 @@ Cov[index] = Rep.Cov[index] + Adj[index]
 #     Coverage = Cov0.
 
 # Search for preceding anchor
-index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+index = !is.na(TS.Cov) & is.na(Anchor.Cov)
 Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
 index = index & !is.na(Prec.Rule) & Prec.Rule == "R: AP"
 
@@ -777,17 +809,17 @@ info = c(gov="Estimate informed by reported data. ",
     extrapolated="Estimate based on extrapolation from data reported by national government. ")
 
 Rule[index] = "R:"
-Info[index] = info[Rep.Src[index]]
-Cov[index] = Rep.Cov[index]
+Info[index] = info[TS.Src[index]]
+Cov[index] = TS.Cov[index]
 
 # Search for next anchor
-index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+index = !is.na(TS.Cov) & is.na(Anchor.Cov)
 Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 index = index & !is.na(Succ.Rule) & Succ.Rule == "R: AP"
 
 Rule[index] = "R:"
-Info[index] = info[Rep.Src[index]]
-Cov[index] = Rep.Cov[index]
+Info[index] = info[TS.Src[index]]
+Cov[index] = TS.Cov[index]
 
 # % Between other anchor points (not both of type "reported"): calibrate
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -806,7 +838,7 @@ Cov[index] = Rep.Cov[index]
 #     Adj is AnchInterp - RepInterp,
 #     Coverage is round(Reported + Adj).
 
-index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+index = !is.na(TS.Cov) & is.na(Anchor.Cov)
 Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
 Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 index = index & !is.na(Prec.Rule) & !is.na(Succ.Rule)
@@ -833,14 +865,14 @@ Info[index] = sprintf("Reported data calibrated to %s and %s levels. ",
 # interpolate Anchor.Cov for year without anchor
 Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
-# interpolate Rep.Cov for year without anchor
-Itp2.Cov = Rep.Cov
+# interpolate TS.Cov for year without anchor
+Itp2.Cov = TS.Cov
 Itp2.Cov[index] = NA
 Itp2.Cov = apply(Itp2.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
 yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
 Adj = Itp1.Cov - Itp2.Cov
-Cov[index] = round(Rep.Cov[index] + Adj[index])
+Cov[index] = round(TS.Cov[index] + Adj[index])
 
 # % Between anchor points: between two reported anchors
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -858,7 +890,7 @@ Cov[index] = round(Rep.Cov[index] + Adj[index])
 #       ]),
 #     Coverage = Cov0.
 
-index = !is.na(Rep.Cov) & is.na(Anchor.Cov)
+index = !is.na(TS.Cov) & is.na(Anchor.Cov)
 Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
 Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 index = index & !is.na(Prec.Rule) & !is.na(Succ.Rule)
@@ -869,8 +901,8 @@ info = c(gov="Estimate informed by reported data. ",
     interpolated="Estimate informed by interpolation between reported data. ")
 
 Rule[index] = "R:"
-Info[index] = info[Rep.Src[index]]
-Cov[index] = Rep.Cov[index]
+Info[index] = info[TS.Src[index]]
+Cov[index] = TS.Cov[index]
 
 # % Between anchor points: interpolation forced by working group
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -940,19 +972,19 @@ Cov[index, "rcv1"] = Cov[index, "mcv1"]
 
 # % Estimate for RCV1 where RCV1 given at MCV2
 # wuenic_I(C, rcv1, Y, Rule, Expl, Coverage) :-
-#     estimate_required(C, rcv1, Y, _, FirstRubellaDose),                   ***
+#     estimate_required(C, rcv1, Y, _, FirstRubellaDose),
 #     firstRubellaAtSecondMCV(C, rcv1, Y, FirstRubellaDose),
 #     !,
 #     wuenic_II(C, mcv2, Y, Rule, _, Coverage),
 #     Expl = 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate'.
 
-# Todo: check estimate_required, ***
+index = which(Rubella == firstRubellaAtSecondMCV, arr.ind=TRUE)
+rcv1 = index[index[, "V"] == "rcv1", ]
+mcv2 = Rubella[, rcv1[, "V"]]
 
-Rule[, "rcv1"] = Rule[cbind(Yn, Rubella[, "rcv1"])]
-Info[, "rcv1"] = ifelse(Rubella[, "rcv1"] == "mcv2", 
-  "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate",
-  "unclear when first dose of rubella vaccine has been given")
-Cov[, "rcv1"] = Cov[cbind(Yn, Rubella[, "rcv1"])]
+Rule[rcv1] = Rule[mcv2]
+Info[rcv1] = "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate"
+Cov[rcv1] = Cov[mcv2]
 
 # % If DTP1 not reported: estimate using equation
 # % If DTP3 > DTP1 (which is impossible), estimate coverage using equation
@@ -999,7 +1031,7 @@ Cov[] = pmax(0, pmin(99, round(Cov)))
 #   (   member(Rule, ['R:', 'R: AP'])
 #   ->  Support = 'R+'
 #   ;   Support = 'R-'
-# ).
+#   ).
 
 Conf.Rep = YV_char
 index = !is.na(Rep.Cov) & Rule %in% c("R:", "R: AP")
@@ -1098,9 +1130,9 @@ Conf.Den[index] = "D-"
 #   Grade = 1.
 
 GoC = YV_int
-Expl = YV_char
+GoC.Expl = YV_char
 GoC[] = 1
-Expl[] = "GoC=No accepted empirical data"
+GoC.Expl[] = "GoC=No accepted empirical data"
 
 # % Confidence in one or two sources, two stars
 # confidence(C, V, Y, Expl, Grade) :-
@@ -1144,27 +1176,27 @@ Expl[] = "GoC=No accepted empirical data"
 
 index = which(Conf.Rep == "R+")
 GoC[index] = 2
-Expl[index] = "GoC=R+"
+GoC.Expl[index] = "GoC=R+"
 
 index = which(Conf.Svy == "S+")
 GoC[index] = 2
-Expl[index] = "GoC=S+"
+GoC.Expl[index] = "GoC=S+"
 
 index = which(Conf.Den == "D+")
 GoC[index] = 2
-Expl[index] = "GoC=D+"
+GoC.Expl[index] = "GoC=D+"
 
 index = which(Conf.Rep == "R+" & Conf.Svy == "S+")
 GoC[index] = 2
-Expl[index] = "GoC=R+ S+"
+GoC.Expl[index] = "GoC=R+ S+"
 
 index = which(Conf.Svy == "S+" & Conf.Den == "D+")
 GoC[index] = 2
-Expl[index] = "GoC=S+ D+"
+GoC.Expl[index] = "GoC=S+ D+"
 
 index = which(Conf.Rep == "R+" & Conf.Den == "D+")
 GoC[index] = 2
-Expl[index] = "GoC=R+ D+"
+GoC.Expl[index] = "GoC=R+ D+"
 
 # % Check if any source is challenged
 # challenge(C, V, Y, 'R-') :-
@@ -1185,9 +1217,9 @@ Expl[index] = "GoC=R+ D+"
 # %     wuenic_I(C, V, Y, 'S: AP', _, _).
 # %
 # % 2. Rewrite rule to look at relationship between estimate rule and
-# % surveys in scope rule. For example, take randomness into account,
-# % e.g. probability for inconsistent results increases with the number of
-# % surveys and decreases with the sample size of the surveys.
+# %    surveys in scope rule. For example, take randomness into account,
+# %    e.g. probability for inconsistent results increases with the number of
+# %    surveys and decreases with the sample size of the surveys.
 
 Chall = YV_char
 Chall[] = ""
@@ -1207,11 +1239,10 @@ Chall[index] = sprintf("%s D-", Chall[index])
 #   !,
 #   concat_atom(['Estimate challenged by: ' | List], Expl),
 #   Grade = 1.
-#
 
 index = Chall != ""
 GoC[index] = 1
-Expl[index] = sprintf("Estimate challenged by: %s", Chall[index])
+GoC.Expl[index] = sprintf("Estimate challenged by: %s", Chall[index])
 
 # % Confidence in both reported, surveys, and sold vaccines
 # confidence(C, V, Y, Expl, Grade) :-
@@ -1224,7 +1255,7 @@ Expl[index] = sprintf("Estimate challenged by: %s", Chall[index])
 
 index = which(Conf.Rep == "R+" & Conf.Svy == "S+" & Conf.Den =="D+")
 GoC[index] = 3
-Expl[index] = "GoC=R+ S+ D+"
+GoC.Expl[index] = "GoC=R+ S+ D+"
 
 # % Confidence rated by working group
 # confidence(C, V, Y, Expl, Grade) :-
@@ -1235,26 +1266,29 @@ Expl[index] = "GoC=R+ S+ D+"
 
 index = Decisions[Decisions$Dec == "assignGoC", ]
 GoC[cbind(index$Y, index$V)] = index$Cov # Cov is GoC here
-Expl[cbind(index$Y, index$V)] =
-  sprintf("GoC=Assigned by working group. ", index$Info)
+GoC.Expl[cbind(index$Y, index$V)] = "GoC=Assigned by working group. "
 
 # % Copy rcv1 from mcv2
+# %
+# % MG, discuss: this differs from the rule in wuenic_I
 # confidence(C, rcv1, Y, Expl, Grade) :-
 #   estimate_required(C, rcv1, Y, _, mcv2),
 #   !,
 #   confidence(C, mcv2, Y, Expl, Grade).
+
 index = which(Ereq[, "rcv1"] & Rubella[, "rcv1"] == "mcv2")
 GoC[index, "rcv1"] = GoC[index, "mcv2"]
-Expl[index, "rcv1"] = Expl[index, "mcv2"]
+GoC.Expl[index, "rcv1"] = GoC.Expl[index, "mcv2"]
 
 # % Copy rcv1 from mcv1
 # confidence(C, rcv1, Y, Expl, Grade) :-
 #   estimate_required(C, rcv1, Y, _, na),
 #   !,
 #   confidence(C, mcv1, Y, Expl, Grade).
+
 index = Ereq[, "rcv1"] & is.na(Rubella[, "rcv1"])
 GoC[index, "rcv1"] = GoC[index, "mcv1"]
-Expl[index, "rcv1"] = Expl[index, "mcv1"]
+GoC.Expl[index, "rcv1"] = GoC.Expl[index, "mcv1"]
 
 # % Flag modifications in the program code that change the coverage
 # % estimates
@@ -1269,8 +1303,211 @@ Expl[index, "rcv1"] = Expl[index, "mcv1"]
 # change_from_previous(_C, _V, _Y, _, '').
 
 Change = YV_char
+Change[] = ""
 index = which(Cov != Legacy)
 Change[index] = sprintf(
   "Estimate of %i percent changed from previous revision value of %i percent. ",
   Cov[index], Legacy[index])
 
+# % Collect explanations in natural language terms
+# collect_explanations(C, V, Y, Explanations) :-
+#     findall(Expl, explanation(C, V, Y, Expl), Explanations).
+
+Expl = YV_char
+Expl[] = ""
+
+# explanation(C, V, Y, Expl) :-
+#     survey_reason_to_exclude(C, V, Y, _, Expl).
+#
+# % Reasons to exclude a survey include:
+# %    Sample size < 300,
+# %    The working group decides to exclude the survey.
+# %
+# % used for explanation/4
+# survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+#     survey_for_analysis(C, V, Y, ID, Description, _),
+#     not(decision(C, V, Y, acceptSurvey, Expl, ID, _)),
+#     member(ss:Size, Description),
+#     Size < 300,
+#     concat_atom(['Survey results ignored. Sample size ', Size,
+#         ' less than 300. '], Expl).
+
+cnf    = Survey$Info.confirm == "card or history"
+age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
+size   = Survey$Info.ss < 300
+index  = Survey[cnf & age & !accept & size, ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Yn[i], index$V[i]] = sprintf(
+      "Survey results ignored. Sample size %i less than 300. %s", 
+      index$Info.ss[i], Expl[index$Yn[i], index$V[i]])
+
+# % V4: Keeps explanations for the same survey together
+# survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+#     survey_for_analysis(C, V, Y, ID, Description, _),
+#     (   decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
+#     ;   decision(C, V, Y, ignoreSurvey, Expl0, na, _)
+#     ),
+#     member(title:Title, Description),
+#     concat_atom([Title, ' results ignored by working group. ', Expl0],
+#     Expl).
+
+cnf    = Survey$Info.confirm == "card or history"
+age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
+year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+index  = Survey[cnf & age & (ignore | year), ]
+
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Yn[i], index$V[i]] = sprintf(
+      "%s results ignored by working group. %s",
+      index$Info.title[i], Expl[index$Yn[i], index$V[i]])
+
+# explanation(C, V, Y, Expl) :-
+#     survey_modified(C, V, Y, _, Expl, _).
+
+index = which(!is.na(Svy.Info), arr.ind=TRUE)
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
+      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]],
+      Expl[index[i, "Y"], index[i, "V"]])
+
+# explanation(C, V, Y, Expl) :-
+#     reported_reason_to_exclude(C, V, Y, _, Expl).
+#
+# % Reasons to exclude reported data are:
+# %  1. Working group decision.
+# %  2. Coverage > 100%
+# %  3. Inconsistent temporal changes (sawtooth or sudden change most
+# %     recent year)
+# reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+#     reported(C, V, Y, _, _),
+#     decision(C, V, Y, ignoreReported, Expl0, _, _),
+#     Reason = wdg,
+#     concat_atom(['Reported data excluded. ', Expl0], Expl).
+
+index = !Rep.Cov
+ignore = Decisions[Decisions$Dec == "ignoreReported", ]
+index[cbind(ignore$Y, ignore$V)] = TRUE
+Expl[which(index)] = sprintf(
+    "Reported data excluded. %s%s", ignore$Info, Expl[which(index)])
+
+# reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+#     reported(C, V, Y, _, Coverage),
+#     not(decision(C, V, Y, acceptReported, _, _, _)),
+#     Coverage > 100,
+#     Reason = 100,
+#     concat_atom(['Reported data excluded because ', Coverage,
+#     ' percent greater than 100 percent. '], Expl).
+
+index = Rep.Cov > 100
+accept = Decisions[Decisions$Dec == "acceptReported", ]
+index[accept$Y, accept$V] = FALSE
+Expl[which(index)] = sprintf(
+    "Reported data excluded because %i percent greater than 100 percent. %s", 
+    Rep.Cov[which(index)], Expl[which(index)])
+
+# reported_reason_to_exclude(C, V, Y, _, Expl) :-
+#     reported(C, V, Y, _, Coverage),
+#     not(decision(C, V, Y, acceptReported, _, _, _)),
+#     Prec is Y - 1,
+#     Succ is Y + 1,
+#     reported(C, V, Prec, _, CoveragePrec),
+#     reported(C, V, Succ, _, CoverageSucc),
+#     sawtooth_threshold(Threshold),
+#     Coverage - CoveragePrec > Threshold,
+#     Coverage - CoverageSucc > Threshold,
+#     concat_atom(
+#       [ 'Reported data excluded due to an increase from ', CoveragePrec,
+#         ' percent to ', Coverage, ' percent with decrease ', CoverageSucc,
+#         ' percent. '
+#       ], Expl).
+#
+# reported_reason_to_exclude(C, V, Y, _, Expl) :-
+#     reported(C, V, Y, _, Coverage),
+#     not(decision(C, V, Y, acceptReported, _, _, _)),
+#     Prec is Y - 1,
+#     Succ is Y + 1,
+#     reported(C, V, Prec, _, CoveragePrec),
+#     reported(C, V, Succ, _, CoverageSucc),
+#     sawtooth_threshold(Threshold),
+#     CoveragePrec - Coverage > Threshold,
+#     CoverageSucc - Coverage > Threshold,
+#     concat_atom(
+#       [ 'Reported data excluded due to decline in reported coverage from ',
+#         CoveragePrec, ' percent to ', Coverage, ' percent with increase to ',
+#         CoverageSucc,' percent. '], Expl).
+
+index = !is.na(Rej.Info)
+Expl[index] = sprintf("%s%s", Expl[index], Rej.Info[index])
+
+# explanation(C, V, Y, Expl) :-
+#     decision(C, V, Y, comment, Expl, _, _).
+
+index = Decisions[Decisions$Dec == "comment", ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Y[i], index$V[i]] =
+      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+
+# explanation(C, V, Y, Expl) :-
+#     decision(C, V, Y, acceptSurvey, Expl, _, _).
+
+index = Decisions[Decisions$Dec == "acceptSurvey", ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Y[i], index$V[i]] =
+      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+
+# explanation(C, V, Y, Expl) :-
+#     decision(C, V, Y, acceptReported, Expl, _, _).
+
+index = Decisions[Decisions$Dec == "acceptReported", ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Y[i], index$V[i]] =
+      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+
+# explanation(C, V, Y, Expl) :-
+#     decision(C, V, Y, ignoreGov, Expl, _, _).
+
+index = Decisions[Decisions$Dec == "ignoreGov", ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Y[i], index$V[i]] =
+      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+
+Text = YV_char
+Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
+
+Vaccine = Vn
+Year = Yn
+VY = expand.grid(Vaccine, Year, stringsAsFactors=FALSE)
+VY = cbind(Y=VY$Var2, V=VY$Var1)
+
+Table = data.frame(
+    Country=Country,
+    ProductionDate=Date,
+    ISOCountryCode=Code,
+    Vaccine=VY[, "V"],
+    Year=VY[, "Y"],
+    WUENIC=Cov[VY],
+    WUENICPreviousRevision=Legacy[VY],
+    GradeOfConfidence=GoC[VY],
+    AdministrativeCoverage=Admin[VY],
+    GovernmentEstimate=Gov[VY],
+    ReportedCoverage=Rep.Cov[VY],
+    ChildrenVaccinated=Vaccinated[VY],
+    ChildrenInTarget=Target[VY],
+    BirthsUNPD=Births[VY[, "Y"]],
+    SurvivingInfantsUNPD=Surviving[VY[, "Y"]],
+    ReportedTimeSeries=TS.Cov[VY],
+    ReportedTimeSeriesSource=TS.Src[VY],
+    SurveyInformation=Svy.Info[VY],
+    Rule=Rule[VY],
+    Comment=Text[VY])
+
+write.table(Table, "R/bgd.R.txt", quote=FALSE, row.names=FALSE, sep="\t", na="")
