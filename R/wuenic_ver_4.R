@@ -384,8 +384,8 @@ reject[cbind(index$Y, index$V)] = FALSE
 index = Decisions[Decisions$Dec == "ignoreReported", ]
 reject[cbind(index$Y, index$V)] = TRUE
 
-Rep.Cov[reject] = NA
-Rep.Src[reject] = NA
+# Rep.Cov[reject] = NA
+# Rep.Src[reject] = NA
 
 # 4. Time series of reported data
 #
@@ -398,12 +398,15 @@ Rep.Src[reject] = NA
 #     Source = Source0,
 #     Coverage = Cov0.
 
-TS.Cov = Rep.Cov
-TS.Src = Rep.Src
+TS.Cov = YV_int
+TS.Src = YV_char
 
-index = Ereq
-TS.Cov[!index] = NA
-TS.Src[!index] = NA
+TS.Cov[!reject] = Rep.Cov[!reject]
+TS.Src[!reject] = Rep.Src[!reject]
+
+# index = !Ereq
+# TS.Cov[!index] = NA
+# TS.Src[!index] = NA
 
 # % Interpolation, no data/reported data excluded between two years
 # reported_time_series(C, V, Y, Source, Coverage) :-
@@ -417,8 +420,10 @@ TS.Src[!index] = NA
 #     Source = interpolated,
 #     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
-inter = apply(Rep.Cov, 2, na.approx, na.rm=FALSE)
-index = Ereq & is.na(Rep.Cov) & !is.na(inter)
+Rep = Rep.Cov
+Rep[reject] = NA
+inter = apply(Rep, 2, na.approx, na.rm=FALSE)
+index = Ereq & (is.na(Rep.Cov) | reject) & !is.na(inter)
 TS.Cov[index] = tround(inter[index])
 TS.Src[index] = "interpolated"
 
@@ -433,13 +438,17 @@ TS.Src[index] = "interpolated"
 #     Source = extrapolated,
 #     Coverage = Cov0.
 
-extra = apply(Rep.Cov, 2, zoo::na.locf, na.rm=FALSE)
-index = Ereq & is.na(Rep.Cov) & !is.na(extra)
+Rep = Rep.Cov
+Rep[reject] = NA
+extra = apply(Rep, 2, zoo::na.locf, na.rm=FALSE)
+index = Ereq & (is.na(Rep.Cov) | reject) & !is.na(extra)
 TS.Cov[index] = round(extra[index])
 TS.Src[index] = "extrapolated"
 
-extra = apply(Rep.Cov, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
-index = Ereq & is.na(Rep.Cov) & !is.na(extra)
+Rep = Rep.Cov
+Rep[reject] = NA
+extra = apply(Rep, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
+index = Ereq & (is.na(Rep.Cov) | reject) & !is.na(extra)
 TS.Cov[index] = round(extra[index])
 TS.Src[index] = "extrapolated"
 
@@ -1367,13 +1376,15 @@ if(nrow(index))
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
-
-index = which(!is.na(Svy.Info), arr.ind=TRUE)
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
-      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]],
-      Expl[index[i, "Y"], index[i, "V"]])
+#
+# MG, todo: temporarily commented out
+#
+# index = which(!is.na(Svy.Info), arr.ind=TRUE)
+# if(nrow(index))
+#   for(i in 1:nrow(index))
+#     Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
+#       Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]],
+#       Expl[index[i, "Y"], index[i, "V"]])
 
 # explanation(C, V, Y, Expl) :-
 #     reported_reason_to_exclude(C, V, Y, _, Expl).
@@ -1389,11 +1400,10 @@ if(nrow(index))
 #     Reason = wdg,
 #     concat_atom(['Reported data excluded. ', Expl0], Expl).
 
-index = !Rep.Cov
+index = !is.na(Rep.Cov)
 ignore = Decisions[Decisions$Dec == "ignoreReported", ]
-index[cbind(ignore$Y, ignore$V)] = TRUE
-Expl[which(index)] = sprintf(
-    "Reported data excluded. %s%s", ignore$Info, Expl[which(index)])
+Expl[cbind(ignore$Y, ignore$V)] = sprintf(
+    "Reported data excluded. %s%s", ignore$Info, Expl[cbind(ignore$Y, ignore$V)])
 
 # reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
 #     reported(C, V, Y, _, Coverage),
@@ -1485,8 +1495,8 @@ Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
 
 Vaccine = Vn
 Year = Yn
-VY = expand.grid(Vaccine, Year, stringsAsFactors=FALSE)
-VY = cbind(Y=VY$Var2, V=VY$Var1)
+VY = expand.grid(Year, Vaccine, stringsAsFactors=FALSE)
+VY = cbind(Y=VY$Var1, V=VY$Var2)
 
 Table = data.frame(
     Country=Country,
@@ -1506,7 +1516,7 @@ Table = data.frame(
     SurvivingInfantsUNPD=Surviving[VY[, "Y"]],
     ReportedTimeSeries=TS.Cov[VY],
     ReportedTimeSeriesSource=TS.Src[VY],
-    SurveyInformation=Svy.Info[VY],
+    SurveyInformation=Svy.Cov[VY],
     Rule=Rule[VY],
     Comment=Text[VY])
 
