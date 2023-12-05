@@ -1233,14 +1233,14 @@ GoC.Expl[index] = "GoC=R+ D+"
 Chall = YV_char
 Chall[] = ""
 
-index = which(Conf.Rep == "R-")
-Chall[index] = "R-"
+index = which(Conf.Den == "D-")
+Chall[index] = "D-"
 
 index = which(Conf.Svy == "S-")
-Chall[index] = sprintf("%s S-", Chall[index])
+Chall[index] = sprintf("%sS-", Chall[index])
 
-index = which(Conf.Den == "D-")
-Chall[index] = sprintf("%s D-", Chall[index])
+index = which(Conf.Rep == "R-")
+Chall[index] = sprintf("%sR-", Chall[index])
 
 # % If any estimate has been challenged, confidence is low
 # confidence(C, V, Y, Expl, Grade) :-
@@ -1346,11 +1346,13 @@ age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
 accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
 size   = Survey$Info.ss < 300
 index  = Survey[cnf & age & !accept & size, ]
+
+# MG, discuss: bgd, bcg/1999: twice the same message, without Survey ID
 if(nrow(index))
   for(i in 1:nrow(index))
     Expl[index$Yn[i], index$V[i]] = sprintf(
-      "Survey results ignored. Sample size %i less than 300. %s", 
-      index$Info.ss[i], Expl[index$Yn[i], index$V[i]])
+      "%sSurvey results ignored. Sample size %i less than 300. ", 
+      Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
 
 # % V4: Keeps explanations for the same survey together
 # survey_reason_to_exclude(C, V, Y, ID, Expl) :-
@@ -1372,7 +1374,7 @@ if(nrow(index))
   for(i in 1:nrow(index))
     Expl[index$Yn[i], index$V[i]] = sprintf(
       "%s results ignored by working group. %s",
-      index$Info.title[i], Expl[index$Yn[i], index$V[i]])
+      Expl[index$Yn[i], index$V[i]], index$Info.title[i])
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
@@ -1403,7 +1405,7 @@ if(nrow(index))
 index = !is.na(Rep.Cov)
 ignore = Decisions[Decisions$Dec == "ignoreReported", ]
 Expl[cbind(ignore$Y, ignore$V)] = sprintf(
-    "Reported data excluded. %s%s", ignore$Info, Expl[cbind(ignore$Y, ignore$V)])
+    "%sReported data excluded. %s", Expl[cbind(ignore$Y, ignore$V)], ignore$Info)
 
 # reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
 #     reported(C, V, Y, _, Coverage),
@@ -1417,8 +1419,8 @@ index = Rep.Cov > 100
 accept = Decisions[Decisions$Dec == "acceptReported", ]
 index[accept$Y, accept$V] = FALSE
 Expl[which(index)] = sprintf(
-    "Reported data excluded because %i percent greater than 100 percent. %s", 
-    Rep.Cov[which(index)], Expl[which(index)])
+    "%sReported data excluded because %i percent greater than 100 percent. ", 
+    Expl[which(index)], Rep.Cov[which(index)])
 
 # reported_reason_to_exclude(C, V, Y, _, Expl) :-
 #     reported(C, V, Y, _, Coverage),
@@ -1461,7 +1463,7 @@ index = Decisions[Decisions$Dec == "comment", ]
 if(nrow(index))
   for(i in 1:nrow(index))
     Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
 
 # explanation(C, V, Y, Expl) :-
 #     decision(C, V, Y, acceptSurvey, Expl, _, _).
@@ -1470,7 +1472,7 @@ index = Decisions[Decisions$Dec == "acceptSurvey", ]
 if(nrow(index))
   for(i in 1:nrow(index))
     Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
 
 # explanation(C, V, Y, Expl) :-
 #     decision(C, V, Y, acceptReported, Expl, _, _).
@@ -1479,7 +1481,7 @@ index = Decisions[Decisions$Dec == "acceptReported", ]
 if(nrow(index))
   for(i in 1:nrow(index))
     Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
 
 # explanation(C, V, Y, Expl) :-
 #     decision(C, V, Y, ignoreGov, Expl, _, _).
@@ -1488,7 +1490,7 @@ index = Decisions[Decisions$Dec == "ignoreGov", ]
 if(nrow(index))
   for(i in 1:nrow(index))
     Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", index$Info[i], Expl[index$Y[i], index$V[i]])
+      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
 
 Text = YV_char
 Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
