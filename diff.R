@@ -6,7 +6,7 @@ results = function(fname, mask="%s.pl.v39.txt", path="xsb")
   if(!is.null(path))
     fname = file.path(path, fname)
 
-  read.table(fname, sep='\t', header=TRUE)
+  read.table(fname, sep='\t', header=TRUE, row.names=NULL)
 }
 
 oldres = function(ccode="and", path="xsb")
