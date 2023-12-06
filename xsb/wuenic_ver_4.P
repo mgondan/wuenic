@@ -1,9 +1,9 @@
-% wuenic_ver_3_9.P version 3.9
+% wuenic_ver_4.pl version 4.0
 %
 % Implements WHO & UNICEF rules for estimating national infant
 % immunization coverage. Includes explanations and grade of confidence
 % in estimate. Based on methods described in:
-%
+% 
 % Burton A, Monash R, Lautenbach B, Gacic-Dobo M, Neill M, Karimov R,
 % Wolfson L, Jones G, Birmingham M. WHO and UNICEF estimates of national
 % infant immunization coverage: methods and processes. Bull World Health
@@ -20,21 +20,19 @@
 % Immunization, Vaccines, and Biologicals. World Health Organization,
 % 1211 Geneva 27, Switzerland
 %
-% Current version (V3.9) written by Matthias Gondan, Department of
+% Current version (V4.0) written by Matthias Gondan, Department of
 % Psychology, University of Innsbruck, Austria
 % Matthias.Gondan-Rochon@uibk.ac.at
 %
-% This program works with the xsb Prolog
-% compiler, https://xsb.sourceforge.net/
+% This program works with the xsb Prolog compiler, https://xsb.sourceforge.net/
 %
 % * Created: 6 November 2011
 % * V3: 6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv GoC
-% * V3.9: 18 Nov 2023. Simplified the code for better maintainance
-% * V4.0: 19 Nov 2023. Corrected some inconsistencies in the output.
+% * V3.9: 6 Dec 2023. Simplified the code for better maintainance
+% * V4.0: 6 Dec 2023. Corrected some inconsistencies in the output.
 %   Does not affect coverage estimates.
-%
-% WHO and UNICEF working group memebers as of 1 January 2010 - 30 April
-% 2012:
+% 
+% WHO/UNICEF working group members as of 1 January 2010 - 30 April 2012
 % * Dr David BROWN, UNICEF/New York (dbrown@unicef.org)
 % * Mr Tony BURTON, WHO/Geneva (burtona@who.int)
 % * Ms Marta GACIC-DOBO, WHO/Geneva (gacicdobom@who.int)
@@ -127,13 +125,20 @@ estimate :-
             Admin, Gov, Reported, Vaccinated, Target, UnpdBirths,
             UnpdSI, SeriesValue, Source, SurveyInfo, Rule, Explanation
           ],
-	wuenic(Code, Vaccine, Year, Rule, Explanation, Coverage,
+    wuenic(Code, Vaccine, Year, Rule, Explanation, Coverage,
             PrevRev, GC, Admin, Gov, Reported, Vaccinated, Target,
             UnpdBirths, UnpdSI, Source, SeriesValue, SurveyInfo),
-	Estimates),
-    concat_atom([Code, '.pl.v40.txt'], OutFile),
-    open_out_file(Out, OutFile,
-	'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
+        Estimates),
+    concat_atom([Code, '.pl.v40.txt'], File),
+    Header = [ 'Country', 'ProductionDate', 'ISOCountryCode', 'Vaccine',
+        'Year', 'WUENIC', 'WUENICPreviousRevision', 'GradeOfConfidence',
+        'AdministrativeCoverage', 'GovernmentEstimate',
+        'ReportedCoverage', 'ChildrenVaccinated', 'ChildrenInTarget',
+        'BirthsUNPD', 'SurvivingInfantsUNPD', 'ReportedTimeSeries',
+        'ReportedTimeSeriesSource', 'SurveyInformation', 'Rule',
+        'Comment' ],
+    open(File, write, Out),
+    output_fields(Header, Out),
     output_results(Estimates, Out),
     close(Out).
 
@@ -303,9 +308,9 @@ conf_denominator(C, V, Y, Support) :-
     denominator(C, V, Y, Coverage),
     !,
     confidence_UNPD_threshold(Threshold),
-    (	abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
-    ->	Support = 'D+'
-    ;	Support = 'D-'
+    (   abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
+    ->  Support = 'D+'
+    ;   Support = 'D-'
     ).
 
 % Births used for bcg and hepb birth dose
@@ -433,7 +438,7 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     !,
     Rule = 'W-I:',
     concat_atom(['Estimate informed by interpolation between ', Prec,
-		 ' and ', Succ, ' levels. ', Expl0], Expl),
+        ' and ', Succ, ' levels. ', Expl0], Expl),
     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 % Between anchor points: between two reported anchors
@@ -454,15 +459,20 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 
 % Between other anchor points (not both of type "reported"): calibrate
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
-    reported_time_series(C, V, Y, _Source, _Cov0),
-    prec_anchor(C, V, Y, Prec, PrecRule, _),
-    succ_anchor(C, V, Y, Succ, SuccRule, _),
+    reported_time_series(C, V, Y, _Source, Reported),
+    prec_anchor(C, V, Y, Prec, PrecRule, PrecCov),
+    succ_anchor(C, V, Y, Succ, SuccRule, SuccCov),
     ( PrecRule \= 'R: AP' ; SuccRule \= 'R: AP' ),
     !,
     Rule = 'C:',
     concat_atom(['Reported data calibrated to ', Prec,
                 ' and ', Succ, ' levels. '], Expl),
-    calibrate(C, V, Prec, Succ, Y, Coverage).
+    reported_time_series(C, V, Prec, _, PrecRep),
+    reported_time_series(C, V, Succ, _, SuccRep),
+    interpolate(Prec, PrecRep, Succ, SuccRep, Y, RepInterp),
+    interpolate(Prec, PrecCov, Succ, SuccCov, Y, AnchInterp),
+    Adj is AnchInterp - RepInterp,
+    Coverage is round(Reported + Adj).
 
 % Before earliest/after latest anchor (of type reported)
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -475,9 +485,9 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     Rule = 'R:',
     member(Source-Expl,
       [ gov-'Estimate informed by reported data. ',
-	admin-'Estimate informed by reported data. ',
-	interpolated-'Estimate informed by interpolation between reported data. ',
-	extrapolated-'Estimate based on extrapolation from data reported by national government. '
+        admin-'Estimate informed by reported administrative data. ',
+        interpolated-'Estimate informed by interpolation between reported data. ',
+        extrapolated-'Estimate based on extrapolation from data reported by national government. '
       ]),
     Coverage = Cov0.
 
@@ -502,9 +512,9 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     Rule = 'R:',
     member(Source-Expl,
       [ gov-'Estimate informed by reported data. ',
-	admin-'Estimate informed by reported administrative data. ',
-	interpolated-'Estimate informed by interpolation between reported data. ',
-	extrapolated-'Estimate informed by extrapolation from reported data. '
+        admin-'Estimate informed by reported administrative data. ',
+        interpolated-'Estimate informed by interpolation between reported data. ',
+        extrapolated-'Estimate informed by extrapolation from reported data. '
       ]),
     Coverage = Cov0.
 
@@ -527,23 +537,27 @@ anchor(C, V, Y, Rule, Expl, Coverage) :-
     % Cov0 \= Assigned,
     !,
     Rule = 'W: AP',
-    concat_atom(['Estimate of ', Assigned, ' percent assigned by working group. ',
-	Expl0], Expl),
+    concat_atom(['Estimate of ', Assigned,
+        ' percent assigned by working group. ', Expl0], Expl),
     Coverage = Assigned.
 
 % Survey results support reported
+%
+% MG, discuss: Comparison with threshold is based on rounded
+% numbers, which gives an incorrect result at
+% anchor(bgd, dtp1, 2015, Info, Src, Cov)
 anchor(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Cov0),
     survey(C, V, Y, Expl0, Survey),
     survey_reported_threshold(Threshold),
-    abs(Cov0 - Survey) =< Threshold,
+    abs(Cov0 - Survey) =< Threshold, % here
     !,
     Rule = 'R: AP',
     member(Source-Expl1,
       [ gov-'Estimate informed by reported data supported by survey. ',
-	admin-'Estimate informed by reported administrative data supported by survey. ',
-	interpolated-'Estimate informed by interpolation between reported data supported by survey. ',
-	extrapolated-'Estimate based on extrapolation from data reported by national government supported by survey. '
+        admin-'Estimate informed by reported administrative data supported by survey. ',
+        interpolated-'Estimate informed by interpolation between reported data supported by survey. ',
+        extrapolated-'Estimate based on extrapolation from data reported by national government supported by survey. '
       ]),
     concat_atom([Expl1, Expl0], Expl),
     Coverage = Cov0.
@@ -557,40 +571,36 @@ anchor(C, V, Y, Rule, Expl, Coverage) :-
     !,
     Rule = 'S: AP',
     concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',
-		 Expl0, ' '], Expl),
+        Expl0, ' '], Expl),
     Coverage = Survey.
 
 % Survey information for given year. Multiple surveys are averaged.
-%
-% MG: this code does not seem to check all surveys
 survey(C, V, Y, Expl, Coverage) :-
     findall(Cov, survey_accepted(C, V, Y, _, Cov), [H | T]),
     length([H | T], N),
     sum_list([H | T], Sum),
     Coverage is round(Sum / N),
     concat_atom(['Survey evidence of ', Coverage, ' percent based on ',
-		 N, ' survey(s). '], Expl).
+        N, ' survey(s). '], Expl).
 
 % Reasons to exclude a survey include:
 %    Sample size < 300,
 %    The working group decides to exclude the survey.
 survey_accepted(C, V, Y, ID, Coverage) :-
     survey_for_analysis(C, V, Y, ID, Desc, Cov0),
-    (	decision(C, V, Y, acceptSurvey, _, ID, _)
-    ;	member(ss:Size, Desc),
+    (   decision(C, V, Y, acceptSurvey, _, ID, _)
+    ;   member(ss:Size, Desc),
         Size >= 300,
         not(decision(C, V, Y, ignoreSurvey, _, ID, _)),
         not(decision(C, V, Y, ignoreSurvey, _, na, _))
     ),
     % Check if survey needs to be modified
-    (	survey_modified(C, V, Y, ID, _, Modified)
-    ->	Coverage = Modified
-    ;	Coverage = Cov0
+    (   survey_modified(C, V, Y, ID, _, Modified)
+    ->  Coverage = Modified
+    ;   Coverage = Cov0
     ).
 
 % Survey results modified for recall bias
-%
-% MG: I do not fully understand this code
 survey_modified(C, V, Y, ID, Expl, Coverage) :-
     member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
 
@@ -627,12 +637,14 @@ survey_modified(C, V, Y, ID, Expl, Coverage) :-
     C1 is round(C1Cov),
     C3 is round(C3Cov),
     member(title:Title, Description),
-    concat_atom([Title, ' card or history results of ', SurveyCovRounded,
-		 ' percent modifed for recall bias to ', Cov0,
-		 ' percent based on 1st dose card or history coverage of ',
-		 CH1, ' percent, 1st dose card only coverage of ',
-		 C1, ' percent and 3rd dose card only coverage of ',
-		 C3, ' percent. '], Expl),
+    concat_atom(
+      [ Title, ' card or history results of ', SurveyCovRounded,
+        ' percent modifed for recall bias to ', Cov0,
+        ' percent based on 1st dose card or history coverage of ', CH1,
+        ' percent, 1st dose card only coverage of ', C1,
+        ' percent and 3rd dose card only coverage of ', C3,
+        ' percent. '
+      ], Expl),
     Coverage = Cov0.
 
 % Survey results passed for inclusion in the analysis include:
@@ -658,8 +670,8 @@ reported_time_series(C, V, Y, Source, Coverage) :-
 % Interpolation, no data/reported data excluded between two years
 reported_time_series(C, V, Y, Source, Coverage) :-
     estimate_required(C, V, Y, _, _),
-    (	not(reported(C, V, Y, _, _))
-    ;	reported_rejected(C, V, Y)
+    (   not(reported(C, V, Y, _, _))
+    ;   reported_rejected(C, V, Y)
     ),
     year_before_reported(C, V, Y, Prec, PrecCov),
     year_after_reported(C, V, Y, Succ, SuccCov),
@@ -670,8 +682,8 @@ reported_time_series(C, V, Y, Source, Coverage) :-
 % Extrapolation, latest required estimate
 reported_time_series(C, V, Y, Source, Coverage) :-
     estimate_required(C, V, Y, _, _),
-    (	not(reported(C, V, Y, _, _))
-    ;	reported_rejected(C, V, Y)
+    (   not(reported(C, V, Y, _, _))
+    ;   reported_rejected(C, V, Y)
     ),
     nearest_reported(C, V, Y, _Year, Cov0),
     !,
@@ -708,10 +720,10 @@ reported_rejected(C, V, Y) :-
     reported(C, V, Prec, _, PrecCov),
     reported(C, V, Succ, _, SuccCov),
     sawtooth_threshold(Threshold),
-    (	Coverage - PrecCov > Threshold,
-	Coverage - SuccCov > Threshold
-    ;	PrecCov - Coverage > Threshold,
-	SuccCov - Coverage > Threshold
+    (   Coverage - PrecCov > Threshold,
+        Coverage - SuccCov > Threshold
+    ;   PrecCov - Coverage > Threshold,
+        SuccCov - Coverage > Threshold
     ), !.
 
 % Sudden change in most recently reported data for classic vaccines, or
@@ -722,9 +734,9 @@ reported_rejected(C, V, Y) :-
     Prec is Y - 1,
     reported(C, V, Prec, _, PrecCov),
     sawtooth_threshold(Threshold),
-    (	member(V, [pcv3, rotac])
-    ->	PrecCov - Coverage > Threshold
-    ;	abs(PrecCov - Coverage) > Threshold
+    (   member(V, [pcv3, rotac])
+    ->  PrecCov - Coverage > Threshold
+    ;   abs(PrecCov - Coverage) > Threshold
     ), !.
 
 reported_later(C, V, Y) :-
@@ -745,8 +757,8 @@ reported(C, V, Y, Source, Coverage) :-
 
 reported(C, V, Y, Source, Coverage) :-
     admin0(C, V, Y, Cov0),
-    (	decision(C, V, Y, ignoreGov, _, _, _)
-    ;	not(gov(C, V, Y, _))
+    (   decision(C, V, Y, ignoreGov, _, _, _)
+    ;   not(gov(C, V, Y, _))
     ),
     not(decision(C, V, Y, ignoreAdmin, _, _, _)),
     !,
@@ -763,11 +775,11 @@ nearest_reported(C, V, Y, Nearest, Coverage) :-
     year_before_reported(C, V, Y, Before, CoverageBefore),
     year_after_reported(C, V, Y, After, CoverageAfter),
     !,
-    (	Y - Before < After - Y
-    ->	Nearest = Before,
-	Coverage = CoverageBefore
-    ;	Nearest = After,
-	Coverage = CoverageAfter
+    (   Y - Before < After - Y
+    ->  Nearest = Before,
+        Coverage = CoverageBefore
+    ;   Nearest = After,
+        Coverage = CoverageAfter
     ).
 
 nearest_reported(C, V, Y, Nearest, Coverage) :-
@@ -831,31 +843,6 @@ succ_anchor(C, V, Y, Succ, Rule, Coverage) :-
 interpolate(Prec, PrecCov, Succ, SuccCov, Year, Coverage) :-
     Slope is (SuccCov - PrecCov) / (Succ - Prec),
     Coverage is round(PrecCov + (Year - Prec) * Slope).
-
-% Calibrate reported data to anchor points
-calibrate(C, V, Prec, Succ, Y, Coverage) :-
-    reported_time_series(C, V, Prec, _, PrecRep),
-    reported_time_series(C, V, Succ, _, SuccRep),
-    anchor(C, V, Prec, _, _, PrecCov),
-    anchor(C, V, Succ, _, _, SuccCov),
-    !,
-    reported_time_series(C, V, Y, _, Reported),
-    interpolate(Prec, PrecRep, Succ, SuccRep, Y, RepInterp),
-    interpolate(Prec, PrecCov, Succ, SuccCov, Y, AnchInterp),
-    Adj is AnchInterp - RepInterp,
-    Coverage is round(Reported + Adj).
-
-% Reported data only at preceeding anchor
-calibrate(C, V, Prec, _Succ, Y, Coverage) :-
-    reported_time_series(C, V, Prec, _, PrecRep),
-    anchor(C, V, Prec, _, _, PrecCov),
-    !,
-    reported_time_series(C, V, Y, _, Reported),
-    Adj is PrecCov - PrecRep,
-    Coverage is round(Reported + Adj).
-
-calibrate(C, V, Prec, Succ, Y, _) :-
-    throw(misc_error(calibrate(C, V, Prec, Succ, Y))).
 
 % Ensure estimates are between 0 and 99
 %
@@ -953,13 +940,13 @@ collect_explanations(C, V, Y, Explanations) :-
     findall(Expl, explanation(C, V, Y, Expl), Explanations).
 
 explanation(C, V, Y, Expl) :-
-    survey_reason_to_exclude(C, V, Y, _, Expl).
+    survey_reason_to_exclude(C, V, Y, Expl).
 
 explanation(C, V, Y, Expl) :-
     survey_modified(C, V, Y, _, Expl, _).
 
 explanation(C, V, Y, Expl) :-
-    reported_reason_to_exclude(C, V, Y, _, Expl).
+    reported_reason_to_exclude(C, V, Y, Expl).
 
 explanation(C, V, Y, Expl) :-
     decision(C, V, Y, comment, Expl, _, _).
@@ -978,25 +965,21 @@ explanation(C, V, Y, Expl) :-
 %    The working group decides to exclude the survey.
 %
 % used for explanation/4
-survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+survey_reason_to_exclude(C, V, Y, Expl) :-
     survey_for_analysis(C, V, Y, ID, Description, _),
-    not(decision(C, V, Y, acceptSurvey, Expl, ID, _)),
+    not(decision(C, V, Y, acceptSurvey, _Expl, ID, _)),
     member(ss:Size, Description),
     Size < 300,
     concat_atom(['Survey results ignored. Sample size ', Size, ' less than 300. '], Expl).
 
-% V4 version
-%
-% Keeps explanations for the same survey together
-%
-survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+% V4: Keeps explanations for the same survey together
+survey_reason_to_exclude(C, V, Y, Expl) :-
     survey_for_analysis(C, V, Y, ID, Description, _),
-    (	decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
-    ;	decision(C, V, Y, ignoreSurvey, Expl0, na, _)
+    (   decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
+    ;   decision(C, V, Y, ignoreSurvey, Expl0, na, _)
     ),
     member(title:Title, Description),
-    concat_atom([Title, ' results ignored by working group. ', Expl0],
-    Expl).
+    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
 
 % Reasons to exclude reported data are:
 %  1. Working group decision.
@@ -1005,21 +988,19 @@ survey_reason_to_exclude(C, V, Y, ID, Expl) :-
 %  recent year)
 %
 %  semidet, needed for explanation/4
-reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+reported_reason_to_exclude(C, V, Y, Expl) :-
     reported(C, V, Y, _, _),
     decision(C, V, Y, ignoreReported, Expl0, _, _),
-    Reason = wdg,
     concat_atom(['Reported data excluded. ', Expl0], Expl).
 
-reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+reported_reason_to_exclude(C, V, Y, Expl) :-
     reported(C, V, Y, _, Coverage),
     not(decision(C, V, Y, acceptReported, _, _, _)),
     Coverage > 100,
-    Reason = 100,
     concat_atom(['Reported data excluded because ', Coverage,
-		 ' percent greater than 100 percent. '], Expl).
+    ' percent greater than 100 percent. '], Expl).
 
-reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+reported_reason_to_exclude(C, V, Y, Expl) :-
     reported(C, V, Y, _, Coverage),
     not(decision(C, V, Y, acceptReported, _, _, _)),
     Prec is Y - 1,
@@ -1029,13 +1010,13 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     sawtooth_threshold(Threshold),
     Coverage - CoveragePrec > Threshold,
     Coverage - CoverageSucc > Threshold,
-    Reason = sawtooth,
     concat_atom(
-	['Reported data excluded due to an increase from ',
-	 CoveragePrec, ' percent to ', Coverage,
-	 ' percent with decrease ', CoverageSucc, ' percent. '], Expl).
+      [ 'Reported data excluded due to an increase from ',
+        CoveragePrec, ' percent to ', Coverage,
+        ' percent with decrease to ', CoverageSucc, ' percent. '
+      ], Expl).
 
-reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+reported_reason_to_exclude(C, V, Y, Expl) :-
     reported(C, V, Y, _, Coverage),
     not(decision(C, V, Y, acceptReported, _, _, _)),
     Prec is Y - 1,
@@ -1045,15 +1026,15 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     sawtooth_threshold(Threshold),
     CoveragePrec - Coverage > Threshold,
     CoverageSucc - Coverage > Threshold,
-    Reason = sawtooth,
     concat_atom(
-	['Reported data excluded due to decline in reported coverage from ',
-	  CoveragePrec, ' percent to ', Coverage,
-	  ' percent with increase to ', CoverageSucc,' percent. '], Expl).
+      [ 'Reported data excluded due to decline in reported coverage from ',
+        CoveragePrec, ' percent to ', Coverage,
+        ' percent with increase to ', CoverageSucc,' percent. '
+      ], Expl).
 
 % Reason to exclude reported: sudden change in most recently reported
 % data for classic vaccines.
-reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+reported_reason_to_exclude(C, V, Y, Expl) :-
     not(member(V, [pcv3, rotac])),
     reported(C, V, Y, _, Coverage),
     not(decision(C, V, Y, acceptReported, _, _, _)),
@@ -1062,14 +1043,14 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     reported(C, V, Prec, _, CoveragePrec),
     sawtooth_threshold(Threshold),
     abs(CoveragePrec - Coverage) > Threshold,
-    Reason = temporalChange,
     concat_atom(
-	['Reported data excluded due to sudden change in coverage from ',
-	 CoveragePrec, ' level to ', Coverage,' percent. '], Expl).
+      [ 'Reported data excluded due to sudden change in coverage from ',
+         CoveragePrec, ' level to ', Coverage,' percent. '
+      ], Expl).
 
 % Reason to exclude reported: sudden decline in most recently reported
 % data for new vaccines.
-reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
+reported_reason_to_exclude(C, V, Y, Expl) :-
     member(V, [pcv3, rotac]),
     reported(C, V, Y, _, Coverage),
     not(decision(C, V, Y, acceptReported, _, _, _)),
@@ -1077,28 +1058,24 @@ reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
     Prec is Y - 1,
     reported(C, V, Prec, _, CoveragePrec),
     sawtooth_threshold(Threshold),
-    (CoveragePrec - Coverage) > Threshold,
-    Reason = temporalChange,
+    CoveragePrec - Coverage > Threshold,
     concat_atom(
-	['Reported data excluded due to decline in reported coverage from ',
-	 CoveragePrec,' level to ', Coverage, ' percent. '], Expl).
+      [ 'Reported data excluded due to decline in reported coverage from ',
+        CoveragePrec,' level to ', Coverage, ' percent. '
+      ], Expl).
 
 % Helper predicates
-open_out_file(Out, File, Header) :-
-    open(File, write, Out),
-    write(Out, Header),
-    nl(Out).
-
 output_results([], _).
 
 output_results([H | T], Out) :-
     output_fields(H, Out),
     output_results(T, Out).
 
-output_fields([], Out) :-
+output_fields([H], Out) :-
+    write(Out, H),
     nl(Out).
 
-output_fields([H | T], Out) :-
-    write(Out, H),
+output_fields([H1, H2 | T], Out) :-
+    write(Out, H1),
     write(Out, '\t'),
-    output_fields(T, Out).
+    output_fields([H2 | T], Out).
