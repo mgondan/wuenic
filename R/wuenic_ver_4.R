@@ -517,10 +517,10 @@ Svy.Title[cbind(index$Y, index$V, index$Id)] = index$Info.title
 #     member(AgeCohortCard3Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
 V13 = c(dtp1="dtp3", pol1="pol3", hib1="hib3", hepb1="hepb3", pcv1="pcv3")
+vac = Survey$V %in% V13
 cnf = Survey$Info.confirm == "card"
 age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-vac = Survey$V %in% V13
-index = Survey[cnf & age & vac, ]
+index = Survey[vac & cnf & age, ]
 
 Svy.C3 = array(NA_integer_, dim=c(length(Yn), length(V13), length(Dn)), 
     dimnames=list(Y=Yn, V=V13, Id=Dn))
@@ -533,10 +533,11 @@ Svy.C3[cbind(index$Y, index$V, index$Id)] = index$Cov
 #     member(age:AgeCohortCoH1, DescriptionCoH1Dose),
 #     member(AgeCohortCoH1, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
+vac = Survey$V %in% names(V13)
 cnf = Survey$Info.confirm == "card or history"
 age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-vac = Survey$V %in% names(V13)
-index = Survey[cnf & age & vac, ]
+index = Survey[vac & cnf & age, ]
+
 Svy.CH1 = array(NA_integer_, dim=c(length(Yn), length(names(V13)), length(Dn)), 
     dimnames=list(Y=Yn, V=names(V13), Id=Dn))
 Svy.CH1[cbind(index$Y, index$V, index$Id)] = index$Cov
@@ -548,11 +549,12 @@ Svy.CH1[cbind(index$Y, index$V, index$Id)] = index$Cov
 #     member(age:AgeCohortCard1Dose, DescriptionCard1Dose),
 #     member(AgeCohortCard1Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
 
+vac = Survey$V %in% names(V13)
 cnf = Survey$Info.confirm == "card"
 age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-vac = Survey$V %in% names(V13)
 cv0 = Survey$Cov > 0
-index = Survey[cnf & age & vac & cv0, ]
+index = Survey[vac & cnf & age & cv0, ]
+
 Svy.C1 = array(NA_integer_, dim=c(length(Yn), length(names(V13)), length(Dn)), 
     dimnames=list(Y=Yn, V=names(V13), Id=Dn))
 Svy.C1[cbind(index$Y, index$V, index$Id)] = index$Cov
@@ -590,7 +592,7 @@ Svy.Info = array(NA_character_, dim=c(length(Yn), length(V13), length(Dn)),
 Svy.Info[index] = sprintf(
   "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i 
   percent, 1st dose card only coverage of %d percent and 3rd dose card only coverage of %d percent. ", 
-  Svy.Title[index], Svy.Ana[index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
+  Svy.Title[index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
 Svy.Ana[, V13, ][index] = H3Adj[index]
 
 # % Survey information for given year. Multiple surveys are averaged.
@@ -1240,11 +1242,11 @@ Chall[] = ""
 index = which(Conf.Den == "D-")
 Chall[index] = "D-"
 
-index = which(Conf.Svy == "S-")
-Chall[index] = sprintf("%sS-", Chall[index])
-
 index = which(Conf.Rep == "R-")
 Chall[index] = sprintf("%sR-", Chall[index])
+
+index = which(Conf.Svy == "S-")
+Chall[index] = sprintf("%sS-", Chall[index])
 
 # % If any estimate has been challenged, confidence is low
 # confidence(C, V, Y, Expl, Grade) :-
@@ -1382,15 +1384,13 @@ if(nrow(index))
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
-#
-# MG, todo: temporarily commented out
-#
-# index = which(!is.na(Svy.Info), arr.ind=TRUE)
-# if(nrow(index))
-#   for(i in 1:nrow(index))
-#     Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
-#       Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]],
-#       Expl[index[i, "Y"], index[i, "V"]])
+
+index = which(!is.na(Svy.Info), arr.ind=TRUE)
+if(nrow(index))
+  for(i in nrow(index):1)
+    Expl[index[i, "Y"], V13[index[i, "V"]]] = sprintf("%s%s",
+      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]],
+      Expl[index[i, "Y"], V13[index[i, "V"]]])
 
 # explanation(C, V, Y, Expl) :-
 #     reported_reason_to_exclude(C, V, Y, _, Expl).
