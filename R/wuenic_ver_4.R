@@ -593,8 +593,7 @@ Svy.Info = array(NA_character_, dim=c(length(Yn), length(V13), length(Dn)),
     dimnames=list(Y=Yn, V=V13, Id=Dn))
 
 Svy.Info[index] = sprintf(
-  "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i 
-  percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
+  "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
   Svy.Title[index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
 Svy.Ana[, V13, ][index] = H3Adj[index]
 
@@ -624,7 +623,7 @@ Svy.Cov = tround(apply(Svy.Acc, c(1, 2), mean, na.rm=TRUE))
 
 Svy.Expl = YV_char
 Svy.Expl[] = sprintf(
-  "Survey evidence of %g percent based on %i survey(s).", 
+  "Survey evidence of %g percent based on %i survey(s). ", 
   Svy.Cov, apply(!is.na(Svy.Acc), c(1, 2), sum))
 
 # 6. Determine coverage value at anchor points defined as years with multiple
@@ -649,7 +648,7 @@ Anchor.Cov = YV_int
 index = which(abs(Svy.Cov - TS.Cov) > svy.thrs, arr.ind=TRUE)
 Anchor.Rule[index] = "S: AP"
 Anchor.Info[index] = sprintf(
-  "Survey evidence does not support reported data. Estimate based on survey results. %s",
+  "Survey evidence does not support reported data. Estimate based on survey results. %s ",
   Svy.Expl[index])
 Anchor.Cov[index] = Svy.Cov[index]
 
@@ -679,7 +678,7 @@ info = c(
 index = which(abs(Svy.Cov - TS.Cov) <= svy.thrs, arr.ind=TRUE)
 Anchor.Rule[index] = "R: AP"
 Anchor.Cov[index] = TS.Cov[index]
-Anchor.Info[index] = sprintf("%s %s", info[TS.Src[index]], Svy.Expl[index])
+Anchor.Info[index] = sprintf("%s%s", info[TS.Src[index]], Svy.Expl[index])
 
 # % Reported value "anchored" by working group
 # anchor(C, V, Y, Rule, Expl, Coverage) :-

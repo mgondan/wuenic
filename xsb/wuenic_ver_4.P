@@ -264,6 +264,10 @@ conf_reported(C, V, Y, Support) :-
 
 % No confidence in surveys if _any_ survey deviates too much from WUENIC
 % coverage
+%
+% MG, discuss: wuenic_I can return coverage > 100 here (e.g., bgd/pcv3
+% in 2018), do we want to use them here? It may make sense not to trust
+% cov > 100, but not *because of* a survey.
 conf_survey(C, V, Y, Support) :-
     wuenic_I(C, V, Y, _, _, Cov0),
     estimate_required(C, V, Year, _, _),
