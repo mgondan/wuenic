@@ -8,6 +8,7 @@ Yn = 1997:2022
 
 sawtooth = 10
 svy.thrs = 10
+svy.scope = 2
 unpd.thrs = 10
 
 YV = list(Y=Yn, V=Vn)
@@ -1074,9 +1075,11 @@ Conf.Rep[index] = "R-"
 
 Svy.Min = YV_int
 suppressWarnings({Svy.Min = round(apply(Svy.Ana, c(1, 2), min, na.rm=TRUE))})
+Svy.Min[] = rollapply(Svy.Min, width=1 + 2*svy.scope, partial=1, FUN=min)
 
 Svy.Max = YV_int
 suppressWarnings({Svy.Max = round(apply(Svy.Ana, c(1, 2), max, na.rm=TRUE))})
+Svy.Max[] = rollapply(Svy.Max, width=1 + 2*svy.scope, partial=1, FUN=max)
 
 Conf.Svy = YV_char
 index = which(!is.na(Cov) & Ereq & is.finite(Svy.Min) & is.finite(Svy.Max))
