@@ -1035,7 +1035,7 @@ reported_reason_to_exclude(C, V, Y, Expl) :-
     Coverage - CoverageSucc > Threshold,
     concat_atom(
       [ 'Reported data excluded due to an increase from ', CoveragePrec,
-        ' percent to ', Coverage, ' percent with decrease ', CoverageSucc, 
+        ' percent to ', Coverage, ' percent with decrease ', CoverageSucc,
         ' percent. '
       ], Expl).
 

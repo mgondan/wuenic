@@ -3,7 +3,7 @@
 % Implements WHO & UNICEF rules for estimating national infant
 % immunization coverage. Includes explanations and grade of confidence
 % in estimate. Based on methods described in:
-% 
+%
 % Burton A, Monash R, Lautenbach B, Gacic-Dobo M, Neill M, Karimov R,
 % Wolfson L, Jones G, Birmingham M. WHO and UNICEF estimates of national
 % infant immunization coverage: methods and processes. Bull World Health
@@ -31,7 +31,7 @@
 % * V3.9: 6 Dec 2023. Simplified the code for better maintainance
 % * V4.0: 6 Dec 2023. Corrected some inconsistencies in the output.
 %   Does not affect coverage estimates.
-% 
+%
 % WHO/UNICEF working group members as of 1 January 2010 - 30 April 2012
 % * Dr David BROWN, UNICEF/New York (dbrown@unicef.org)
 % * Mr Tony BURTON, WHO/Geneva (burtona@who.int)
@@ -372,7 +372,7 @@ wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     DTP3 > DTP1,
     !,
     Rule = 'RMF:',
-    concat_atom(['DTP1 coverage estimated based on DTP3 coverage of ',
+    concat_atom(['Estimate based on DTP3 coverage of ',
         DTP3, '. '], Expl),
     Coverage is round(DTP3 - 0.0058 * DTP3 * DTP3 + 0.3912 * DTP3 + 18.258).
 
