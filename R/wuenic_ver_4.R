@@ -482,11 +482,12 @@ age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
 #     ;   Coverage = Cov0
 #     ).
 
-size   = Survey$Info.ss >= 300
-ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
-year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
-index  = Survey[cnf & age & ((size & !ignore & !year) | accept), ]
+size     = Survey$Info.ss >= 300
+ignore   = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
+year     = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+vacc     = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+accept   = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
+index    = Survey[cnf & age & ((size & !ignore & !(year & vacc)) | accept), ]
 
 Dn = levels(as.factor(Survey$Id))
 Svy.Ana = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
@@ -881,7 +882,7 @@ Itp2.Cov = apply(Itp2.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
 yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
 Adj = Itp1.Cov - Itp2.Cov
-Cov[index] = round(TS.Cov[index] + Adj[index])
+Cov[index] = tround(TS.Cov[index] + Adj[index])
 
 # % Between anchor points: between two reported anchors
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -1364,17 +1365,17 @@ if(nrow(index))
 #     concat_atom([Title, ' results ignored by working group. ', Expl0],
 #     Expl).
 
-cnf    = Survey$Info.confirm == "card or history"
-age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
-year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-index  = Survey[cnf & age & (ignore | year), ]
-
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index$Yn[i], index$V[i]] = sprintf(
-      "%s results ignored by working group. %s",
-      Expl[index$Yn[i], index$V[i]], index$Info.title[i])
+# Commented out to match Prolog output
+# cnf    = Survey$Info.confirm == "card or history"
+# age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+# ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
+# year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+# index  = Survey[cnf & age & (ignore | year), ]
+# if(nrow(index))
+#   for(i in 1:nrow(index))
+#     Expl[index$Yn[i], index$V[i]] = sprintf(
+#       "%s%s results ignored by working group. ",
+#       Expl[index$Yn[i], index$V[i]], index$Info.title[i])
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
