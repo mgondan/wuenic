@@ -892,6 +892,7 @@ rownames(Itp1.Cov) = Yn
 Itp2.Cov = TS.Cov
 Itp2.Cov[index] = NA
 Itp2.Cov = apply(Itp2.Cov, 2, FUN=na.approx, na.rm=FALSE)
+Itp2.Cov[] = tround(Itp2.Cov)
 rownames(Itp2.Cov) = Yn
 
 # yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
@@ -1044,7 +1045,8 @@ Cov[cbind(index$Y, index$V)] = index$Cov
 #
 # bound_0_100(X, Y) :-
 #   Y is max(0, min(99, round(X))).
-Cov[] = pmax(0, pmin(99, round(Cov)))
+Bounded = Cov
+Bounded[] = pmax(0, pmin(99, round(Bounded)))
 
 # % Confidence in reported coverage if it is an anchor point. Otherwise,
 # % no confidence
@@ -1331,10 +1333,10 @@ GoC.Expl[index, "rcv1"] = GoC.Expl[index, "mcv1"]
 
 Change = YV_char
 Change[] = ""
-index = which(Cov != Legacy)
+index = which(Bounded != Legacy)
 Change[index] = sprintf(
   "Estimate of %i percent changed from previous revision value of %i percent. ",
-  Cov[index], Legacy[index])
+  Bounded[index], Legacy[index])
 
 # % Collect explanations in natural language terms
 # collect_explanations(C, V, Y, Explanations) :-
@@ -1522,7 +1524,7 @@ Table = data.frame(
     ISOCountryCode=Code,
     Vaccine=VY[, "V"],
     Year=VY[, "Y"],
-    WUENIC=Cov[VY],
+    WUENIC=Bounded[VY],
     WUENICPreviousRevision=Legacy[VY],
     GradeOfConfidence=GoC[VY],
     AdministrativeCoverage=Admin[VY],
