@@ -490,11 +490,8 @@ age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
 #     ).
 
 size     = Survey$Info.ss >= 300
-ignore   = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
-year     = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-vacc     = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
 accept   = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
-index    = Survey[cnf & age & ((size & !ignore & !(year & vacc)) | accept), ]
+index    = Survey[cnf & age & (size | accept), ]
 
 Dn = levels(as.factor(Survey$Id))
 Svy.Ana = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
@@ -597,9 +594,21 @@ Svy.Info = array(NA_character_, dim=c(length(Yn), length(V13), length(Dn)),
 
 Svy.Info[index] = sprintf(
   "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i 
-  percent, 1st dose card only coverage of %d percent and 3rd dose card only coverage of %d percent. ", 
+  percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
   Svy.Title[index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
 Svy.Ana[, V13, ][index] = H3Adj[index]
+
+# Some surveys are ignored by the working group
+ignore   = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
+index    = Survey[cnf & age & ignore, ]
+
+Svy.Acc = Svy.Ana
+Svy.Acc[cbind(index$Yn, index$V, index$Id)] = NA
+
+year     = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+vacc     = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+index    = Survey[cnf & age & year & vacc, ]
+Svy.Acc[cbind(index$Yn, index$V, index$Id)] = NA
 
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
@@ -611,12 +620,12 @@ Svy.Ana[, V13, ][index] = H3Adj[index]
 #         N, ' survey(s). '], Expl).
 
 Svy.Cov = YV_int
-Svy.Cov = tround(apply(Svy.Ana, c(1, 2), mean, na.rm=TRUE))
+Svy.Cov = tround(apply(Svy.Acc, c(1, 2), mean, na.rm=TRUE))
 
 Svy.Expl = YV_char
 Svy.Expl[] = sprintf(
   "Survey evidence of %g percent based on %i survey(s).", 
-  Svy.Cov, apply(!is.na(Svy.Ana), c(1, 2), sum))
+  Svy.Cov, apply(!is.na(Svy.Acc), c(1, 2), sum))
 
 # 6. Determine coverage value at anchor points defined as years with multiple
 #    data points (reported | survey | wgd).
@@ -1089,11 +1098,11 @@ Conf.Rep[index] = "R-"
 #   Support = 'S+'.
 
 Svy.Min = YV_int
-suppressWarnings({Svy.Min = round(apply(Svy.Ana, c(1, 2), min, na.rm=TRUE))})
+suppressWarnings({Svy.Min = round(apply(Svy.Acc, c(1, 2), min, na.rm=TRUE))})
 Svy.Min[] = rollapply(Svy.Min, width=1 + 2*svy.scope, partial=1, FUN=min)
 
 Svy.Max = YV_int
-suppressWarnings({Svy.Max = round(apply(Svy.Ana, c(1, 2), max, na.rm=TRUE))})
+suppressWarnings({Svy.Max = round(apply(Svy.Acc, c(1, 2), max, na.rm=TRUE))})
 Svy.Max[] = rollapply(Svy.Max, width=1 + 2*svy.scope, partial=1, FUN=max)
 
 Conf.Svy = YV_char
@@ -1384,27 +1393,43 @@ if(nrow(index))
 #     concat_atom([Title, ' results ignored by working group. ', Expl0],
 #     Expl).
 
-# Commented out to match Prolog output
-# cnf    = Survey$Info.confirm == "card or history"
-# age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-# ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
-# year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-# index  = Survey[cnf & age & (ignore | year), ]
-# if(nrow(index))
-#   for(i in 1:nrow(index))
-#     Expl[index$Yn[i], index$V[i]] = sprintf(
-#       "%s%s results ignored by working group. ",
-#       Expl[index$Yn[i], index$V[i]], index$Info.title[i])
+cnf    = Survey$Info.confirm == "card or history"
+age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+ignore = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
+index  = Survey[cnf & age & ignore, ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Expl[index$Yn[i], index$V[i]] = sprintf(
+      "%s%s results ignored by working group.",
+      Expl[index$Yn[i], index$V[i]], index$Info.title[i])
+
+cnf    = Survey$Info.confirm == "card or history"
+age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+vacc   = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
+index  = Survey[cnf & age & year & vacc, ]
+if(nrow(index))
+  for(i in 1:nrow(index))
+  {
+    Expl0 = Decisions$Info[Decisions$Dec == "ignoreSurvey"
+                           & is.na(Decisions$Id)
+                           & Decisions$Y == index$Yn[i]
+                           & Decisions$V == index$V[i]]
+    
+    Expl[index$Yn[i], index$V[i]] = sprintf(
+      "%s%s results ignored by working group. %s",
+      Expl[index$Yn[i], index$V[i]], index$Info.title[i], Expl0)
+  }
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
 
 index = which(!is.na(Svy.Info), arr.ind=TRUE)
 if(nrow(index))
-  for(i in nrow(index):1)
+  for(i in 1:nrow(index))
     Expl[index[i, "Y"], V13[index[i, "V"]]] = sprintf("%s%s",
-      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]],
-      Expl[index[i, "Y"], V13[index[i, "V"]]])
+      Expl[index[i, "Y"], V13[index[i, "V"]]],
+      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]])
 
 # explanation(C, V, Y, Expl) :-
 #     reported_reason_to_exclude(C, V, Y, _, Expl).
