@@ -317,7 +317,7 @@ J = sapply(Diff, `>`, sawtooth)
 reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
 
 Rej.Info[reject] = sprintf(
-    "Reported data excluded due to sudden change in reported coverage from %i level to %i percent. ",
+    "Reported data excluded due to sudden change in coverage from %i level to %i percent. ",
     rbind(NA, Rep.Cov)[reject], Rep.Cov[reject])
 
 # reported_rejected(C, V, Y) :-
