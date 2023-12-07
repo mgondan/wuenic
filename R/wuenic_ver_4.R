@@ -292,17 +292,18 @@ Diff = lapply(Diff, na.trim, sides="right")                  # last reported
 Diff = lapply(Diff, rev)                                     # -> first
 Diff = lapply(Diff, `[`, 1)                                  # jump of interest
 
-Y = sapply(Diff, names)
-V = names(Diff)
 J = sapply(Diff, `<`, sawtooth)                              # check for decline
+Y = sapply(Diff, names)[which(J)]
+V = names(Diff)[which(J)]
+reject[cbind(Y, V)] = J[!is.na(J)]
 
-# Skip if J is NA (for vaccines with only NA reported)
-reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
+Rep.Prev = rbind(Rep.Cov, NA)
+Rep.Prev[] = rbind(NA, Rep.Cov)
 
 Rej.Info = YV_char
-Rej.Info[reject] = sprintf(
+Rej.Info[cbind(Y, V)] = sprintf(
     "Reported data excluded due to decline in reported coverage from %i level to %i percent. ",
-    rbind(NA, Rep.Cov)[reject], Rep.Cov[reject])
+    Rep.Prev[cbind(Y, V)], Rep.Cov[cbind(Y, V)])
 
 # Sudden change in most recently reported data for classic vaccines
 V.new = Rep.Cov[, !(Vn %in% c("pcv3", "rotac")), drop=FALSE]
@@ -312,14 +313,17 @@ Diff = lapply(Diff, rev)
 Diff = lapply(Diff, `[`, 1)
 Diff = lapply(Diff, abs)                                     # up or down
 
-Y = sapply(Diff, names)
-V = names(Diff)
 J = sapply(Diff, `>`, sawtooth)
-reject[cbind(Y[!is.na(J)], V[!is.na(J)])] = J[!is.na(J)]
+Y = sapply(Diff, names)[which(J)]
+V = names(Diff)[which(J)]
+reject[cbind(Y, V)] = J[!is.na(J)]
 
-Rej.Info[reject] = sprintf(
+Rep.Prev = rbind(Rep.Cov, NA)
+Rep.Prev[] = rbind(NA, Rep.Cov)
+
+Rej.Info[cbind(Y, V)] = sprintf(
     "Reported data excluded due to sudden change in coverage from %i level to %i percent. ",
-    rbind(NA, Rep.Cov)[reject], Rep.Cov[reject])
+    Rep.Prev[cbind(Y, V)], Rep.Cov[cbind(Y, V)])
 
 # reported_rejected(C, V, Y) :-
 #     reported(C, V, Y, _, Coverage),
