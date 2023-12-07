@@ -446,14 +446,16 @@ TS.Src[index] = "interpolated"
 Rep = Rep.Cov
 Rep[reject] = NA
 extra = apply(Rep, 2, zoo::na.locf, na.rm=FALSE)
-index = Ereq & (is.na(Rep.Cov) | reject) & !is.na(extra)
+
+# Don't overwrite interpolated
+index = Ereq & (is.na(Rep.Cov) | reject) & is.na(inter) & !is.na(extra)
 TS.Cov[index] = round(extra[index])
 TS.Src[index] = "extrapolated"
 
 Rep = Rep.Cov
 Rep[reject] = NA
 extra = apply(Rep, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
-index = Ereq & (is.na(Rep.Cov) | reject) & !is.na(extra)
+index = Ereq & (is.na(Rep.Cov) | reject) & is.na(inter) & !is.na(extra)
 TS.Cov[index] = round(extra[index])
 TS.Src[index] = "extrapolated"
 
@@ -882,12 +884,17 @@ Info[index] = sprintf("Reported data calibrated to %s and %s levels. ",
 # interpolate Anchor.Cov for year without anchor
 Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
+# MG, discuss: this shouldn't be rounded
+Itp1.Cov[] = tround(Itp1.Cov)
+rownames(Itp1.Cov) = Yn
+
 # interpolate TS.Cov for year without anchor
 Itp2.Cov = TS.Cov
 Itp2.Cov[index] = NA
 Itp2.Cov = apply(Itp2.Cov, 2, FUN=na.approx, na.rm=FALSE)
+rownames(Itp2.Cov) = Yn
 
-yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+# yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
 Adj = Itp1.Cov - Itp2.Cov
 Cov[index] = tround(TS.Cov[index] + Adj[index])
 
@@ -1285,7 +1292,8 @@ GoC.Expl[index] = "GoC=R+ S+ D+"
 
 index = Decisions[Decisions$Dec == "assignGoC", ]
 GoC[cbind(index$Y, index$V)] = index$Cov # Cov is GoC here
-GoC.Expl[cbind(index$Y, index$V)] = "GoC=Assigned by working group. "
+GoC.Expl[cbind(index$Y, index$V)] = sprintf("GoC=Assigned by working group. %s",
+    index$Info)
 
 # % Copy rcv1 from mcv2
 # %
