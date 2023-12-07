@@ -344,7 +344,7 @@ prev[, 1] = prev[, 1] - 1
 succ = index
 succ[, 1] = succ[, 1] + 1
 Rej.Info[index] = sprintf(
-    "Reported data excluded due to an increase from %i percent to %i percent with decrease %i percent. ",
+    "Reported data excluded due to an increase from %i percent to %i percent with decrease to %i percent. ",
     Rep.Cov[prev], Rep.Cov[index], Rep.Cov[succ])
 
 down  = apply(rbind(NA, Rep.Cov), 2, diff) < -sawtooth
@@ -1502,7 +1502,7 @@ Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
 Vaccine = Vn
 Year = Yn
 VY = expand.grid(Year, Vaccine, stringsAsFactors=FALSE)
-VY = cbind(Y=VY$Var1, V=VY$Var2)
+VY = cbind(Y=VY$Var1[Ereq], V=VY$Var2[Ereq])
 
 Table = data.frame(
     Country=Country,
