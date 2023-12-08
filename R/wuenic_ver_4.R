@@ -1,9 +1,11 @@
 library(zoo)
 library(rolog)
-consult("xsb/bgd.pl")
 
-Vn = c("bcg", "dtp1", "dtp3", "hepb1", "hepb3", "hib1", "hib3", "ipv1", "mcv1",
-       "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "hepbb")
+# consult("xsb/afg.pl")
+once(call("load_files", "xsb/afg.pl", list(call("encoding", quote(text)))))
+
+Vn = c("bcg", "dtp1", "dtp3", "hepb1", "hepb3", "hepbb", "hib1", "hib3", "ipv1",
+       "mcv1", "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "rotac")
 Yn = 1997:2022
 
 sawtooth = 10
@@ -33,10 +35,10 @@ firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
 
 atom2char = function(q)
 { if(is.expression(q))
-    return(as.character(q))
-  
+    return(iconv(as.character(q), "latin1", "latin1"))
+
   if(is.symbol(q))
-    return(as.character(q))
+    return(iconv(as.character(q), "latin1", "latin1"))
   
   if(is.call(q))
   { args <- as.list(q)
@@ -106,6 +108,12 @@ est_req = function()
   s = do.call("rbind", s)
   s$Y = as.character(s$Y)
   
+  index = which(!(s$V %in% Vn))
+  if(length(index))
+  { warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
+    s = s[-index, ]
+  }
+
   m = YV_bool
   m[cbind(s$Y, s$V)] = TRUE
   return(m)
@@ -292,7 +300,7 @@ Diff = lapply(Diff, na.trim, sides="right")                  # last reported
 Diff = lapply(Diff, rev)                                     # -> first
 Diff = lapply(Diff, `[`, 1)                                  # jump of interest
 
-J = sapply(Diff, `<`, sawtooth)                              # check for decline
+J = sapply(Diff, `<`, -sawtooth)                             # check for decline
 Y = sapply(Diff, names)[which(J)]
 V = names(Diff)[which(J)]
 reject[cbind(Y, V)] = J[!is.na(J)]
@@ -604,10 +612,14 @@ index    = Survey[cnf & age & ignore, ]
 Svy.Acc = Svy.Ana
 Svy.Acc[cbind(index$Yn, index$V, index$Id)] = NA
 
-year     = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-vacc     = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-index    = Survey[cnf & age & year & vacc, ]
-Svy.Acc[cbind(index$Yn, index$V, index$Id)] = NA
+# Some surveys are ignored by the working group (by year and vaccine, no Id)
+index = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
+IgnoreSurvey = YV_char
+IgnoreSurvey[cbind(index$Y, index$V)] = index$Info
+
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Svy.Acc[index$Y[i], index$V[i], ] = NA
 
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
@@ -929,13 +941,21 @@ Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 index = index & !is.na(Prec.Rule) & !is.na(Succ.Rule)
 index = index & Prec.Rule == "R: AP" & Succ.Rule == "R: AP"
 
+index1 = index & TS.Src %in% c("gov", "admin", "interpolated")
 info = c(gov="Estimate informed by reported data. ",
     admin="Estimate informed by reported administrative data. ",
     interpolated="Estimate informed by interpolation between reported data. ")
 
-Rule[index] = "R:"
-Info[index] = info[TS.Src[index]]
-Cov[index] = TS.Cov[index]
+Rule[index1] = "R:"
+Info[index1] = info[TS.Src[index1]]
+Cov[index1] = TS.Cov[index1]
+
+# MG, discuss: if it is extrapolated, the rule fails and NA
+index2 = index & TS.Src %in% c("extrapolated")
+Rule[index2] = NA
+Info[index2] = NA
+Cov[index2] = NA
+
 
 # % Between anchor points: interpolation forced by working group
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -1031,7 +1051,7 @@ Cov[rcv1] = Cov[mcv2]
 index = !is.na(Cov[, "dtp1"]) & !is.na(Cov[, "dtp3"]) & Cov[, "dtp3"] > Cov[, "dtp1"]
 index = index | is.na(Cov[, "dtp1"]) & !is.na(Cov[, "dtp3"])
 Rule[index, "dtp1"] = "RMF:"
-Info[index, "dtp1"] = sprintf("Estimate based on DTP3 coverage of %s. ",
+Info[index, "dtp1"] = sprintf("Estimate based on DTP3 coverage of %i. ",
   Cov[index, "dtp3"])
 Cov[index, "dtp1"] =
   round(-0.0058 * Cov[index, "dtp3"]^2 + 1.3912 * Cov[index, "dtp3"] + 18.258)
@@ -1409,16 +1429,10 @@ vacc   = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decis
 index  = Survey[cnf & age & year & vacc, ]
 if(nrow(index))
   for(i in 1:nrow(index))
-  {
-    Expl0 = Decisions$Info[Decisions$Dec == "ignoreSurvey"
-                           & is.na(Decisions$Id)
-                           & Decisions$Y == index$Yn[i]
-                           & Decisions$V == index$V[i]]
-    
     Expl[index$Yn[i], index$V[i]] = sprintf(
       "%s%s results ignored by working group. %s",
-      Expl[index$Yn[i], index$V[i]], index$Info.title[i], Expl0)
-  }
+      Expl[index$Yn[i], index$V[i]], index$Info.title[i], 
+      IgnoreSurvey[index$Yn[i], index$V[i]])
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
@@ -1564,4 +1578,4 @@ Table = data.frame(
     Rule=Rule[VY],
     Comment=Text[VY])
 
-write.table(Table, "R/bgd.R.txt", quote=FALSE, row.names=FALSE, sep="\t", na="")
+write.table(Table, "R/afg.R.txt", quote=FALSE, row.names=FALSE, sep="\t", na="")
