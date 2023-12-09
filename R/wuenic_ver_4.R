@@ -1,12 +1,12 @@
 library(zoo)
 library(rolog)
 
-ccode = "bgd"
+ccode = "and"
 
 # consult("xsb/ago.pl")
 once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
 
-Vn = c("bcg", "dtp1", "dtp3", "hepb1", "hepb3", "hepbb", "hib1", "hib3", "ipv1",
+Vn = c("bcg", "dtp1", "dtp3", "hepb0", "hepb1", "hepb3", "hepbb", "hib1", "hib3", "ipv1",
        "mcv1", "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "rotac", "yfv")
 Yn = 1991:2022
 
@@ -81,9 +81,12 @@ rep3 = function(pred="births_UNPD")
 }
 
 # Read all pred(C, V, Y, Out) and save Out in a matrix
-rep4 = function(pred="admin")
-{ q = call(pred, expression(C), expression(V), expression(Y), expression(Out))
+rep4 = function(ccode, pred="admin")
+{ q = call(pred, as.name(ccode), expression(V), expression(Y), expression(Out))
   s = findall(q)
+  if(!length(s))
+    return(YV_int)
+
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
@@ -137,10 +140,13 @@ rubella = function()
 }
 
 # Multiple surveys per year, therefore no YV-matrix, but a long data frame
-survey_results = function()
-{ q = call("survey_results", expression(C), expression(V), expression(Y), 
+survey_results = function(ccode)
+{ q = call("survey_results", as.name(ccode), expression(V), expression(Y), 
     expression(Id), expression(Info), expression(Cov))
   s = findall(q)
+  if(!length(s))
+      return(data.frame(V=NULL, Y=NULL, Yn=NULL, Id=NULL, Info=NULL, Cov=NULL))
+
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
@@ -212,14 +218,14 @@ Date = atom2char(s$Date)
 
 Ereq = est_req()
 Rubella = rubella()
-Admin = rep4("admin")
-Gov = rep4("gov")
-Legacy = rep4("legacy")
-Vaccinated = rep4("vaccinated")
-Target = rep4("target")
+Admin = rep4(ccode, "admin")
+Gov = rep4(ccode, "gov")
+Legacy = rep4(ccode, "legacy")
+Vaccinated = rep4(ccode, "vaccinated")
+Target = rep4(ccode, "target")
 Births = rep3("births_UNPD")[as.character(Yn)]
 Surviving = rep3("si_UNPD")[as.character(Yn)]
-Survey = survey_results()
+Survey = survey_results(ccode)
 Decisions = wgd()
 
 # 2. Add information from government and administration.
