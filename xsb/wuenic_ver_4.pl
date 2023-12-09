@@ -125,7 +125,7 @@ estimate :-
             PrevRev, GC, Admin, Gov, Reported, Vaccinated, Target,
             UnpdBirths, UnpdSI, Source, SeriesValue, SurveyInfo),
         Estimates),
-    concat_atom([Code, '.pl.v40.txt'], File),
+    concat_atom(['out/', Code, '.pl.v40.txt'], File),
     Header = [ 'Country', 'ProductionDate', 'ISOCountryCode', 'Vaccine',
         'Year', 'WUENIC', 'WUENICPreviousRevision', 'GradeOfConfidence',
         'AdministrativeCoverage', 'GovernmentEstimate',
@@ -260,9 +260,13 @@ conf_reported(C, V, Y, Support) :-
 
 % No confidence in surveys if _any_ survey deviates too much from WUENIC
 % coverage
+%
+% MG, discuss: arm/pcv3 has a survey in 2013, but it is not taken into
+% account because estimate_required starts only in 2015. Do we actually
+% want this?
 conf_survey(C, V, Y, Support) :-
     wuenic_I(C, V, Y, _, _, Cov0),
-    estimate_required(C, V, Year, _, _),
+    estimate_required(C, V, Year, _, _), % check
     survey(C, V, Year, _, Coverage),
     confidence_survey_scope(Scope),
     abs(Y - Year) =< Scope,
