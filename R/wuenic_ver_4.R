@@ -614,10 +614,10 @@ index = which(Svy.Ana[, V13, ] != H3Adj, arr.ind=TRUE)
 #         C3, ' percent. '], Expl),
 #         Coverage = Cov0.
 
-Svy.Info = array(NA_character_, dim=c(length(Yn), length(V13), length(Dn)),
-    dimnames=list(Y=Yn, V=V13, Id=Dn))
+Svy.Info = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)),
+    dimnames=list(Y=Yn, V=Vn, Id=Dn))
 
-Svy.Info[index] = sprintf(
+Svy.Info[, V13, ][index] = sprintf(
   "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
   Svy.Title[index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
 Svy.Ana[, V13, ][index] = H3Adj[index]
@@ -628,6 +628,7 @@ index    = Survey[cnf & age & ignore, ]
 
 Svy.Acc = Svy.Ana
 Svy.Acc[cbind(index$Yn, index$V, index$Id)] = NA
+Svy.Info[cbind(index$Yn, index$V, index$Id)] = NA
 
 # Some surveys are ignored by the working group (by year and vaccine, no Id)
 index = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
@@ -637,6 +638,8 @@ if(nrow(index))
   for(i in 1:nrow(index))
   {
     Svy.Acc[index$Y[i], index$V[i], ] = NA
+    Svy.Info[index$Y[i], index$V[i], ] = NA
+    
     Ids = names(which(!is.na(Svy.CoH[index$Y[i], index$V[i], ])))
     if(length(Ids))
         IgnoreSurvey[index$Y[i], index$V[i]] = sprintf(
@@ -776,13 +779,13 @@ info = c(
   admin="Estimate informed by reported administrative data. ",
   interpolated="Estimate informed by interpolation between reported data. ",
   extrapolated="Estimate informed by extrapolation from reported data. ")
-W2.Cov = TS.Cov
+Cov = TS.Cov
 
-W2.Info = YV_char
-W2.Info[] = info[TS.Src]
+Info = YV_char
+Info[] = info[TS.Src]
 
-W2.Rule = YV_char
-W2.Rule[!is.na(TS.Cov)] = "R:"
+Rule = YV_char
+Rule[!is.na(TS.Cov)] = "R:"
 
 # % Before earliest/after latest anchor (not of type reported): calibrated
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -810,16 +813,16 @@ Prec.Year[] = Yn
 Prec.Year[index] = NA
 Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
-Rule = YV_char
+# Rule = YV_char
 Rule[index] = "C:"
 
-Info = YV_char
+# Info = YV_char
 Info[index] = sprintf("Reported data calibrated to %s levels. ", 
     Prec.Year[index])
 
 yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
 Adj = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - TS.Cov[cbind(c(Prec.Year), yv$V)]
-Cov = YV_int
+# Cov = YV_int
 Cov[index] = TS.Cov[index] + Adj[index]
 
 # Search for next anchor
@@ -854,7 +857,7 @@ Cov[index] = TS.Cov[index] + Adj[index]
 #     Rule = 'R:',
 #     member(Source-Expl,
 #       [ gov-'Estimate informed by reported data. ',
-#         admin-'Estimate informed by reported data. ',
+#         admin-'Estimate informed by reported administrative data. ',
 #         interpolated-'Estimate informed by interpolation between reported data. ',
 #         extrapolated-'Estimate based on extrapolation from data reported by national government. '
 #       ]),
@@ -866,7 +869,7 @@ Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
 index = index & !is.na(Prec.Rule) & Prec.Rule == "R: AP"
 
 info = c(gov="Estimate informed by reported data. ",
-    admin="Estimate informed by reported data. ",
+    admin="Estimate informed by reported administrative data. ",
     interpolated="Estimate informed by interpolation between reported data. ",
     extrapolated="Estimate based on extrapolation from data reported by national government. ")
 
@@ -1454,9 +1457,11 @@ Expl[index] = sprintf("%s%s", Expl[index], IgnoreSurvey[index])
 index = which(!is.na(Svy.Info), arr.ind=TRUE)
 if(nrow(index))
   for(i in 1:nrow(index))
-    Expl[index[i, "Y"], V13[index[i, "V"]]] = sprintf("%s%s",
-      Expl[index[i, "Y"], V13[index[i, "V"]]],
+  {
+    Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
+      Expl[index[i, "Y"], index[i, "V"]],
       Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]])
+  }
 
 # explanation(C, V, Y, Expl) :-
 #     reported_reason_to_exclude(C, V, Y, _, Expl).
