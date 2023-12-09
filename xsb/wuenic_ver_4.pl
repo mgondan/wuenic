@@ -937,8 +937,11 @@ collect_explanations(C, V, Y, Explanations) :-
 explanation(C, V, Y, Expl) :-
     survey_reason_to_exclude(C, V, Y, Expl).
 
+% Change in V4: report adjustment only for those surveys that have not
+% been ignored by the working group
 explanation(C, V, Y, Expl) :-
-    survey_modified(C, V, Y, _, Expl, _).
+    survey_accepted(C, V, Y, ID, _), % V4
+    survey_modified(C, V, Y, ID, Expl, _).
 
 explanation(C, V, Y, Expl) :-
     reported_reason_to_exclude(C, V, Y, Expl).
