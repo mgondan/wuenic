@@ -1,12 +1,14 @@
 library(zoo)
 library(rolog)
 
-# consult("xsb/afg.pl")
-once(call("load_files", "xsb/afg.pl", list(call("encoding", quote(text)))))
+ccode = "bgd"
+
+# consult("xsb/ago.pl")
+once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
 
 Vn = c("bcg", "dtp1", "dtp3", "hepb1", "hepb3", "hepbb", "hib1", "hib3", "ipv1",
-       "mcv1", "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "rotac")
-Yn = 1997:2022
+       "mcv1", "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "rotac", "yfv")
+Yn = 1991:2022
 
 sawtooth = 10
 svy.thrs = 10
@@ -309,6 +311,7 @@ Rep.Prev = rbind(Rep.Cov, NA)
 Rep.Prev[] = rbind(NA, Rep.Cov)
 
 Rej.Info = YV_char
+Rej.Info[] = ""
 Rej.Info[cbind(Y, V)] = sprintf(
     "Reported data excluded due to decline in reported coverage from %i level to %i percent. ",
     Rep.Prev[cbind(Y, V)], Rep.Cov[cbind(Y, V)])
@@ -324,7 +327,7 @@ Diff = lapply(Diff, abs)                                     # up or down
 J = sapply(Diff, `>`, sawtooth)
 Y = sapply(Diff, names)[which(J)]
 V = names(Diff)[which(J)]
-reject[cbind(Y, V)] = J[!is.na(J)]
+reject[cbind(Y, V)] = J[which(J)]
 
 Rep.Prev = rbind(Rep.Cov, NA)
 Rep.Prev[] = rbind(NA, Rep.Cov)
@@ -369,7 +372,7 @@ prev[, 1] = prev[, 1] - 1
 succ = index
 succ[, 1] = succ[, 1] + 1
 Rej.Info[index] = sprintf(
-    "Reported data excluded due to a decrease from %i percent to %i percent with increase to %i percent. ",
+    "Reported data excluded due to decline in reported coverage from %i percent to %i percent with increase to %i percent. ",
     Rep.Cov[prev], Rep.Cov[index], Rep.Cov[succ])
 
 # % Implausible coverage
@@ -380,6 +383,9 @@ Rej.Info[index] = sprintf(
 
 index = which(Rep.Cov > 100, arr.ind=TRUE)
 reject[index] = TRUE
+Rej.Info[index] = sprintf(
+    "Reported data excluded because %i percent greater than 100 percent. %s", 
+    Rep.Cov[index], Rej.Info[index])
 
 # reported_rejected(C, V, Y) :-
 #     decision(C, V, Y, acceptReported, _, _, _),
@@ -388,6 +394,7 @@ reject[index] = TRUE
 
 index = Decisions[Decisions$Dec == "acceptReported", ]
 reject[cbind(index$Y, index$V)] = FALSE
+Rej.Info[cbind(index$Y, index$V)] = NA
 
 # % Ignore dominates accept
 # reported_rejected(C, V, Y) :-
@@ -479,6 +486,16 @@ TS.Src[index] = "extrapolated"
 
 cnf = Survey$Info.confirm == "card or history"
 age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+index    = Survey[cnf & age, ]
+
+# MG, discuss: Only needed to find Ids for surveys that are ignored for multiple
+# reasons
+# Example: bcg,1999,afg2000231 ignored because of sample size as well as by a
+# wgd
+Dn = levels(as.factor(Survey$Id))
+Svy.CoH = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
+    dimnames=list(Y=Yn, V=Vn, Id=Dn))
+Svy.CoH[cbind(index$Y, index$V, index$Id)] = index$Cov
 
 # % Reasons to exclude a survey include:
 # %    Sample size < 300,
@@ -615,11 +632,17 @@ Svy.Acc[cbind(index$Yn, index$V, index$Id)] = NA
 # Some surveys are ignored by the working group (by year and vaccine, no Id)
 index = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
 IgnoreSurvey = YV_char
-IgnoreSurvey[cbind(index$Y, index$V)] = index$Info
 
 if(nrow(index))
   for(i in 1:nrow(index))
+  {
     Svy.Acc[index$Y[i], index$V[i], ] = NA
+    Ids = names(which(!is.na(Svy.CoH[index$Y[i], index$V[i], ])))
+    if(length(Ids))
+        IgnoreSurvey[index$Y[i], index$V[i]] = sprintf(
+            "%s results ignored by working group. %s",
+            Survey$Info.title[Survey$Id == Ids][1], index$Info[i])
+  }
 
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
@@ -1422,17 +1445,8 @@ if(nrow(index))
       "%s%s results ignored by working group.",
       Expl[index$Yn[i], index$V[i]], index$Info.title[i])
 
-cnf    = Survey$Info.confirm == "card or history"
-age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-year   = Survey$Y %in% Decisions$Y[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-vacc   = Survey$V %in% Decisions$V[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id)]
-index  = Survey[cnf & age & year & vacc, ]
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index$Yn[i], index$V[i]] = sprintf(
-      "%s%s results ignored by working group. %s",
-      Expl[index$Yn[i], index$V[i]], index$Info.title[i], 
-      IgnoreSurvey[index$Yn[i], index$V[i]])
+index = !is.na(IgnoreSurvey)
+Expl[index] = sprintf("%s%s", Expl[index], IgnoreSurvey[index])
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
@@ -1471,12 +1485,12 @@ Expl[cbind(ignore$Y, ignore$V)] = sprintf(
 #     concat_atom(['Reported data excluded because ', Coverage,
 #     ' percent greater than 100 percent. '], Expl).
 
-index = Rep.Cov > 100
-accept = Decisions[Decisions$Dec == "acceptReported", ]
-index[accept$Y, accept$V] = FALSE
-Expl[which(index)] = sprintf(
-    "%sReported data excluded because %i percent greater than 100 percent. ", 
-    Expl[which(index)], Rep.Cov[which(index)])
+# index = Rep.Cov > 100
+# accept = Decisions[Decisions$Dec == "acceptReported", ]
+# index[accept$Y, accept$V] = FALSE
+# Expl[which(index)] = sprintf(
+#     "%sReported data excluded because %i percent greater than 100 percent. ", 
+#     Expl[which(index)], Rep.Cov[which(index)])
 
 # reported_reason_to_exclude(C, V, Y, _, Expl) :-
 #     reported(C, V, Y, _, Coverage),
@@ -1509,7 +1523,7 @@ Expl[which(index)] = sprintf(
 #         CoveragePrec, ' percent to ', Coverage, ' percent with increase to ',
 #         CoverageSucc,' percent. '], Expl).
 
-index = !is.na(Rej.Info)
+index = which(Rej.Info != "")
 Expl[index] = sprintf("%s%s", Expl[index], Rej.Info[index])
 
 # explanation(C, V, Y, Expl) :-
@@ -1554,7 +1568,9 @@ Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
 Vaccine = Vn
 Year = Yn
 VY = expand.grid(Year, Vaccine, stringsAsFactors=FALSE)
-VY = cbind(Y=VY$Var1[Ereq], V=VY$Var2[Ereq])
+
+include = Ereq & !is.na(Bounded)
+VY = cbind(Y=VY$Var1[include], V=VY$Var2[include])
 
 Table = data.frame(
     Country=Country,
@@ -1578,4 +1594,4 @@ Table = data.frame(
     Rule=Rule[VY],
     Comment=Text[VY])
 
-write.table(Table, "R/afg.R.txt", quote=FALSE, row.names=FALSE, sep="\t", na="")
+write.table(Table, sprintf("R/%s.R.txt", ccode), quote=FALSE, row.names=FALSE, sep="\t", na="")
