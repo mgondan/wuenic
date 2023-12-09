@@ -1,7 +1,10 @@
 library(zoo)
 library(rolog)
 
-ccode = "and"
+ccode = "arm"
+args = commandArgs(trailingOnly=TRUE)
+if(length(args))
+    ccode = tools::file_path_sans_ext(args[1])
 
 # consult("xsb/ago.pl")
 once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
@@ -625,7 +628,7 @@ Svy.Info = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)),
 
 Svy.Info[, V13, ][index] = sprintf(
   "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
-  Svy.Title[index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
+  Svy.Title[, V13, ][index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
 Svy.Ana[, V13, ][index] = H3Adj[index]
 
 # Some surveys are ignored by the working group
@@ -1148,12 +1151,23 @@ Conf.Rep[index] = "R-"
 #   !,
 #   Support = 'S+'.
 
-Svy.Min = YV_int
-suppressWarnings({Svy.Min = round(apply(Svy.Acc, c(1, 2), min, na.rm=TRUE))})
+# MG, discuss: It seems as if surveys are ignored if there is no estimate
+# required. Unclear if intended, since the scope of surveys spans +/- 2 years.
+# Example: arm/pcv3 2015 (Svy.Min from 2013)
+index = which(!Ereq, arr.ind=TRUE)
+
+Svy.Min = Svy.Acc
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Svy.Min[index[i, "Y"], index[i, "V"], ] = NA # here
+suppressWarnings({Svy.Min = round(apply(Svy.Min, c(1, 2), min, na.rm=TRUE))})
 Svy.Min[] = rollapply(Svy.Min, width=1 + 2*svy.scope, partial=1, FUN=min)
 
-Svy.Max = YV_int
-suppressWarnings({Svy.Max = round(apply(Svy.Acc, c(1, 2), max, na.rm=TRUE))})
+Svy.Max = Svy.Acc
+if(nrow(index))
+  for(i in 1:nrow(index))
+    Svy.Max[index[i, "Y"], index[i, "V"], ] = NA # here
+suppressWarnings({Svy.Max = round(apply(Svy.Max, c(1, 2), max, na.rm=TRUE))})
 Svy.Max[] = rollapply(Svy.Max, width=1 + 2*svy.scope, partial=1, FUN=max)
 
 Conf.Svy = YV_char
@@ -1605,4 +1619,4 @@ Table = data.frame(
     Rule=Rule[VY],
     Comment=Text[VY])
 
-write.table(Table, sprintf("R/%s.R.txt", ccode), quote=FALSE, row.names=FALSE, sep="\t", na="")
+write.table(Table, sprintf("out/%s.pl.R.txt", ccode), quote=FALSE, row.names=FALSE, sep="\t", na="")
