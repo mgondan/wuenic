@@ -129,7 +129,7 @@ estimate :-
             PrevRev, GC, Admin, Gov, Reported, Vaccinated, Target,
             UnpdBirths, UnpdSI, Source, SeriesValue, SurveyInfo),
         Estimates),
-    concat_atom([Code, '.pl.v39.txt'], OutFile),
+    concat_atom(['out/', Code, '.pl.v39.txt'], OutFile),
     open_out_file(Out, OutFile,
         'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
     output_results(Estimates, Out),
