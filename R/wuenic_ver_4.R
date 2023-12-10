@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "bfa"
+ccode = "bwa"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -1038,7 +1038,7 @@ Info[cbind(index$Y, index$V)] = sprintf(
 
 Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
 rownames(Itp1.Cov) = rownames(Anchor.Cov)
-Cov[cbind(index$Y, index$V)] = round(Itp1.Cov[cbind(index$Y, index$V)])
+Cov[cbind(index$Y, index$V)] = tround(Itp1.Cov[cbind(index$Y, index$V)])
 
 # % At anchor points
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
