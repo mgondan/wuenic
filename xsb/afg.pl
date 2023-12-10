@@ -1,7 +1,7 @@
-%  Afghanistan - AFG 
-%  Wed Sep 06 18:35:26 2023 
+%  Afghanistan - AFG
+%  Wed Sep 06 18:35:26 2023
 
-country(afg,'Afghanistan'). 
+country(afg,'Afghanistan').
 date('Wed Sep 06 18:35:26 2023').
 
 estimate_required(afg,bcg,1997,na,'na').

@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "arm"
+ccode = "atg"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -9,8 +9,9 @@ if(length(args))
 # consult("xsb/ago.pl")
 once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
 
-Vn = c("bcg", "dtp1", "dtp3", "hepb0", "hepb1", "hepb3", "hepbb", "hib1", "hib3", "ipv1",
-       "mcv1", "mcv2", "pcv1", "pcv3", "pol1", "pol3", "rcv1", "rotac", "yfv")
+Vn = c("bcg", "dtp1", "dtp3", "hepb0", "hepb1", "hepb3", "hepbb",
+       "hib1", "hib3", "ipv1", "ipv2", "mcv1", "mcv2", "pcv1", "pcv3",
+       "pol1", "pol3", "rcv1", "rotac", "yfv")
 Yn = 1991:2022
 
 sawtooth = 10
@@ -608,7 +609,7 @@ H3Adj[] = pmin(99, pmax(0, tround(Svy.C3 + H3Adj)))
 #     survey_for_analysis(C, V, Y, ID, Description, SurveyCoverage),
 #     Cov0 \= SurveyCoverage,
 
-index = which(Svy.Ana[, V13, ] != H3Adj, arr.ind=TRUE)
+index = which(Svy.Ana[, V13, , drop=FALSE] != H3Adj, arr.ind=TRUE)
 
 #     SurveyCovRounded is round(SurveyCoverage),
 #     CH1 is round(CoH1Cov),
@@ -626,10 +627,14 @@ index = which(Svy.Ana[, V13, ] != H3Adj, arr.ind=TRUE)
 Svy.Info = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)),
     dimnames=list(Y=Yn, V=Vn, Id=Dn))
 
-Svy.Info[, V13, ][index] = sprintf(
-  "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
-  Svy.Title[, V13, ][index], Svy.Ana[, V13, ][index], H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
-Svy.Ana[, V13, ][index] = H3Adj[index]
+if(any(index))
+{
+  Svy.Info[, V13, , drop=FALSE][index] = sprintf(
+    "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
+    Svy.Title[, V13, , drop=FALSE][index], Svy.Ana[, V13, , drop=FALSE][index],
+    H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
+  Svy.Ana[, V13, , drop=FALSE][index] = H3Adj[index]
+}
 
 # Some surveys are ignored by the working group
 ignore   = Survey$Id %in% Decisions$Id[Decisions$Dec == "ignoreSurvey"]
