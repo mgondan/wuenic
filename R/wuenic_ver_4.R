@@ -9,8 +9,8 @@ if(length(args))
 # consult("xsb/ago.pl")
 once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
 
-Vn = c("bcg", "dtp1", "dtp3", "hepb0", "hepb1", "hepb3", "hepbb",
-       "hib1", "hib3", "ipv1", "ipv2", "mcv1", "mcv2", "pcv1", "pcv3",
+Vn = c("bcg", "dtp1", "dtp3", "hepb0", "hepb1", "hepb3", "hepbb", "hib1", "hib3",
+       "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv2", "pcv1", "pcv3",
        "pol1", "pol3", "rcv1", "rotac", "yfv")
 Yn = 1987:2022
 
