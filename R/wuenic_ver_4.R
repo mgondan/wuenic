@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "bwa"
+ccode = "cmr"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -657,9 +657,14 @@ if(nrow(index))
     
     Ids = names(which(!is.na(Svy.CoH[index$Y[i], index$V[i], ])))
     if(length(Ids))
+    {
+      IgnoreSurvey[index$Y[i], index$V[i]] = ""
+      for(j in Ids)
         IgnoreSurvey[index$Y[i], index$V[i]] = sprintf(
-            "%s results ignored by working group. %s",
-            Survey$Info.title[Survey$Id == Ids][1], index$Info[i])
+            "%s%s results ignored by working group. %s",
+            IgnoreSurvey[index$Y[i], index$V[i]],
+            Survey$Info.title[Survey$Id == j][1], index$Info[i])
+    }
   }
 
 # % Survey information for given year. Multiple surveys are averaged.
