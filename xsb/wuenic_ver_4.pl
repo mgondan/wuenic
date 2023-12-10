@@ -603,6 +603,8 @@ survey_accepted(C, V, Y, ID, Coverage) :-
     ).
 
 % Survey results modified for recall bias
+%
+% MG, V4: compare to rounded survey coverage (e.g., bfa dtp3 in 2019)
 survey_modified(C, V, Y, ID, Expl, Coverage) :-
     member(V, [dtp3, pol3, hib3, hepb3, pcv3]),
 
@@ -632,7 +634,7 @@ survey_modified(C, V, Y, ID, Expl, Coverage) :-
     bound_0_100(CovAdjusted, Cov0),
 
     survey_for_analysis(C, V, Y, ID, Description, SurveyCoverage),
-    Cov0 \= SurveyCoverage,
+    Cov0 =\= round(SurveyCoverage), % added rounding
 
     SurveyCovRounded is round(SurveyCoverage),
     CH1 is round(CoH1Cov),
