@@ -9,24 +9,28 @@ results = function(fname, mask="%s.pl.v39.txt", path="xsb")
   read.table(fname, sep='\t', header=TRUE, row.names=NULL)
 }
 
-oldres = function(ccode="and", path="xsb")
+oldres = function(ccode="and", path="out")
   results(ccode, mask="%s.pl.v39.txt", path=path)
 
-newres = function(ccode="and", path="xsb")
+newres = function(ccode="and", path="out")
   results(ccode, mask="%s.pl.v40.txt", path=path)
 
-diffcov = function(ccode="bdi")
+diffcov = function(ccode="che")
 {
   old = oldres(ccode)
   new = newres(ccode)
   any(old$WUENIC != new$WUENIC)
 }
 
-diffall = function(path="xsb")
+diffall = function(path="out")
 {
   l = list.files(path=path, pattern="^...\\.pl$")
   l = gsub("\\.pl$", "", l) # remove extension
   sapply(l, diffcov)
 }
 
-diffall()
+ccode = "che"
+args = commandArgs(trailingOnly=TRUE)
+if(length(args))
+    ccode = tools::file_path_sans_ext(args[1])
+print(sprintf("%s: Difference %s", ccode, diffcov(ccode)))
