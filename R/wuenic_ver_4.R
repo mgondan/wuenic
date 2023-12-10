@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "aze"
+ccode = "bdi"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -1009,7 +1009,7 @@ Cov[index2] = NA
 #     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 index = Decisions[Decisions$Dec == "interpolate", ]
-index = cbind(index$Y, index$V)
+# index = cbind(index$Y, index$V)
 
 Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
 Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
@@ -1019,21 +1019,25 @@ Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
 Prec.Year = YV_char
 Prec.Year[] = Yn
-Prec.Year[index] = NA
+Prec.Year[is.na(Anchor.Cov)] = NA
+# Prec.Year[cbind(index$Y, index$V)] = NA
 Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
 Succ.Year = YV_char
 Succ.Year[] = Yn
-Succ.Year[index] = NA
+Succ.Year[is.na(Anchor.Cov)] = NA
+# Succ.Year[cbind(index$Y, index$V)] = NA
 Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-Rule[index] = "W-I:"
-Info[index] = sprintf(
-  "Estimate informed by interpolation between %s and %s levels. ",
-  Prec.Year[index], Succ.Year[index])
+Rule[cbind(index$Y, index$V)] = "W-I:"
+Info[cbind(index$Y, index$V)] = sprintf(
+  "Estimate informed by interpolation between %s and %s levels. %s",
+  Prec.Year[cbind(index$Y, index$V)], Succ.Year[cbind(index$Y, index$V)],
+  index$Info)
 
 Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
-Cov[index] = round(Itp1.Cov)
+rownames(Itp1.Cov) = rownames(Anchor.Cov)
+Cov[cbind(index$Y, index$V)] = round(Itp1.Cov[cbind(index$Y, index$V)])
 
 # % At anchor points
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-

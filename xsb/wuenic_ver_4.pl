@@ -429,7 +429,10 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 
 % Between anchor points: interpolation forced by working group
 %
-% Todo: Move to Level I, because working group decisions should rule.
+% MG, discuss: Move to Level I, because working group decisions should
+% rule.
+% MG, discuss: Prec and Succ Year relative to current year, should be
+% relative to the decision. Example: bdi/bcg, 2000
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     decision(C, V, Y, interpolate, Expl0, _, _),
     prec_anchor(C, V, Y, Prec, _, PrecCov),
