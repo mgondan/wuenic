@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "cmr"
+ccode = "cok"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -186,6 +186,10 @@ wgd = function()
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
 
+  # Fix strange year ranges
+  s$Y0 = pmax(s$Y0, min(Yn))
+  s$Y1 = pmin(s$Y1, max(Yn))
+  
   # V = NA means that a decision applies to all vaccines
   V.na = function(d)
   { if(is.na(d['V']))
