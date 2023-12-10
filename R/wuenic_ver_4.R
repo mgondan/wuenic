@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "bdi"
+ccode = "ben"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -1165,19 +1165,10 @@ Conf.Rep[index] = "R-"
 # Example: arm/pcv3 2015 (Svy.Min from 2013)
 index = which(!Ereq, arr.ind=TRUE)
 
-Svy.Min = Svy.Acc
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Svy.Min[index[i, "Y"], index[i, "V"], ] = NA # here
-suppressWarnings({Svy.Min = round(apply(Svy.Min, c(1, 2), min, na.rm=TRUE))})
-Svy.Min[] = rollapply(Svy.Min, width=1 + 2*svy.scope, partial=1, FUN=min)
-
-Svy.Max = Svy.Acc
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Svy.Max[index[i, "Y"], index[i, "V"], ] = NA # here
-suppressWarnings({Svy.Max = round(apply(Svy.Max, c(1, 2), max, na.rm=TRUE))})
-Svy.Max[] = rollapply(Svy.Max, width=1 + 2*svy.scope, partial=1, FUN=max)
+Svy.Min = suppressWarnings({rollapply(Svy.Cov, width=1 + 2*svy.scope, partial=1, FUN=min, na.rm=TRUE)})
+Svy.Min[index[i, "Y"], index[i, "V"]] = NA # here
+Svy.Max = suppressWarnings({rollapply(Svy.Cov, width=1 + 2*svy.scope, partial=1, FUN=max, na.rm=TRUE)})
+Svy.Max[index[i, "Y"], index[i, "V"]] = NA # here
 
 Conf.Svy = YV_char
 index = which(!is.na(Cov) & Ereq & is.finite(Svy.Min) & is.finite(Svy.Max))
@@ -1508,6 +1499,7 @@ if(nrow(index))
 
 index = !is.na(Rep.Cov)
 ignore = Decisions[Decisions$Dec == "ignoreReported", ]
+ignore = ignore[index[cbind(ignore$Y, ignore$V)], ]
 Expl[cbind(ignore$Y, ignore$V)] = sprintf(
     "%sReported data excluded. %s", Expl[cbind(ignore$Y, ignore$V)], ignore$Info)
 
