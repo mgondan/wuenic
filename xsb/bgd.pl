@@ -1,7 +1,7 @@
-%  Bangladesh - BGD 
-%  Wed Sep 06 18:39:00 2023 
+%  Bangladesh - BGD
+%  Wed Sep 06 18:39:00 2023
 
-country(bgd,'Bangladesh'). 
+country(bgd,'Bangladesh').
 date('Wed Sep 06 18:39:00 2023').
 
 estimate_required(bgd,bcg,1997,na,'na').
@@ -2786,4 +2786,11 @@ wgd(bgd,X,2005,2203,internalComment,' Nationally reported data includes only val
  wgd(bgd,pol3,2012,2012,assignAnchor,' Estimate based on survey result.',na,94,na,na).
  wgd(bgd,pol3,2014,2014,assignAnchor,' Estimate based on survey result.',na,97,na,na).
  wgd(bgd,rcv1,2012,2012,assignWUENIC,' Rubella vaccine introduced during 2012 as a combination measles-rubella vaccine.',na,17,na,na).
+
+
+
+
+
+
+
 
