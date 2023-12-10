@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "aus"
+ccode = "aze"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -629,11 +629,11 @@ Svy.Info = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)),
 
 if(any(index))
 {
-  Svy.Info[, V13, , drop=FALSE][index] = sprintf(
+  Svy.Info[, V13, ][index] = sprintf(
     "%s card or history results of %i percent modifed for recall bias to %i percent based on 1st dose card or history coverage of %i percent, 1st dose card only coverage of %i percent and 3rd dose card only coverage of %i percent. ", 
-    Svy.Title[, V13, , drop=FALSE][index], Svy.Ana[, V13, , drop=FALSE][index],
+    Svy.Title[, V13, ][index], Svy.Ana[, V13, ][index],
     H3Adj[index], Svy.CH1[index], Svy.C1[index], Svy.C3[index])
-  Svy.Ana[, V13, , drop=FALSE][index] = H3Adj[index]
+  Svy.Ana[, V13, ][index] = H3Adj[index]
 }
 
 # Some surveys are ignored by the working group
