@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "cok"
+ccode = "com"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -9,9 +9,10 @@ if(length(args))
 # consult("xsb/ago.pl")
 once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
 
-Vn = c("bcg", "dtp1", "dtp3", "hepb0", "hepb1", "hepb3", "hepbb", "hib1", "hib3",
-       "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv2", "pcv1", "pcv3",
-       "pol1", "pol3", "rcv1", "rotac", "yfv")
+Vn = c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", 
+       "hepb0", "hepb1", "hepb3", "hepb3x", "hepbb", "hib1", "hib3", "hib3x",
+       "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv1x", "mcv2", "pcv1", "pcv3",
+       "pol1", "pol3", "pol3x", "rcv1", "rotac", "yfv")
 Yn = 1987:2022
 
 sawtooth = 10
