@@ -980,8 +980,12 @@ survey_reason_to_exclude(C, V, Y, Expl) :-
     concat_atom(['Survey results ignored. Sample size ', Size, ' less than 300. '], Expl).
 
 % V4: Keeps explanations for the same survey together
+%
+% MG, discuss: only display if sample size > 300 to avoid long comments
 survey_reason_to_exclude(C, V, Y, Expl) :-
     survey_for_analysis(C, V, Y, ID, Description, _),
+    member(ss:Size, Description),
+    Size >= 300,
     (   decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
     ;   decision(C, V, Y, ignoreSurvey, Expl0, na, _)
     ),
