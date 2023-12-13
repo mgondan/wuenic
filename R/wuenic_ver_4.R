@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "esp"
+ccode = "fji"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -333,8 +333,8 @@ Rej.Info[cbind(Y, V)] = sprintf(
 
 # Sudden change in most recently reported data for classic vaccines
 V.new = Rep.Cov[, !(Vn %in% c("pcv3", "rotac")), drop=FALSE]
-Diff = apply(V.new, 2, diff, simplify=FALSE)
-Diff = lapply(Diff, na.trim, sides="right")
+Diff = apply(V.new, 2, na.trim, sides="right", simplify=FALSE)
+Diff = lapply(Diff, diff)
 Diff = lapply(Diff, rev)
 Diff = lapply(Diff, `[`, 1)
 Diff = lapply(Diff, abs)                                     # up or down
