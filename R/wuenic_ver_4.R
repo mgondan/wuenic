@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "cpv"
+ccode = "esp"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -12,7 +12,7 @@ once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote
 Vn = c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", 
        "hepb0", "hepb1", "hepb3", "hepb3x", "hepbb", "hib1", "hib3", "hib3x",
        "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv1x", "mcv2", "pcv1", "pcv3",
-       "pol1", "pol3", "pol3x", "rcv1", "rotac", "yfv")
+       "pol1", "pol3", "pol3x", "rcv1", "rotac", "rotacx", "yfv")
 Yn = 1987:2022
 
 sawtooth = 10
@@ -1075,10 +1075,12 @@ Cov[index, "rcv1"] = Cov[index, "mcv1"]
 
 index = Rubella[, "rcv1"] == firstRubellaAtSecondMCV[, "rcv1"]
 index = as.character(Yn[which(index)])
-
-Rule[cbind(index, "rcv1")] = Rule[cbind(index, Rubella[, "rcv1"][index])]
-Info[cbind(index, "rcv1")] = "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate"
-Cov[cbind(index, "rcv1")] = Cov[cbind(index, Rubella[, "rcv1"][index])]
+if(length(index))
+{
+  Rule[cbind(index, "rcv1")] = Rule[cbind(index, Rubella[, "rcv1"][index])]
+  Info[cbind(index, "rcv1")] = "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate"
+  Cov[cbind(index, "rcv1")] = Cov[cbind(index, Rubella[, "rcv1"][index])]
+}
 
 # % If DTP1 not reported: estimate using equation
 # % If DTP3 > DTP1 (which is impossible), estimate coverage using equation
