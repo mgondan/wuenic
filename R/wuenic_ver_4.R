@@ -1074,7 +1074,7 @@ Cov[index, "rcv1"] = Cov[index, "mcv1"]
 #     Expl = 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate'.
 
 index = Rubella[, "rcv1"] == firstRubellaAtSecondMCV[, "rcv1"]
-index = Yn[which(index)]
+index = as.character(Yn[which(index)])
 
 Rule[cbind(index, "rcv1")] = Rule[cbind(index, Rubella[, "rcv1"][index])]
 Info[cbind(index, "rcv1")] = "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate"
