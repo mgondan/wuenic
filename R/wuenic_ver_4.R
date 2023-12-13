@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "fji"
+ccode = "tha"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -10,10 +10,12 @@ if(length(args))
 once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
 
 Vn = c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", 
-       "hepb0", "hepb1", "hepb3", "hepb3x", "hepbb", "hib1", "hib3", "hib3x",
-       "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv1x", "mcv2", "pcv1", "pcv3",
+       "hepb0", "hepb1", "hepb3", "hepb3x", "hepbb","hepbbx", "hib1", "hib3", "hib3x",
+       "opv1", "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv1x", "mcv2", "pcv1", "pcv3", "pcv3x",
        "pol1", "pol3", "pol3x", "rcv1", "rotac", "rotacx", "yfv")
-Yn = 1987:2022
+Yn = 1985:2022
+
+# MG, discuss: khm.pl has an "opv1" vaccine, I guess it is ipv1
 
 sawtooth = 10
 svy.thrs = 10
@@ -41,12 +43,18 @@ firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
 # elements of type name:elem to named list elements
 
 atom2char = function(q)
-{ if(is.expression(q))
+{
+  if(is.expression(q))
     return(iconv(as.character(q), "latin1", "latin1"))
 
   if(is.symbol(q))
     return(iconv(as.character(q), "latin1", "latin1"))
   
+  # Translate mmr/rubella to string
+  if(is.call(q))
+    if(as.character(q[[1]]) == "/")
+      return(paste(collapse="/", as.character(q[-1])))
+
   if(is.call(q))
   { args <- as.list(q)
     args[-1] <- lapply(args[-1], FUN=atom2char)
