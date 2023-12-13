@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "esp"
+ccode = "fji"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -312,12 +312,12 @@ reject = YV_bool
 V.new = Rep.Cov[, Vn %in% c("pcv3", "rotac"), drop=FALSE]
 
 # Search for last reported data
-Diff = apply(V.new, 2, diff, simplify=FALSE)                 # jumps
-Diff = lapply(Diff, na.trim, sides="right")                  # last reported
-Diff = lapply(Diff, rev)                                     # -> first
-Diff = lapply(Diff, `[`, 1)                                  # jump of interest
+Diff = apply(V.new, 2, na.trim, sides="right", simplify=FALSE) # last reported
+Diff = lapply(Diff, diff, simplify=FALSE)                      # jumps
+Diff = lapply(Diff, rev)                                       # -> first
+Diff = lapply(Diff, `[`, 1)                                    # jump of interest
 
-J = sapply(Diff, `<`, -sawtooth)                             # check for decline
+J = sapply(Diff, `<`, -sawtooth)                               # check for decline
 Y = sapply(Diff, names)[which(J)]
 V = names(Diff)[which(J)]
 reject[cbind(Y, V)] = J[!is.na(J)]
@@ -333,8 +333,8 @@ Rej.Info[cbind(Y, V)] = sprintf(
 
 # Sudden change in most recently reported data for classic vaccines
 V.new = Rep.Cov[, !(Vn %in% c("pcv3", "rotac")), drop=FALSE]
-Diff = apply(V.new, 2, diff, simplify=FALSE)
-Diff = lapply(Diff, na.trim, sides="right")
+Diff = apply(V.new, 2, na.trim, sides="right", simplify=FALSE)
+Diff = lapply(Diff, diff)
 Diff = lapply(Diff, rev)
 Diff = lapply(Diff, `[`, 1)
 Diff = lapply(Diff, abs)                                     # up or down
