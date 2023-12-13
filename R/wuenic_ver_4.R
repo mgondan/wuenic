@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "afg"
+ccode = "cpv"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -986,12 +986,12 @@ Rule[index1] = "R:"
 Info[index1] = info[TS.Src[index1]]
 Cov[index1] = TS.Cov[index1]
 
-# MG, discuss: if it is extrapolated, the rule fails and NA
-index2 = index & TS.Src %in% c("extrapolated")
+# MG, discuss: if it is extrapolated, the rule fails and NA is returned. See the
+# corresponding Prolog rule.
+index2 = index & TS.Src == "extrapolated"
 Rule[index2] = NA
 Info[index2] = NA
 Cov[index2] = NA
-
 
 # % Between anchor points: interpolation forced by working group
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -1005,12 +1005,10 @@ Cov[index2] = NA
 #     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
 
 index = Decisions[Decisions$Dec == "interpolate", ]
-# index = cbind(index$Y, index$V)
 
 Prec.Rule = apply(Anchor.Rule, 2, FUN=na.locf, na.rm=FALSE)
-Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
-
 Prec.Cov = apply(Anchor.Cov, 2, FUN=na.locf, na.rm=FALSE)
+Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
 Prec.Year = YV_char
@@ -1025,15 +1023,19 @@ Succ.Year[is.na(Anchor.Cov)] = NA
 # Succ.Year[cbind(index$Y, index$V)] = NA
 Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-Rule[cbind(index$Y, index$V)] = "W-I:"
-Info[cbind(index$Y, index$V)] = sprintf(
+WI = YV_char
+WI[cbind(index$Y, index$V)] = index$Info
+WI[is.na(Prec.Rule) | is.na(Succ.Rule)] = NA
+
+index = !is.na(WI)
+Rule[index] = "W-I:"
+Info[index] = sprintf(
   "Estimate informed by interpolation between %s and %s levels. %s",
-  Prec.Year[cbind(index$Y, index$V)], Succ.Year[cbind(index$Y, index$V)],
-  index$Info)
+  Prec.Year[index], Succ.Year[index], WI[index])
 
 Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
 rownames(Itp1.Cov) = rownames(Anchor.Cov)
-Cov[cbind(index$Y, index$V)] = tround(Itp1.Cov[cbind(index$Y, index$V)])
+Cov[index] = tround(Itp1.Cov[index])
 
 # % At anchor points
 # wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
@@ -1071,13 +1073,12 @@ Cov[index, "rcv1"] = Cov[index, "mcv1"]
 #     wuenic_II(C, mcv2, Y, Rule, _, Coverage),
 #     Expl = 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate'.
 
-index = which(Rubella == firstRubellaAtSecondMCV, arr.ind=TRUE)
-rcv1 = index[index[, "V"] == "rcv1", ]
-mcv2 = Rubella[, rcv1[, "V"]]
+index = Rubella[, "rcv1"] == firstRubellaAtSecondMCV[, "rcv1"]
+index = Yn[which(index)]
 
-Rule[rcv1] = Rule[mcv2]
-Info[rcv1] = "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate"
-Cov[rcv1] = Cov[mcv2]
+Rule[cbind(index, "rcv1")] = Rule[cbind(index, Rubella[, "rcv1"][index])]
+Info[cbind(index, "rcv1")] = "First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate"
+Cov[cbind(index, "rcv1")] = Cov[cbind(index, Rubella[, "rcv1"][index])]
 
 # % If DTP1 not reported: estimate using equation
 # % If DTP3 > DTP1 (which is impossible), estimate coverage using equation
