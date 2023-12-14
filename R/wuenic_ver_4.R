@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "ukr"
+ccode = "nga"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -1470,18 +1470,6 @@ if(nrow(index))
 #     concat_atom([Title, ' results ignored by working group. ', Expl0],
 #     Expl).
 
-# Some surveys are ignored by the working group
-ignore = Decisions[Decisions$Dec == "ignoreSurvey" & !is.na(Decisions$Id), ]
-if(nrow(ignore))
-  for(i in 1:nrow(ignore))
-    if(!is.na(Svy.Ana[ignore$Y[i], ignore$V[i], ignore$Id[i]]))
-    {
-      Expl[ignore$Y[i], ignore$V[i]] = sprintf(
-        "%s%s results ignored by working group. %s",
-        Expl[ignore$Y[i], ignore$V[i]],
-        Survey$Info.title[Survey$Id == ignore$Id[i]][1], ignore$Info[i])
-    }
-
 # Some surveys are ignored by the working group (by year and vaccine, no Id)
 ignore = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
 if(nrow(ignore))
@@ -1498,6 +1486,18 @@ if(nrow(ignore))
           Survey$Info.title[Survey$Id == Ids[j]][1], ignore$Info[i])
       }
   }
+
+# Some surveys are ignored by the working group
+ignore = Decisions[Decisions$Dec == "ignoreSurvey" & !is.na(Decisions$Id), ]
+if(nrow(ignore))
+  for(i in 1:nrow(ignore))
+    if(!is.na(Svy.Ana[ignore$Y[i], ignore$V[i], ignore$Id[i]]))
+    {
+      Expl[ignore$Y[i], ignore$V[i]] = sprintf(
+        "%s%s results ignored by working group. %s",
+        Expl[ignore$Y[i], ignore$V[i]],
+        Survey$Info.title[Survey$Id == ignore$Id[i]][1], ignore$Info[i])
+    }
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
@@ -1525,11 +1525,15 @@ if(nrow(index))
 #     Reason = wdg,
 #     concat_atom(['Reported data excluded. ', Expl0], Expl).
 
-index = !is.na(Rep.Cov)
 ignore = Decisions[Decisions$Dec == "ignoreReported", ]
-ignore = ignore[index[cbind(ignore$Y, ignore$V)], ]
-Expl[cbind(ignore$Y, ignore$V)] = sprintf(
-    "%sReported data excluded. %s", Expl[cbind(ignore$Y, ignore$V)], ignore$Info)
+if(nrow(ignore))
+  for(i in 1:nrow(ignore))
+  {
+    if(!is.na(Rep.Cov[ignore$Y[i], ignore$V[i]]))
+      Expl[ignore$Y[i], ignore$V[i]] = sprintf("%sReported data excluded. %s",
+        Expl[ignore$Y[i], ignore$V[i]], ignore$Info[i])
+  }
+
 
 # reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
 #     reported(C, V, Y, _, Coverage),
