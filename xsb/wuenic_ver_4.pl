@@ -95,9 +95,20 @@ vaccinated0(C, V, Y, Vaccinated) :-
     current_predicate(vaccinated/4),
     vaccinated(C, V, Y, Vaccinated).
 
+% MG, discuss: Do we need support for unbounded integers?
+% Example: target(irq,mcv2,2005,9744095698508)
 target0(C, V, Y, Vaccinated) :-
     current_predicate(vaccinated/4),
-    target(C, V, Y, Vaccinated).
+    target(C, V, Y, Vac),
+    Vac < 2^31,
+    !,
+    Vaccinated = Vac.
+
+target0(C, V, Y, Vaccinated) :-
+    current_predicate(vaccinated/4),
+    target(C, V, Y, _Vac),
+    !,
+    Vaccinated = ''.
 
 admin0(C, V, Y, Coverage) :-
     current_predicate(admin/4),
