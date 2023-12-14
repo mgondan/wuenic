@@ -1,13 +1,13 @@
 library(zoo)
 library(rolog)
 
-ccode = "irq"
+ccode = "ukr"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
 
 # consult("xsb/ago.pl")
-once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
+once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(iso_latin_1)))))
 
 Vn = c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", 
        "hepb0", "hepb1", "hepb3", "hepb3x", "hepbb","hepbbx", "hib1", "hib3", "hib3x",
@@ -1487,7 +1487,8 @@ ignore = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
 if(nrow(ignore))
   for(i in 1:nrow(ignore))
   {
-    Ids = names(which(!is.na(Svy.Ana[ignore$Y[i], ignore$V[i], ])))
+    Ids = which(!is.na(Svy.Ana[ignore$Y[i], ignore$V[i], , drop=FALSE]), arr.ind=TRUE)
+    Ids = dimnames(Svy.Ana)$Id[Ids[, "Id"]]
     if(length(Ids))
       for(j in 1:length(Ids))
       {
