@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "nga"
+ccode = "plw"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -538,8 +538,7 @@ Svy.CoH[cbind(index$Y, index$V, index$Id)] = index$Cov
 #     ).
 
 size     = Survey$Info.ss >= 300
-accept   = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
-index    = Survey[cnf & age & (size | accept), ]
+index    = Survey[cnf & age & size, ]
 
 Dn = levels(as.factor(Survey$Id))
 Svy.Ana = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
@@ -549,6 +548,10 @@ Svy.Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
 Svy.Title = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)), 
     dimnames=list(Yn, Vn, Dn))
 Svy.Title[cbind(index$Y, index$V, index$Id)] = index$Info.title
+
+accept   = Decisions[Decisions$Dec == "acceptSurvey" & !is.na(Decisions$Id), ]
+Svy.Ana[cbind(accept$Y, accept$V, accept$Id)] = accept$Cov
+# MG, check: is a title needed if the survey is explicitly accepted?
 
 # % Recall bias is estimated by comparing the first and third dose of a vaccine
 #
@@ -1449,16 +1452,21 @@ Expl[] = ""
 
 cnf    = Survey$Info.confirm == "card or history"
 age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
+# accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
 size   = Survey$Info.ss < 300
-index  = Survey[cnf & age & !accept & size, ]
+index  = Survey[cnf & age & size, ]
+
+accept   = Decisions[Decisions$Dec == "acceptSurvey" & !is.na(Decisions$Id), ]
 
 # MG, discuss: bgd, bcg/1999: twice the same message, without Survey ID
 if(nrow(index))
   for(i in 1:nrow(index))
-    Expl[index$Yn[i], index$V[i]] = sprintf(
-      "%sSurvey results ignored. Sample size %i less than 300. ", 
-      Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
+  {
+    if(!any(index$V[i] == accept$V & index$Y[i] == accept$Y & index$Id[i] == accept$Id))
+      Expl[index$Yn[i], index$V[i]] = sprintf(
+        "%sSurvey results ignored. Sample size %i less than 300. ", 
+        Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
+  }
 
 # % V4: Keeps explanations for the same survey together
 # survey_reason_to_exclude(C, V, Y, ID, Expl) :-
