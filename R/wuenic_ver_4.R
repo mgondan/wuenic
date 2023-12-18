@@ -1,13 +1,13 @@
 library(zoo)
 library(rolog)
 
-ccode = "tha"
+ccode = "bgd"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
 
 # consult("xsb/ago.pl")
-once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(text)))))
+once(call("load_files", sprintf("xsb/%s.pl", ccode), list(call("encoding", quote(iso_latin_1)))))
 
 Vn = c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", 
        "hepb0", "hepb1", "hepb3", "hepb3x", "hepbb","hepbbx", "hib1", "hib3", "hib3x",
@@ -538,8 +538,7 @@ Svy.CoH[cbind(index$Y, index$V, index$Id)] = index$Cov
 #     ).
 
 size     = Survey$Info.ss >= 300
-accept   = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
-index    = Survey[cnf & age & (size | accept), ]
+index    = Survey[cnf & age & size, ]
 
 Dn = levels(as.factor(Survey$Id))
 Svy.Ana = array(NA_integer_, dim=c(length(Yn), length(Vn), length(Dn)), 
@@ -549,6 +548,10 @@ Svy.Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
 Svy.Title = array(NA_character_, dim=c(length(Yn), length(Vn), length(Dn)), 
     dimnames=list(Yn, Vn, Dn))
 Svy.Title[cbind(index$Y, index$V, index$Id)] = index$Info.title
+
+accept   = Decisions[Decisions$Dec == "acceptSurvey" & !is.na(Decisions$Id), ]
+Svy.Ana[cbind(accept$Y, accept$V, accept$Id)] = accept$Cov
+# MG, check: is a title needed if the survey is explicitly accepted?
 
 # % Recall bias is estimated by comparing the first and third dose of a vaccine
 #
@@ -1449,16 +1452,21 @@ Expl[] = ""
 
 cnf    = Survey$Info.confirm == "card or history"
 age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
+# accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
 size   = Survey$Info.ss < 300
-index  = Survey[cnf & age & !accept & size, ]
+index  = Survey[cnf & age & size, ]
+
+accept   = Decisions[Decisions$Dec == "acceptSurvey" & !is.na(Decisions$Id), ]
 
 # MG, discuss: bgd, bcg/1999: twice the same message, without Survey ID
 if(nrow(index))
   for(i in 1:nrow(index))
-    Expl[index$Yn[i], index$V[i]] = sprintf(
-      "%sSurvey results ignored. Sample size %i less than 300. ", 
-      Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
+  {
+    if(!any(index$V[i] == accept$V & index$Y[i] == accept$Y & index$Id[i] == accept$Id))
+      Expl[index$Yn[i], index$V[i]] = sprintf(
+        "%sSurvey results ignored. Sample size %i less than 300. ", 
+        Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
+  }
 
 # % V4: Keeps explanations for the same survey together
 # survey_reason_to_exclude(C, V, Y, ID, Expl) :-
@@ -1469,6 +1477,23 @@ if(nrow(index))
 #     member(title:Title, Description),
 #     concat_atom([Title, ' results ignored by working group. ', Expl0],
 #     Expl).
+
+# Some surveys are ignored by the working group (by year and vaccine, no Id)
+ignore = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
+if(nrow(ignore))
+  for(i in 1:nrow(ignore))
+  {
+    Ids = which(!is.na(Svy.Ana[ignore$Y[i], ignore$V[i], , drop=FALSE]), arr.ind=TRUE)
+    Ids = dimnames(Svy.Ana)$Id[Ids[, "Id"]]
+    if(length(Ids))
+      for(j in 1:length(Ids))
+      {
+        Expl[ignore$Y[i], ignore$V[i]] = sprintf(
+          "%s%s results ignored by working group. %s",
+          Expl[ignore$Y[i], ignore$V[i]],
+          Survey$Info.title[Survey$Id == Ids[j]][1], ignore$Info[i])
+      }
+  }
 
 # Some surveys are ignored by the working group
 ignore = Decisions[Decisions$Dec == "ignoreSurvey" & !is.na(Decisions$Id), ]
@@ -1481,22 +1506,6 @@ if(nrow(ignore))
         Expl[ignore$Y[i], ignore$V[i]],
         Survey$Info.title[Survey$Id == ignore$Id[i]][1], ignore$Info[i])
     }
-
-# Some surveys are ignored by the working group (by year and vaccine, no Id)
-ignore = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
-if(nrow(ignore))
-  for(i in 1:nrow(ignore))
-  {
-    Ids = names(which(!is.na(Svy.Ana[ignore$Y[i], ignore$V[i], ])))
-    if(length(Ids))
-      for(j in 1:length(Ids))
-      {
-        Expl[ignore$Y[i], ignore$V[i]] = sprintf(
-          "%s%s results ignored by working group. %s",
-          Expl[ignore$Y[i], ignore$V[i]],
-          Survey$Info.title[Survey$Id == Ids[j]][1], ignore$Info[i])
-      }
-  }
 
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
@@ -1524,11 +1533,15 @@ if(nrow(index))
 #     Reason = wdg,
 #     concat_atom(['Reported data excluded. ', Expl0], Expl).
 
-index = !is.na(Rep.Cov)
 ignore = Decisions[Decisions$Dec == "ignoreReported", ]
-ignore = ignore[index[cbind(ignore$Y, ignore$V)], ]
-Expl[cbind(ignore$Y, ignore$V)] = sprintf(
-    "%sReported data excluded. %s", Expl[cbind(ignore$Y, ignore$V)], ignore$Info)
+if(nrow(ignore))
+  for(i in 1:nrow(ignore))
+  {
+    if(!is.na(Rep.Cov[ignore$Y[i], ignore$V[i]]))
+      Expl[ignore$Y[i], ignore$V[i]] = sprintf("%sReported data excluded. %s",
+        Expl[ignore$Y[i], ignore$V[i]], ignore$Info[i])
+  }
+
 
 # reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
 #     reported(C, V, Y, _, Coverage),
