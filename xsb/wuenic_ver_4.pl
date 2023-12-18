@@ -1,52 +1,50 @@
-/* wuenic_ver_4.pl version 4.0
+% wuenic_ver_4.pl version 4.0
+%
+% Implements WHO & UNICEF rules for estimating national infant
+% immunization coverage. Includes explanations and grade of confidence
+% in estimate. Based on methods described in:
+%
+% Burton A, Monash R, Lautenbach B, Gacic-Dobo M, Neill M, Karimov R,
+% Wolfson L, Jones G, Birmingham M. WHO and UNICEF estimates of national
+% infant immunization coverage: methods and processes. Bull World Health
+% Organ 2009; 87:535-541.
+% https://www.who.int/bulletin/volumes/87/7/08-053819.pdf
+%
+% Burton A, Gacic-Dobo M, Karimov R, Kowalski R. A computational
+% logic-based representation of the WHO and UNICEF estimates of national
+% immunization coverage. DRAFT 23 January 2011. Articles and code
+% available at: https://github.com/mgondan/wuenic
+%
+% Original code (V3) written by Tony Burton, System Analyst, Strategic
+% Information Group, Expanded Programme on Immunization, Department of
+% Immunization, Vaccines, and Biologicals. World Health Organization,
+% 1211 Geneva 27, Switzerland
+%
+% Current version written by Matthias Gondan, Department of Psychology,
+% University of Innsbruck, Austria, Matthias.Gondan-Rochon@uibk.ac.at
+%
+% This program works with the SWI-Prolog compiler,
+% https://xsb.sourceforge.net/
+%
+% * Created: 6 November 2011
+% * V3: 6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv GoC
+% * V3.9: 6 Dec 2023. Simplified the code for better maintainance
+% * V4.0: 8 Dec 2023. Corrected some inconsistencies in the output.
+%   Does not affect coverage estimates.
+%
+% WHO and UNICEF working group members as of 1 January 2010 - 30 April
+% 2012:
+% * Dr David BROWN, UNICEF/New York (dbrown@unicef.org)
+% * Mr Tony BURTON, WHO/Geneva (burtona@who.int)
+% * Ms Marta GACIC-DOBO, WHO/Geneva (gacicdobom@who.int)
+% * Mr Rouslan KARIMOV, UNICEF/NEW YORK (rkarimov@unicef.org)
+% * Dr Robert KOWALSKI, Imperial College London
+%   (r.kowalski@imperial.ac.uk)
 
-Implements WHO & UNICEF rules for estimating national infant
-immunization coverage. Includes explanations and grade of confidence
-in estimate. Based on methods described in:
-
-Burton A, Monash R, Lautenbach B, Gacic-Dobo M, Neill M, Karimov R,
-Wolfson L, Jones G, Birmingham M. WHO and UNICEF estimates of national
-infant immunization coverage: methods and processes. Bull World Health
-Organ 2009; 87:535-541.
-https://www.who.int/bulletin/volumes/87/7/08-053819.pdf
-
-Burton A, Gacic-Dobo M, Karimov R, Kowalski R. A computational
-logic-based representation of the WHO and UNICEF estimates of national
-immunization coverage. DRAFT 23 January 2011. Articles and code
-available at: https://github.com/mgondan/wuenic
-
-Original code (V3) written by Tony Burton, System Analyst, Strategic
-Information Group, Expanded Programme on Immunization, Department of
-Immunization, Vaccines, and Biologicals. World Health Organization,
-1211 Geneva 27, Switzerland
-
-Current version (V4.0) written by Matthias Gondan, Department of
-Psychology, University of Innsbruck, Austria
-Matthias.Gondan-Rochon@uibk.ac.at
-
-This program works with the xsb Prolog compiler,
-https://xsb.sourceforge.net/
-
-* Created: 6 November 2011
-* V3: 6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv GoC
-* V3.9: 6 Dec 2023. Simplified the code for better maintainance
-* V4.0: 8 Dec 2023. Corrected some inconsistencies in the output.
-  Does not affect coverage estimates.
-
-WHO and UNICEF working group memebers as of 1 January 2010 - 30 April
-2012:
-* Dr David BROWN, UNICEF/New York (dbrown@unicef.org)
-* Mr Tony BURTON, WHO/Geneva (burtona@who.int)
-* Ms Marta GACIC-DOBO, WHO/Geneva (gacicdobom@who.int)
-* Mr Rouslan KARIMOV, UNICEF/NEW YORK (rkarimov@unicef.org)
-* Dr Robert KOWALSKI, Imperial College London
-  (r.kowalski@imperial.ac.uk)
-*/
-
-% :- table anchor/6.
-% :- table survey/5.
-% :- table reported/5.
-% :- table wuenic_I/6.
+:- table anchor/6.
+:- table survey/5.
+:- table reported/5.
+:- table wuenic_I/6.
 
 % Separator is used in surveys
 :- op(500, xfy, :).
@@ -110,10 +108,7 @@ firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 % Year range for estimation. This needs to be changed each year.
 year_range(1997, 2022).
 
-% ==================================================
-% Collects all estimates and saves it in
-% (country).pl.v40.txt
-% ==================================================
+% Save all estimates in (country).pl.v40.txt
 estimate :-
     country(Code, Country),
     date(Date),
@@ -253,9 +248,9 @@ conf_reported(C, V, Y, Support) :-
     reported(C, V, Y, _, _),
     wuenic_I(C, V, Y, Rule, _, _),
     !,
-    (	member(Rule, ['R:', 'R: AP'])
-    ->	Support = 'R+'
-    ;	Support = 'R-'
+    (   member(Rule, ['R:', 'R: AP'])
+    ->  Support = 'R+'
+    ;   Support = 'R-'
     ).
 
 % No confidence in surveys if _any_ survey deviates too much from WUENIC
@@ -266,7 +261,7 @@ conf_reported(C, V, Y, Support) :-
 % want this?
 conf_survey(C, V, Y, Support) :-
     wuenic_I(C, V, Y, _, _, Cov0),
-    estimate_required(C, V, Year, _, _), % check
+    estimate_required(C, V, Year, _, _),
     survey(C, V, Year, _, Coverage),
     confidence_survey_scope(Scope),
     abs(Y - Year) =< Scope,
@@ -350,21 +345,6 @@ wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
     Expl = Expl0,
     Coverage = Cov0.
 
-% Interpolation forced by working group
-%
-% (In V3, this predicate is at Level II, may be moved to
-% Level I in future versions)
-%
-% wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
-%     decision(C, V, Y, interpolate, Expl0, _, _),
-%     prec_anchor(C, V, Y, Prec, _, PrecCov),
-%     succ_anchor(C, V, Y, Succ, _, SuccCov),
-%     !,
-%     Rule = 'W-I:',
-%     concat_atom(['Estimate informed by interpolation between ', Prec,
-%                  ' and ', Succ, ' levels. ', Expl0], Expl),
-%    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
-
 % If DTP3 > DTP1 (which is impossible), estimate coverage using equation
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp1, Y, _Rule, _Expl, DTP1),
@@ -372,7 +352,8 @@ wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     DTP3 > DTP1,
     !,
     Rule = 'RMF:',
-    concat_atom(['Estimate based on DTP3 coverage of ', DTP3, '. '], Expl),
+    concat_atom(['Estimate based on DTP3 coverage of ',
+        DTP3, '. '], Expl),
     Coverage is round(DTP3 - 0.0058 * DTP3 * DTP3 + 0.3912 * DTP3 + 18.258).
 
 % Estimate for DTP1 plausible
@@ -387,7 +368,7 @@ wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp3, Y, _, _, DTP3),
     !,
-    Rule = 'RMF:',
+    Rule = 'RMF:', % added colon for consistency
     concat_atom(['Estimate based on DTP3 coverage of ', DTP3, '. '], Expl),
     Coverage is round(DTP3 - 0.0058 * DTP3 * DTP3 + 0.3912 * DTP3 + 18.258).
 
@@ -468,7 +449,7 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     !,
     Rule = 'C:',
     concat_atom(['Reported data calibrated to ', Prec,
-                ' and ', Succ, ' levels. '], Expl),
+        ' and ', Succ, ' levels. '], Expl),
     reported_time_series(C, V, Prec, _, PrecRep),
     reported_time_series(C, V, Succ, _, SuccRep),
     interpolate(Prec, PrecRep, Succ, SuccRep, Y, RepInterp),
@@ -552,7 +533,7 @@ anchor(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Cov0),
     survey(C, V, Y, Expl0, Survey),
     survey_reported_threshold(Threshold),
-    abs(Cov0 - Survey) =< Threshold, % here
+    abs(Cov0 - Survey) =< Threshold,
     !,
     Rule = 'R: AP',
     member(Source-Expl1,
@@ -850,7 +831,7 @@ interpolate(Prec, PrecCov, Succ, SuccCov, Year, Coverage) :-
 
 % Ensure estimates are between 0 and 99
 %
-% MG, todo: round only at output
+% MG, discuss: round only at output
 bound_0_100(X, Y) :-
     Y is max(0, min(99, round(X))).
 
@@ -1009,7 +990,7 @@ reported_reason_to_exclude(C, V, Y, Expl) :-
     not(decision(C, V, Y, acceptReported, _, _, _)),
     Coverage > 100,
     concat_atom(['Reported data excluded because ', Coverage,
-    ' percent greater than 100 percent. '], Expl).
+        ' percent greater than 100 percent. '], Expl).
 
 reported_reason_to_exclude(C, V, Y, Expl) :-
     reported(C, V, Y, _, Coverage),
@@ -1022,9 +1003,9 @@ reported_reason_to_exclude(C, V, Y, Expl) :-
     Coverage - CoveragePrec > Threshold,
     Coverage - CoverageSucc > Threshold,
     concat_atom(
-      [ 'Reported data excluded due to an increase from ',
-        CoveragePrec, ' percent to ', Coverage,
-        ' percent with decrease to ', CoverageSucc, ' percent. '
+      [ 'Reported data excluded due to an increase from ', CoveragePrec,
+        ' percent to ', Coverage, ' percent with decrease to ', % added a word
+        CoverageSucc, ' percent. '
       ], Expl).
 
 reported_reason_to_exclude(C, V, Y, Expl) :-
@@ -1056,7 +1037,7 @@ reported_reason_to_exclude(C, V, Y, Expl) :-
     abs(CoveragePrec - Coverage) > Threshold,
     concat_atom(
       [ 'Reported data excluded due to sudden change in coverage from ',
-         CoveragePrec, ' level to ', Coverage,' percent. '
+        CoveragePrec, ' level to ', Coverage,' percent. '
       ], Expl).
 
 % Reason to exclude reported: sudden decline in most recently reported

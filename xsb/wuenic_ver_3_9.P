@@ -20,18 +20,17 @@
 % Immunization, Vaccines, and Biologicals. World Health Organization,
 % 1211 Geneva 27, Switzerland
 %
-% Current version (V3.9) written by Matthias Gondan, Department of
-% Psychology, University of Innsbruck, Austria
-% Matthias.Gondan-Rochon@uibk.ac.at
+% Current version written by Matthias Gondan, Department of Psychology,
+% University of Innsbruck, Austria, Matthias.Gondan-Rochon@uibk.ac.at
 %
-% This program works with the xsb Prolog
-% compiler, https://xsb.sourceforge.net/
+% This program works with the XSB-Prolog compiler,
+% https://xsb.sourceforge.net/
 %
 % * Created: 6 November 2011
 % * V3: 6 May 2016. ipv1 & rcv1 added, GoC for rcv1 based on mcv GoC
 % * V3.9: 6 Dec 2023. Simplified the code for better maintainance
 %
-% WHO and UNICEF working group memebers as of 1 January 2010 - 30 April
+% WHO and UNICEF working group members as of 1 January 2010 - 30 April
 % 2012:
 % * Dr David BROWN, UNICEF/New York (dbrown@unicef.org)
 % * Mr Tony BURTON, WHO/Geneva (burtona@who.int)
@@ -114,10 +113,7 @@ firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 % Year range for estimation. This needs to be changed each year.
 year_range(1997, 2022).
 
-% ==================================================
-% Collects all estimates and saves it in
-% (country).pl.new.txt
-% ==================================================
+% Save all estimates in (country).pl.v39.txt
 estimate :-
     country(Code, Country),
     date(Date),
@@ -129,8 +125,8 @@ estimate :-
             PrevRev, GC, Admin, Gov, Reported, Vaccinated, Target,
             UnpdBirths, UnpdSI, Source, SeriesValue, SurveyInfo),
         Estimates),
-    concat_atom(['out/', Code, '.pl.v39.txt'], OutFile),
-    open_out_file(Out, OutFile,
+    concat_atom(['out/', Code, '.pl.v39.txt'], File),
+    open_out_file(Out, File,
         'Country\tProductionDate\tISOCountryCode\tVaccine\tYear\tWUENIC\tWUENICPreviousRevision\tGradeOfConfidence\tAdministrativeCoverage\tGovernmentEstimate\tReportedCoverage\tChildrenVaccinated\tChildrenInTarget\tBirthsUNPD\tSurvivingInfantsUNPD\tReportedTimeSeries\tReportedTimeSeriesSource\tSurveyInformation\tRule\tComment\t'),
     output_results(Estimates, Out),
     close(Out).
@@ -179,14 +175,14 @@ confidence(C, V, Y, Expl, Grade) :-
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=R+ S+ D+',
-    Grade = '3'.
+    Grade = 3.
 
 % If any estimate has been challenged, confidence is low
 confidence(C, V, Y, Expl, Grade) :-
     setof(Expl0, challenge(C, V, Y, Expl0), List),
     !,
     concat_atom(['Estimate challenged by: ' | List], Expl),
-    Grade = '1'.
+    Grade = 1.
 
 % Confidence in one or two sources, two stars
 confidence(C, V, Y, Expl, Grade) :-
@@ -194,45 +190,45 @@ confidence(C, V, Y, Expl, Grade) :-
     conf_survey(C, V, Y, 'S+'),
     !,
     Expl = 'GoC=R+ S+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_survey(C, V, Y, 'S+'),
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=S+ D+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_reported(C, V, Y, 'R+'),
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=R+ D+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_reported(C, V, Y, 'R+'),
     !,
     Expl = 'GoC=R+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_survey(C, V, Y, 'S+'),
     !,
     Expl = 'GoC=S+',
-    Grade = '2'.
+    Grade = 2.
 
 confidence(C, V, Y, Expl, Grade) :-
     conf_denominator(C, V, Y, 'D+'),
     !,
     Expl = 'GoC=D+',
-    Grade = '2'.
+    Grade = 2.
 
 % Low confidence
 confidence(_C, _V, _Y, Expl, Grade) :-
     !,
     Expl = 'GoC=No accepted empirical data',
-    Grade = '1'.
+    Grade = 1.
 
 % Check if any source is challenged
 challenge(C, V, Y, 'R-') :-
@@ -301,9 +297,9 @@ conf_denominator(C, V, Y, Support) :-
     denominator(C, V, Y, Coverage),
     !,
     confidence_UNPD_threshold(Threshold),
-    (	abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
-    ->	Support = 'D+'
-    ;	Support = 'D-'
+    (   abs(Coverage - Cov0) < Threshold % MG: < inconsistent with conf_survey
+    ->  Support = 'D+'
+    ;   Support = 'D-'
     ).
 
 % Births used for bcg and hepb birth dose
@@ -343,21 +339,6 @@ wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
     Expl = Expl0,
     Coverage = Cov0.
 
-% Interpolation forced by working group
-%
-% (In V3, this predicate is at Level II, will be moved to
-% Level I in V4)
-%
-% wuenic_I(C, V, Y, Rule, Expl, Coverage) :-
-%     decision(C, V, Y, interpolate, Expl0, _, _),
-%     prec_anchor(C, V, Y, Prec, _, PrecCov),
-%     succ_anchor(C, V, Y, Succ, _, SuccCov),
-%     !,
-%     Rule = 'W-I:',
-%     concat_atom(['Estimate informed by interpolation between ', Prec,
-%                  ' and ', Succ, ' levels. ', Expl0], Expl),
-%    interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
-
 % If DTP3 > DTP1 (which is impossible), estimate coverage using equation
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp1, Y, _Rule, _Expl, DTP1),
@@ -381,7 +362,7 @@ wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
 wuenic_I(C, dtp1, Y, Rule, Expl, Coverage) :-
     wuenic_II(C, dtp3, Y, _, _, DTP3),
     !,
-    Rule = 'RMF', % Todo: add colon in V4 (RMF:)
+    Rule = 'RMF',
     concat_atom(['Estimate based on DTP3 coverage of ', DTP3, '. '], Expl),
     Coverage is round(DTP3 - 0.0058 * DTP3 * DTP3 + 0.3912 * DTP3 + 18.258).
 
@@ -422,8 +403,6 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     Coverage = Cov0.
 
 % Between anchor points: interpolation forced by working group
-%
-% Todo: Move to Level I, because working group decisions should rule.
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     decision(C, V, Y, interpolate, Expl0, _, _),
     prec_anchor(C, V, Y, Prec, _, PrecCov),
@@ -438,8 +417,9 @@ wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
 wuenic_II(C, V, Y, Rule, Expl, Coverage) :-
     reported_time_series(C, V, Y, Source, Cov0),
     prec_anchor(C, V, Y, _Prec, PrecRule, _),
+    PrecRule = 'R: AP',
     succ_anchor(C, V, Y, _Succ, SuccRule, _),
-    PrecRule = 'R: AP', SuccRule = 'R: AP',
+    SuccRule = 'R: AP',
     !,
     Rule = 'R:',
     member(Source-Expl,
@@ -591,8 +571,8 @@ survey(C, V, Y, Expl, Coverage) :-
     length([H | T], N),
     sum_list([H | T], Sum),
     Coverage is round(Sum / N),
-    concat_atom(['Survey evidence of ', Coverage, ' percent based on ', N,
-        ' survey(s). '], Expl).
+    concat_atom(['Survey evidence of ', Coverage, ' percent based on ',
+        N, ' survey(s). '], Expl).
 
 % Reasons to exclude a survey include:
 %    Sample size < 300,
@@ -648,12 +628,14 @@ survey_modified(C, V, Y, ID, Expl, Coverage) :-
     C1 is round(C1Cov),
     C3 is round(C3Cov),
     member(title:Title, Description),
-    concat_atom([Title, ' card or history results of ', SurveyCovRounded,
+    concat_atom(
+      [ Title, ' card or history results of ', SurveyCovRounded,
         ' percent modifed for recall bias to ', Cov0,
         ' percent based on 1st dose card or history coverage of ', CH1,
         ' percent, 1st dose card only coverage of ', C1,
         ' percent and 3rd dose card only coverage of ', C3,
-        ' percent. '], Expl),
+        ' percent. '
+      ], Expl),
     Coverage = Cov0.
 
 % Survey results passed for inclusion in the analysis include:
@@ -855,7 +837,7 @@ interpolate(Prec, PrecCov, Succ, SuccCov, Year, Coverage) :-
 
 % Ensure estimates are between 0 and 99
 %
-% MG, todo: round only at output
+% MG, discuss: round only at output
 bound_0_100(X, Y) :-
     Y is max(0, min(99, round(X))).
 
@@ -981,16 +963,6 @@ survey_reason_to_exclude(C, V, Y, Expl) :-
     Size < 300,
     concat_atom(['Survey results ignored. Sample size ', Size, ' less than 300. '], Expl).
 
-% V4
-% survey_reason_to_exclude(C, V, Y, ID, Expl) :-
-%     survey_results_for_analysis(C, V, Y, ID, Description, _),
-%     (	decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
-%     ;	decision(C, V, Y, ignoreSurvey, Expl0, na, _)
-%     ),
-%     member(title:Title, Description),
-%     concat_atom([Title, ' results ignored by working group. ', Expl0],
-%     Expl).
-
 % Duplicated the rule to preserve order of explanations in V3 output file
 survey_reason_to_exclude(C, V, Y, Expl) :-
     survey_for_analysis(C, V, Y, ID, Description, _),
@@ -1035,8 +1007,8 @@ reported_reason_to_exclude(C, V, Y, Expl) :-
     Coverage - CoverageSucc > Threshold,
     concat_atom(
       [ 'Reported data excluded due to an increase from ', CoveragePrec,
-        ' percent to ', Coverage, ' percent with decrease ', CoverageSucc,
-        ' percent. '
+        ' percent to ', Coverage, ' percent with decrease ',
+        CoverageSucc, ' percent. '
       ], Expl).
 
 reported_reason_to_exclude(C, V, Y, Expl) :-
