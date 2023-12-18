@@ -93,9 +93,20 @@ vaccinated0(C, V, Y, Vaccinated) :-
     current_predicate(vaccinated/4),
     vaccinated(C, V, Y, Vaccinated).
 
+% MG, discuss: Do we need support for unbounded integers?
+% Example: target(irq,mcv2,2005,9744095698508)
 target0(C, V, Y, Vaccinated) :-
     current_predicate(vaccinated/4),
-    target(C, V, Y, Vaccinated).
+    target(C, V, Y, Vac),
+    Vac < 2^31,
+    !,
+    Vaccinated = Vac.
+
+target0(C, V, Y, Vaccinated) :-
+    current_predicate(vaccinated/4),
+    target(C, V, Y, _Vac),
+    !,
+    Vaccinated = ''.
 
 admin0(C, V, Y, Coverage) :-
     current_predicate(admin/4),
@@ -964,12 +975,18 @@ survey_reason_to_exclude(C, V, Y, Expl) :-
 %
 % MG, discuss: only display if sample size > 300 to avoid long comments
 survey_reason_to_exclude(C, V, Y, Expl) :-
+    survey_for_analysis(C, V, Y, _ID, Description, _),
+    member(ss:Size, Description),
+    Size >= 300,
+    decision(C, V, Y, ignoreSurvey, Expl0, na, _),
+    member(title:Title, Description),
+    concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
+
+survey_reason_to_exclude(C, V, Y, Expl) :-
     survey_for_analysis(C, V, Y, ID, Description, _),
     member(ss:Size, Description),
     Size >= 300,
-    (   decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
-    ;   decision(C, V, Y, ignoreSurvey, Expl0, na, _)
-    ),
+    decision(C, V, Y, ignoreSurvey, Expl0, ID, _),
     member(title:Title, Description),
     concat_atom([Title, ' results ignored by working group. ', Expl0], Expl).
 
