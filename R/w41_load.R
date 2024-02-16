@@ -12,7 +12,7 @@ s = once(call("date", expression(Date)))
 Date = atom2char(s$Date)
 
 # Store all entries with estimate_required(_, V, Y, _, _)
-Ereq = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Ereq = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 q = call("estimate_required", expression(C), expression(V), expression(Y),
          expression(A4), expression(A5))
 s = findall(q)
@@ -42,20 +42,20 @@ s = lapply(s, as.data.frame)
 s = do.call("rbind", s)
 s$Y = as.character(s$Y)
 
-Rub = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Rub = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 Rub[cbind(s$Y, s$V)] = s$Rub
 
 # Default setting
 #
 # firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 firstRubellaAtSecondMCV = 
-  matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+  matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
 
 # Vaccination data reported from administration
 #
 # admin(C, V, Y, Admin)
-Admin = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Admin = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 
 q = call("admin", as.name(Code), expression(V), expression(Y), expression(Adm))
 s = findall(q)
@@ -80,7 +80,7 @@ Admin[cbind(s$Y, s$V)] = s$Adm
 # Vaccination data reported from government
 #
 # gov(C, V, Y, Gov)
-Gov = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Gov = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 
 q = call("gov", as.name(Code), expression(V), expression(Y), expression(Gov))
 s = findall(q)
@@ -106,7 +106,7 @@ Gov[cbind(s$Y, s$V)] = s$Gov
 # numbers are consistent.
 #
 # legacy(C, V, Y, Legacy)
-Legacy = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Legacy = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 
 q = call("legacy", as.name(Code), expression(V), expression(Y), expression(Leg))
 s = findall(q)
@@ -130,7 +130,7 @@ if(length(s))
 # Some general statistics that are used for confidence grading
 #
 # vaccinated(C, V, Y, Vaccinated)
-Vaccinated = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Vaccinated = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 
 q = call("vaccinated", 
          as.name(Code), expression(V), expression(Y), expression(Vac))
@@ -155,7 +155,7 @@ if(length(s))
 # Some general statistics that are used for confidence grading
 #
 # target(C, V, Y, Target)
-Target = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
+Target = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=list(Y=Yn, V=Vn))
 
 q = call("target", 
          as.name(Code), expression(V), expression(Y), expression(Targ))

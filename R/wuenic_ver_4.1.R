@@ -30,64 +30,13 @@ svy.thrs = 10
 svy.scope = 2
 unpd.thrs = 10
 
+source("R/w41_reported.R")
+
 YV = list(Y=Yn, V=Vn)
 YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-
-# 2. Add information from government and administration.
-#
-# Reported to WHO and UNICEF is government estimate. If government
-# estimate missing, then reported is administrative data. If both
-# missing, fail.
-#
-# R implementation is in reverse order, with the higher-order predicate
-# eventually overwriting the lower predicate.
-
-Rep.Cov = YV_real
-Rep.Src = YV_char
-
-# reported(C, V, Y, Source, Coverage) :-
-#     admin0(C, V, Y, Cov0),
-#     (   decision(C, V, Y, ignoreGov, _, _, _)
-#     ;   not(gov(C, V, Y, _))
-#     ),
-#     not(decision(C, V, Y, ignoreAdmin, _, _, _)),
-#     !,
-#     Source = admin,
-#     Coverage = Cov0.
-
-Rep.Cov = Admin
-Rep.Src = ifelse(is.na(Admin), NA, "admin")
-
-# Working group decides to ignore admin data
-ignore = Decisions$Dec == "ignoreAdmin"
-index = cbind(Decisions$Y[ignore], Decisions$V[ignore])
-Rep.Cov[index] = NA
-Rep.Src[index] = NA
-
-# Use admin data only if government data is invalid
-# Todo: This code can be removed, data will be overwritten below
-
-gov = !is.na(Gov)
-ignore = Decisions$Dec == "ignoreGov"
-gov[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
-Rep.Cov[gov] = NA
-Rep.Src[gov] = NA
-
-# reported(C, V, Y, Source, Coverage) :-
-#    gov(C, V, Y, Cov0),
-#    not(decision(C, V, Y, ignoreGov, _, _, _)),
-#    !,
-#    Source = gov,
-#    Coverage = Cov0.
-
-gov = !is.na(Gov)
-ignore = Decisions$Dec == "ignoreGov"
-gov[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
-Rep.Cov[gov] = Gov[gov]
-Rep.Src[gov] = "gov"
 
 # 3. Check reported data
 #
@@ -1451,4 +1400,5 @@ Table = data.frame(
     Rule=Rule[VY],
     Comment=Text[VY])
 
+dir.create("out", showWarnings = FALSE)
 write.table(Table, sprintf("out/%s.pl.R41.txt", Code), quote=FALSE, row.names=FALSE, sep="\t", na="")
