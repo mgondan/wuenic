@@ -31,80 +31,14 @@ svy.scope = 2
 unpd.thrs = 10
 
 source("R/w41_reported.R")
-source("R/w41_checks.R")
+source("R/w41_check.R")
+source("R/w41_ts.R")
 
 YV = list(Y=Yn, V=Vn)
 YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
 YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-
-# 4. Time series of reported data
-#
-# % Reported data available
-# reported_time_series(C, V, Y, Source, Coverage) :-
-#     estimate_required(C, V, Y, _, _),
-#     reported(C, V, Y, Source0, Cov0),
-#     not(reported_rejected(C, V, Y)),
-#     !,
-#     Source = Source0,
-#     Coverage = Cov0.
-
-TS.Cov = YV_int
-TS.Src = YV_char
-
-TS.Cov[!reject & Ereq] = Rep.Cov[!reject & Ereq]
-TS.Src[!reject & Ereq] = Rep.Src[!reject & Ereq]
-
-# index = !Ereq
-# TS.Cov[!index] = NA
-# TS.Src[!index] = NA
-
-# % Interpolation, no data/reported data excluded between two years
-# reported_time_series(C, V, Y, Source, Coverage) :-
-#     estimate_required(C, V, Y, _, _),
-#     (   not(reported(C, V, Y, _, _))
-#     ;   reported_rejected(C, V, Y)
-#     ),
-#     year_before_reported(C, V, Y, Prec, PrecCov),
-#     year_after_reported(C, V, Y, Succ, SuccCov),
-#     !,
-#     Source = interpolated,
-#     interpolate(Prec, PrecCov, Succ, SuccCov, Y, Coverage).
-
-Rep = Rep.Cov
-Rep[reject] = NA
-inter = apply(Rep, 2, na.approx, na.rm=FALSE)
-index = Ereq & (is.na(Rep.Cov) | reject) & !is.na(inter)
-TS.Cov[index] = tround(inter[index])
-TS.Src[index] = "interpolated"
-
-# % Extrapolation, latest required estimate
-# reported_time_series(C, V, Y, Source, Coverage) :-
-#     estimate_required(C, V, Y, _, _),
-#     (   not(reported(C, V, Y, _, _))
-#     ;   reported_rejected(C, V, Y)
-#     ),
-#     nearest_reported(C, V, Y, _Year, Cov0),
-#     !,
-#     Source = extrapolated,
-#     Coverage = Cov0.
-
-Rep = Rep.Cov
-Rep[reject] = NA
-extra = apply(Rep, 2, zoo::na.locf, na.rm=FALSE)
-
-# Don't overwrite interpolated
-index = Ereq & (is.na(Rep.Cov) | reject) & is.na(inter) & !is.na(extra)
-TS.Cov[index] = round(extra[index])
-TS.Src[index] = "extrapolated"
-
-Rep = Rep.Cov
-Rep[reject] = NA
-extra = apply(Rep, 2, zoo::na.locf, na.rm=FALSE, fromLast=TRUE)
-index = Ereq & (is.na(Rep.Cov) | reject) & is.na(inter) & !is.na(extra)
-TS.Cov[index] = round(extra[index])
-TS.Src[index] = "extrapolated"
 
 # 5. Survey data
 #
