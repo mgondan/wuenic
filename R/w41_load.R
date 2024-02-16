@@ -62,19 +62,20 @@ s = findall(q)
 
 # Not all countries report administrative data
 if(length(s))
-{ s = lapply(s, atom2char)
-s = lapply(s, as.data.frame)
-s = do.call("rbind", s)
-s$Y = as.character(s$Y)
-
-index = which(!(s$V %in% Vn))
-if(length(index))
 {
-  warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
-  s = s[-index, ]
-}
+  s = lapply(s, atom2char)
+  s = lapply(s, as.data.frame)
+  s = do.call("rbind", s)
+  s$Y = as.character(s$Y)
 
-Admin[cbind(s$Y, s$V)] = s$Adm
+  index = which(!(s$V %in% Vn))
+  if(length(index))
+  {
+    warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
+    s = s[-index, ]
+  }
+
+  Admin[cbind(s$Y, s$V)] = s$Adm
 }
 
 # Vaccination data reported from government
@@ -87,19 +88,20 @@ s = findall(q)
 
 # Not all countries report administrative data
 if(length(s))
-{ s = lapply(s, atom2char)
-s = lapply(s, as.data.frame)
-s = do.call("rbind", s)
-s$Y = as.character(s$Y)
-
-index = which(!(s$V %in% Vn))
-if(length(index))
 {
-  warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
-  s = s[-index, ]
-}
+  s = lapply(s, atom2char)
+  s = lapply(s, as.data.frame)
+  s = do.call("rbind", s)
+  s$Y = as.character(s$Y)
 
-Gov[cbind(s$Y, s$V)] = s$Gov
+  index = which(!(s$V %in% Vn))
+  if(length(index))
+  {
+    warning("Unknown vaccine(s): ", paste(unique(s$V[index]), collapse=", "))
+    s = s[-index, ]
+  }
+
+  Gov[cbind(s$Y, s$V)] = s$Gov
 }
 
 # Numbers from earlier Wuenic algorithms. This is needed to check if the
@@ -270,6 +272,21 @@ Y.range = function(d)
 }
 
 s = apply(s, MARGIN=1, simplify=FALSE, FUN=Y.range)
+s = do.call("rbind", s)
+
+# For "ignore survey", the Id is sometimes NA, meaning that it applies to all
+# surveys of a given year and vaccine
+Id.na = function(d, Idn)
+{
+  if(d['Dec'] == "ignoreSurvey" & is.na(d['Id']))
+    return(data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'], 
+      Id=Idn, Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+  
+  data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'],
+      Id=d['Id'], Info=d['Info'], Cov=d['Cov'])
+}
+
+s = apply(s, MARGIN=1, simplify=FALSE, FUN=Id.na, Idn=unique(Survey$Id))
 s = do.call("rbind", s)
 
 s$Cov = as.integer(s$Cov)
