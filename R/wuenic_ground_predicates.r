@@ -1,3 +1,6 @@
+if(FALSE)
+{
+
 ###########################################
 #
 #  Name:	wuenic_ground_predicates.R
@@ -503,3 +506,4 @@ extract_coverage_data <- function(table_name,CountryName,country_code,data_type,
 	cat('\n')
 sink()
 odbcCloseAll()
+}

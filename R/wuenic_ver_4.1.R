@@ -1,47 +1,3 @@
-library(zoo)
-
-# List of all vaccine names
-#
-# Todo: Generate Vn on the fly
-# Todo: khm.pl has an "opv1" vaccine, I guess it is ipv1
-#
-Vn = c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", "hepb0", "hepb1",
-  "hepb3", "hepb3x", "hepbb","hepbbx", "hib1", "hib3", "hib3x", "opv1",
-  "ipv1", "ipv1x", "ipv2", "ipv2", "mcv1", "mcv1x", "mcv2", "pcv1", "pcv3",
-  "pcv3x", "pol1", "pol3", "pol3x", "rcv1", "rotac", "rotacx", "yfv")
-
-# Year range for estimation
-Yn = 1985:2022
-
-# The country-specific data is stored in a Prolog file data.pl. 
-# 
-# Todo: I consider this a temporary solution, we should skip this intermediate
-# step and export the country data to a different representation, not Prolog.
-# The step is not needed, and we would not depend on R package rolog anymore.
-
-library(rolog)
-source("R/atom2char.R")
-source("R/tround.R")
-source("R/padna.R")
-source("R/w41_load.R")
-
-sawtooth = 10
-svy.thrs = 10
-svy.scope = 2
-unpd.thrs = 10
-
-source("R/w41_reported.R")
-source("R/w41_check.R")
-source("R/w41_ts.R")
-source("R/w41_survey.R")
-source("R/w41_anchor.R")
-
-YV = list(Y=Yn, V=Vn)
-YV_bool = matrix(FALSE, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-YV_int = matrix(NA_integer_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-YV_real = matrix(NA_real_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-YV_char = matrix(NA_character_, nrow=length(Yn), ncol=length(Vn), dimnames=YV)
-
 # % 7. Estimate coverage by distinguishing different cases
 # %
 # % * Estimate at anchor point
@@ -70,10 +26,10 @@ info = c(
   extrapolated="Estimate informed by extrapolation from reported data. ")
 Cov = TS.Cov
 
-Info = YV_char
+Info = YV.char()
 Info[] = info[TS.Src]
 
-Rule = YV_char
+Rule = YV.char()
 Rule[!is.na(TS.Cov)] = "R:"
 
 # % Before earliest/after latest anchor (not of type reported): calibrated
@@ -97,21 +53,21 @@ index = index & !is.na(Prec.Rule) & Prec.Rule != "R: AP"
 
 Prec.Cov = apply(Anchor.Cov, 2, FUN=na.locf, na.rm=FALSE)
 
-Prec.Year = YV_char
-Prec.Year[] = Yn
+Prec.Year = YV.char()
+Prec.Year[] = Yn()
 Prec.Year[index] = NA
 Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
-# Rule = YV_char
+# Rule = YV.char()
 Rule[index] = "C:"
 
-# Info = YV_char
+# Info = YV.char()
 Info[index] = sprintf("Reported data calibrated to %s levels. ", 
     Prec.Year[index])
 
-yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+yv = expand.grid(Y=Yn(), V=Vn(), stringsAsFactors=FALSE)
 Adj = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - TS.Cov[cbind(c(Prec.Year), yv$V)]
-# Cov = YV_int
+Cov = YV.int()
 Cov[index] = TS.Cov[index] + Adj[index]
 
 # Search for next anchor
@@ -121,8 +77,8 @@ index = index & !is.na(Succ.Rule) & Succ.Rule != "R: AP"
 
 Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-Succ.Year = YV_char
-Succ.Year[] = Yn
+Succ.Year = YV.char()
+Succ.Year[] = Yn()
 Succ.Year[index] = NA
 Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
@@ -131,7 +87,7 @@ Rule[index] = "C:"
 Info[index] = sprintf("Reported data calibrated to %s levels. ", 
     Succ.Year[index])
 
-yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+yv = expand.grid(Y=Yn(), V=Vn(), stringsAsFactors=FALSE)
 Adj = Anchor.Cov[cbind(c(Succ.Year), yv$V)] - TS.Cov[cbind(c(Succ.Year), yv$V)]
 Cov[index] = TS.Cov[index] + Adj[index]
 
@@ -203,13 +159,13 @@ Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
 Rule[index] = "C:"
 
-Prec.Year = YV_char
-Prec.Year[] = Yn
+Prec.Year = YV.char()
+Prec.Year[] = Yn()
 Prec.Year[index] = NA
 Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
-Succ.Year = YV_char
-Succ.Year[] = Yn
+Succ.Year = YV.char()
+Succ.Year[] = Yn()
 Succ.Year[index] = NA
 Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
@@ -221,16 +177,16 @@ Itp1.Cov = apply(Anchor.Cov, 2, FUN=na.approx, na.rm=FALSE)
 
 # MG, discuss: this shouldn't be rounded
 Itp1.Cov[] = tround(Itp1.Cov)
-rownames(Itp1.Cov) = Yn
+rownames(Itp1.Cov) = Yn()
 
 # interpolate TS.Cov for year without anchor
 Itp2.Cov = TS.Cov
 Itp2.Cov[index] = NA
 Itp2.Cov = apply(Itp2.Cov, 2, FUN=na.approx, na.rm=FALSE)
 Itp2.Cov[] = tround(Itp2.Cov)
-rownames(Itp2.Cov) = Yn
+rownames(Itp2.Cov) = Yn()
 
-# yv = expand.grid(Y=Yn, V=Vn, stringsAsFactors=FALSE)
+# yv = expand.grid(Y=Yn(), V=Vn(), stringsAsFactors=FALSE)
 Adj = Itp1.Cov - Itp2.Cov
 Cov[index] = tround(TS.Cov[index] + Adj[index])
 
@@ -290,19 +246,19 @@ Prec.Cov = apply(Anchor.Cov, 2, FUN=na.locf, na.rm=FALSE)
 Succ.Rule = apply(Anchor.Rule, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 Succ.Cov = apply(Anchor.Cov, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-Prec.Year = YV_char
-Prec.Year[] = Yn
+Prec.Year = YV.char()
+Prec.Year[] = Yn()
 Prec.Year[is.na(Anchor.Cov)] = NA
 # Prec.Year[cbind(index$Y, index$V)] = NA
 Prec.Year = apply(Prec.Year, 2, FUN=na.locf, na.rm=FALSE)
 
-Succ.Year = YV_char
-Succ.Year[] = Yn
+Succ.Year = YV.char()
+Succ.Year[] = Yn()
 Succ.Year[is.na(Anchor.Cov)] = NA
 # Succ.Year[cbind(index$Y, index$V)] = NA
 Succ.Year = apply(Succ.Year, 2, FUN=na.locf, fromLast=TRUE, na.rm=FALSE)
 
-WI = YV_char
+WI = YV.char()
 WI[cbind(index$Y, index$V)] = index$Info
 WI[is.na(Prec.Rule) | is.na(Succ.Rule)] = NA
 
@@ -353,7 +309,7 @@ Cov[index, "rcv1"] = Cov[index, "mcv1"]
 #     Expl = 'First dose of rubella vaccine given with second dose of measles containing vaccine. Estimate based on MCV2 estimate'.
 
 index = Rub[, "rcv1"] == firstRubellaAtSecondMCV[, "rcv1"]
-index = as.character(Yn[which(index)])
+index = as.character(Yn()[which(index)])
 if(length(index))
 {
   Rule[cbind(index, "rcv1")] = Rule[cbind(index, Rub[, "rcv1"][index])]
@@ -409,7 +365,7 @@ Bounded[] = pmax(0, pmin(99, round(Bounded)))
 #   ;   Support = 'R-'
 #   ).
 
-Conf.Rep = YV_char
+Conf.Rep = YV.char()
 index = !is.na(Rep.Cov) & Rule %in% c("R:", "R: AP")
 Conf.Rep[index] = "R+"
 index = !is.na(Rep.Cov) & !(Rule %in% c("R:", "R: AP"))
@@ -445,22 +401,22 @@ index = which(!Ereq, arr.ind=TRUE)
 
 Svy.Min = Svy.Cov
 Svy.Min[cbind(index[, "Y"], index[, "V"])] = NA # here
-Svy.Min = suppressWarnings({rollapply(Svy.Min, width=1 + 2*svy.scope, partial=1, FUN=min, na.rm=TRUE)})
+Svy.Min = suppressWarnings({rollapply(Svy.Min, width=1 + 2*svy.scope(), partial=1, FUN=min, na.rm=TRUE)})
 rownames(Svy.Min) = rownames(Svy.Cov)
 
 Svy.Max = Svy.Cov
 Svy.Max[cbind(index[, "Y"], index[, "V"])] = NA # here
-Svy.Max = suppressWarnings({rollapply(Svy.Max, width=1 + 2*svy.scope, partial=1, FUN=max, na.rm=TRUE)})
+Svy.Max = suppressWarnings({rollapply(Svy.Max, width=1 + 2*svy.scope(), partial=1, FUN=max, na.rm=TRUE)})
 rownames(Svy.Max) = rownames(Svy.Cov)
 
-Conf.Svy = YV_char
+Conf.Svy = YV.char()
 index = which(!is.na(Cov) & Ereq & is.finite(Svy.Min) & is.finite(Svy.Max))
 Conf.Svy[index] = "S+"
 
-index = which(!is.na(Cov) & Ereq & Cov - Svy.Min > svy.thrs)
+index = which(!is.na(Cov) & Ereq & Cov - Svy.Min > svy.thrs())
 Conf.Svy[index] = "S-"
 
-index = which(!is.na(Cov) & Ereq & Svy.Max - Cov > svy.thrs)
+index = which(!is.na(Cov) & Ereq & Svy.Max - Cov > svy.thrs())
 Conf.Svy[index] = "S-"
 
 # % Births used for bcg and hepb birth dose
@@ -477,11 +433,11 @@ Conf.Svy[index] = "S-"
 #   si_UNPD(C, Y, SI),
 #   Coverage is Vaccinated / SI * 100.
 
-Den = YV_real
+Den = YV.real()
 index = c("bcg", "hepbb")
 Den[, index] = Vaccinated[, index] / Births * 100
 
-index = setdiff(Vn, c("bcg", "hepbb"))
+index = setdiff(Vn(), c("bcg", "hepbb"))
 Den[, index] = Vaccinated[, index] / Surviving * 100
 
 # % Recalculate coverage using reported number of children vaccinated and
@@ -499,10 +455,10 @@ Den[, index] = Vaccinated[, index] / Surviving * 100
 #   ;   Support = 'D-'
 #   ).
 
-Conf.Den = YV_char
-index = which(abs(Cov - Den) < unpd.thrs)
+Conf.Den = YV.char()
+index = which(abs(Cov - Den) < unpd.thrs())
 Conf.Den[index] = "D+"
-index = which(abs(Cov - Den) >= unpd.thrs)
+index = which(abs(Cov - Den) >= unpd.thrs())
 Conf.Den[index] = "D-"
 
 # 10. Confidence depends on converging evidence from the different sources.
@@ -514,8 +470,8 @@ Conf.Den[index] = "D-"
 #   Expl = 'GoC=No accepted empirical data',
 #   Grade = 1.
 
-GoC = YV_int
-GoC.Expl = YV_char
+GoC = YV.int()
+GoC.Expl = YV.char()
 GoC[] = 1
 GoC.Expl[] = "GoC=No accepted empirical data"
 
@@ -606,7 +562,7 @@ GoC.Expl[index] = "GoC=R+ D+"
 # %    e.g. probability for inconsistent results increases with the number of
 # %    surveys and decreases with the sample size of the surveys.
 
-Chall = YV_char
+Chall = YV.char()
 Chall[] = ""
 
 index = which(Conf.Den == "D-")
@@ -688,7 +644,7 @@ GoC.Expl[index, "rcv1"] = GoC.Expl[index, "mcv1"]
 #
 # change_from_previous(_C, _V, _Y, _, '').
 
-Change = YV_char
+Change = YV.char()
 Change[] = ""
 index = which(Bounded != Legacy)
 Change[index] = sprintf(
@@ -699,7 +655,7 @@ Change[index] = sprintf(
 # collect_explanations(C, V, Y, Explanations) :-
 #     findall(Expl, explanation(C, V, Y, Expl), Explanations).
 
-Expl = YV_char
+Expl = YV.char()
 Expl[] = ""
 
 # explanation(C, V, Y, Expl) :-
@@ -896,11 +852,11 @@ if(nrow(index))
     Expl[index$Y[i], index$V[i]] =
       sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
 
-Text = YV_char
+Text = YV.char()
 Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
 
-Vaccine = Vn
-Year = Yn
+Vaccine = Vn()
+Year = Yn()
 VY = expand.grid(Year, Vaccine, stringsAsFactors=FALSE)
 
 include = Ereq & !is.na(Bounded)
