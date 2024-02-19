@@ -1,2 +1,4 @@
 exportPattern("^[[:alpha:]]+")
 importFrom("utils", "read.table")
+import("rolog")
+importFrom("zoo", "na.locf")

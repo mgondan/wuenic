@@ -1,23 +1,23 @@
 library(rolog)
 
 # load_files("data.pl", [encoding(iso_latin_1)])
-once(call("load_files", "data.pl", list(call("encoding", quote(iso_latin_1)))))
+rolog::once(call("load_files", "data.pl", list(call("encoding", quote(iso_latin_1)))))
 
 # country(Code, Country)
-s = once(call("country", expression(Code), expression(Country)))
+s = rolog::once(call("country", expression(Code), expression(Country)))
 s = atom2char(s)
 Code = s$Code
 Country = s$Country
 
 # date(Date)
-s = once(call("date", expression(Date)))
+s = rolog::once(call("date", expression(Date)))
 Date = atom2char(s$Date)
 
 # Store all entries with estimate_required(_, V, Y, _, _)
 Ereq = YV.bool()
 q = call("estimate_required", expression(C), expression(V), expression(Y),
          expression(A4), expression(A5))
-s = findall(q)
+s = rolog::findall(q)
 s = lapply(s, atom2char)
 s = lapply(s, as.data.frame)
 s = do.call("rbind", s)
@@ -38,7 +38,7 @@ Ereq[cbind(s$Y, s$V)] = TRUE
 # about this is stored in estimate_required(_, V, Y, _, Rub)
 q = call("estimate_required", expression(C), expression(V), expression(Y), 
          expression(A4), expression(Rub))
-s = findall(q)
+s = rolog::findall(q)
 s = lapply(s, atom2char)
 s = lapply(s, as.data.frame)
 s = do.call("rbind", s)
@@ -58,7 +58,7 @@ firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
 # admin(C, V, Y, Admin)
 Admin = YV.int()
 q = call("admin", as.name(Code), expression(V), expression(Y), expression(Adm))
-s = findall(q)
+s = rolog::findall(q)
 
 # Not all countries report administrative data
 if(length(s))
