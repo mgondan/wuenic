@@ -183,3 +183,81 @@ Svy.Expl = YV.char()
 Svy.Expl[] = sprintf(
   "Survey evidence of %g percent based on %i survey(s). ", 
   Svy.Cov, apply(!is.na(Svy.Acc), c(1, 2), sum))
+
+# Reasons to exclude a survey include:
+#   Sample size < 300,
+#   The working group decides to exclude the survey.
+# This is used later for explanation/4
+#
+# Prolog
+# survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+#     survey_for_analysis(C, V, Y, ID, Description, _),
+#     not(decision(C, V, Y, acceptSurvey, Expl, ID, _)),
+#     member(ss:Size, Description),
+#     Size < 300,
+#     concat_atom(['Survey results ignored. Sample size ', Size,
+#         ' less than 300. '], Expl).
+
+# Todo: bgd, bcg/1999: twice the same message, without Survey ID
+exclude = array(NA_real_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
+                dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
+conf = Survey$Info.confirm == "card or history"
+age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+size = Survey$Info.ss < 300
+index = Survey[conf & age & size, ]
+exclude[cbind(index$Y, index$V, index$Id)] = index$Info.ss
+
+index = Decisions[Decisions$Dec == "acceptSurvey", ]
+exclude[cbind(index$Y, index$V, index$Id)] = NA
+
+Excl = array("", dim=c(length(Yn()), length(Vn()), length(Idn)), 
+  dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
+Excl[] = ifelse(is.na(exclude), "", 
+  sprintf("Survey results ignored. Sample size %i less than 300. ", exclude))
+
+# Old code
+# if(nrow(index))
+#   for(i in 1:nrow(index))
+#   {
+#     if(!any(index$V[i] == accept$V & index$Y[i] == accept$Y & index$Id[i] == accept$Id))
+#       Expl[index$Yn[i], index$V[i]] = sprintf(
+#         "%sSurvey results ignored. Sample size %i less than 300. ", 
+#         Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
+#   }
+
+# % V4: Keeps explanations for the same survey together
+# survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+#     survey_for_analysis(C, V, Y, ID, Description, _),
+#     (   decision(C, V, Y, ignoreSurvey, Expl0, ID, _)
+#     ;   decision(C, V, Y, ignoreSurvey, Expl0, na, _)
+#     ),
+#     member(title:Title, Description),
+#     concat_atom([Title, ' results ignored by working group. ', Expl0],
+#     Expl).
+
+#index = Decisions[Decisions$Dec == "ignoreSurvey", ]
+#
+#Svy.Excl[cbind(index$Y, index$V, index$Id)] = 
+#  ifelse(is.na(Svy.Ana[cbind(index$Y, index$V, index$Id)]),
+#         Svy.Excl[cbind(index$Y, index$V, index$Id)],
+#         sprintf("%s%s results ignored by working group. %s",
+#           Svy.Excl[cbind(index$Y, index$V, index$Id)],
+#           Svy.Title[cbind(index$Y, index$V, index$Id)], index$Info[i]))
+#
+
+Excl1 = apply(Excl, c(1, 2), paste, collapse="")
+
+# Some surveys are ignored by the working group
+ignore = Decisions[Decisions$Dec == "ignoreSurvey", ]
+
+Excl = array("", dim=c(length(Yn()), length(Vn()), length(Idn)), 
+                 dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
+Excl[cbind(ignore$Y, ignore$V, ignore$Id)] =
+  sprintf("%s results ignored by working group. %s",
+    Svy.Title[cbind(ignore$Y, ignore$V, ignore$Id)],
+    ignore$Info)
+Excl[is.na(Svy.Ana)] = ""
+Excl2 = apply(Excl, c(1, 2), paste, collapse="")
+
+Svy.Excl = YV.char("")
+Svy.Excl[] = paste(Excl1, Excl2, sep="")
