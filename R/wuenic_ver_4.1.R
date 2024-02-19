@@ -1,43 +1,13 @@
-# % Collect explanations in natural language terms
+# Collect explanations in natural language terms
+#
+# Prolog
 # collect_explanations(C, V, Y, Explanations) :-
 #     findall(Expl, explanation(C, V, Y, Expl), Explanations).
 
-Expl = YV.char()
-Expl[] = ""
-
 # explanation(C, V, Y, Expl) :-
 #     survey_reason_to_exclude(C, V, Y, _, Expl).
-#
-# % Reasons to exclude a survey include:
-# %    Sample size < 300,
-# %    The working group decides to exclude the survey.
-# %
-# % used for explanation/4
-# survey_reason_to_exclude(C, V, Y, ID, Expl) :-
-#     survey_for_analysis(C, V, Y, ID, Description, _),
-#     not(decision(C, V, Y, acceptSurvey, Expl, ID, _)),
-#     member(ss:Size, Description),
-#     Size < 300,
-#     concat_atom(['Survey results ignored. Sample size ', Size,
-#         ' less than 300. '], Expl).
 
-cnf    = Survey$Info.confirm == "card or history"
-age    = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
-# accept = Survey$Id %in% Decisions$Id[Decisions$Dec == "acceptSurvey"]
-size   = Survey$Info.ss < 300
-index  = Survey[cnf & age & size, ]
-
-accept   = Decisions[Decisions$Dec == "acceptSurvey" & !is.na(Decisions$Id), ]
-
-# MG, discuss: bgd, bcg/1999: twice the same message, without Survey ID
-if(nrow(index))
-  for(i in 1:nrow(index))
-  {
-    if(!any(index$V[i] == accept$V & index$Y[i] == accept$Y & index$Id[i] == accept$Id))
-      Expl[index$Yn[i], index$V[i]] = sprintf(
-        "%sSurvey results ignored. Sample size %i less than 300. ", 
-        Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
-  }
+Expl = Svy.Excl
 
 # % V4: Keeps explanations for the same survey together
 # survey_reason_to_exclude(C, V, Y, ID, Expl) :-

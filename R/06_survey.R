@@ -183,3 +183,46 @@ Svy.Expl = YV.char()
 Svy.Expl[] = sprintf(
   "Survey evidence of %g percent based on %i survey(s). ", 
   Svy.Cov, apply(!is.na(Svy.Acc), c(1, 2), sum))
+
+# Reasons to exclude a survey include:
+#   Sample size < 300,
+#   The working group decides to exclude the survey.
+# This is used later for explanation/4
+#
+# Prolog
+# survey_reason_to_exclude(C, V, Y, ID, Expl) :-
+#     survey_for_analysis(C, V, Y, ID, Description, _),
+#     not(decision(C, V, Y, acceptSurvey, Expl, ID, _)),
+#     member(ss:Size, Description),
+#     Size < 300,
+#     concat_atom(['Survey results ignored. Sample size ', Size,
+#         ' less than 300. '], Expl).
+
+# Todo: bgd, bcg/1999: twice the same message, without Survey ID
+exclude = array(NA_real_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
+                dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
+conf = Survey$Info.confirm == "card or history"
+age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+size = Survey$Info.ss < 300
+index = Survey[conf & age & size, ]
+exclude[cbind(index$Y, index$V, index$Id)] = index$Info.ss
+
+index = Decisions[Decisions$Dec == "acceptSurvey", ]
+exclude[cbind(index$Y, index$V, index$Id)] = NA
+
+Svy.Excl = array("", dim=c(length(Yn()), length(Vn()), length(Idn)), 
+                 dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
+Svy.Excl[] = ifelse(is.na(exclude), "", 
+                    sprintf("Survey results ignored. Sample size %i less than 300. ", exclude))
+
+Svy.Excl = apply(Svy.Excl, c(1, 2), paste, collapse="")
+
+# Old code
+# if(nrow(index))
+#   for(i in 1:nrow(index))
+#   {
+#     if(!any(index$V[i] == accept$V & index$Y[i] == accept$Y & index$Id[i] == accept$Id))
+#       Expl[index$Yn[i], index$V[i]] = sprintf(
+#         "%sSurvey results ignored. Sample size %i less than 300. ", 
+#         Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
+#   }
