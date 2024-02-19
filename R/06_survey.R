@@ -235,16 +235,6 @@ Excl[] = ifelse(is.na(exclude), "",
 #     concat_atom([Title, ' results ignored by working group. ', Expl0],
 #     Expl).
 
-#index = Decisions[Decisions$Dec == "ignoreSurvey", ]
-#
-#Svy.Excl[cbind(index$Y, index$V, index$Id)] = 
-#  ifelse(is.na(Svy.Ana[cbind(index$Y, index$V, index$Id)]),
-#         Svy.Excl[cbind(index$Y, index$V, index$Id)],
-#         sprintf("%s%s results ignored by working group. %s",
-#           Svy.Excl[cbind(index$Y, index$V, index$Id)],
-#           Svy.Title[cbind(index$Y, index$V, index$Id)], index$Info[i]))
-#
-
 Excl1 = apply(Excl, c(1, 2), paste, collapse="")
 
 # Some surveys are ignored by the working group
