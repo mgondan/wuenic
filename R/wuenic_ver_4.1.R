@@ -1,22 +1,3 @@
-# % Flag modifications in the program code that change the coverage
-# % estimates
-# change_from_previous(C, V, Y, Coverage, Change) :-
-#     legacy(C, V, Y, Legacy),
-#     Legacy \= Coverage,
-#     !,
-#     concat_atom(['Estimate of ', Coverage,
-#         ' percent changed from previous revision value of ',
-#         Legacy,' percent. '], Change).
-#
-# change_from_previous(_C, _V, _Y, _, '').
-
-Change = YV.char()
-Change[] = ""
-index = which(Bounded != Legacy)
-Change[index] = sprintf(
-  "Estimate of %i percent changed from previous revision value of %i percent. ",
-  Bounded[index], Legacy[index])
-
 # % Collect explanations in natural language terms
 # collect_explanations(C, V, Y, Explanations) :-
 #     findall(Expl, explanation(C, V, Y, Expl), Explanations).
