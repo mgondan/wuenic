@@ -25,7 +25,7 @@ Table = data.frame(
     ReportedTimeSeriesSource=TS.Src[VY],
     SurveyInformation=Svy.Cov[VY],
     Rule=Rule[VY],
-    Comment=Text[VY])
+    Comment=Expl[VY])
 
 dir.create("out", showWarnings = FALSE)
 write.table(Table, sprintf("out/%s.pl.R41.txt", Code), quote=FALSE, row.names=FALSE, sep="\t", na="")
