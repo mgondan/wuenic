@@ -9,56 +9,8 @@
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
 
-Expl = Svy.Excl
-
-# reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
-#     reported(C, V, Y, _, Coverage),
-#     not(decision(C, V, Y, acceptReported, _, _, _)),
-#     Coverage > 100,
-#     Reason = 100,
-#     concat_atom(['Reported data excluded because ', Coverage,
-#     ' percent greater than 100 percent. '], Expl).
-
-# index = Rep.Cov > 100
-# accept = Decisions[Decisions$Dec == "acceptReported", ]
-# index[accept$Y, accept$V] = FALSE
-# Expl[which(index)] = sprintf(
-#     "%sReported data excluded because %i percent greater than 100 percent. ", 
-#     Expl[which(index)], Rep.Cov[which(index)])
-
-# reported_reason_to_exclude(C, V, Y, _, Expl) :-
-#     reported(C, V, Y, _, Coverage),
-#     not(decision(C, V, Y, acceptReported, _, _, _)),
-#     Prec is Y - 1,
-#     Succ is Y + 1,
-#     reported(C, V, Prec, _, CoveragePrec),
-#     reported(C, V, Succ, _, CoverageSucc),
-#     sawtooth_threshold(Threshold),
-#     Coverage - CoveragePrec > Threshold,
-#     Coverage - CoverageSucc > Threshold,
-#     concat_atom(
-#       [ 'Reported data excluded due to an increase from ', CoveragePrec,
-#         ' percent to ', Coverage, ' percent with decrease ', CoverageSucc,
-#         ' percent. '
-#       ], Expl).
-#
-# reported_reason_to_exclude(C, V, Y, _, Expl) :-
-#     reported(C, V, Y, _, Coverage),
-#     not(decision(C, V, Y, acceptReported, _, _, _)),
-#     Prec is Y - 1,
-#     Succ is Y + 1,
-#     reported(C, V, Prec, _, CoveragePrec),
-#     reported(C, V, Succ, _, CoverageSucc),
-#     sawtooth_threshold(Threshold),
-#     CoveragePrec - Coverage > Threshold,
-#     CoverageSucc - Coverage > Threshold,
-#     concat_atom(
-#       [ 'Reported data excluded due to decline in reported coverage from ',
-#         CoveragePrec, ' percent to ', Coverage, ' percent with increase to ',
-#         CoverageSucc,' percent. '], Expl).
-
-index = which(Rej.Info != "")
-Expl[index] = sprintf("%s%s", Expl[index], Rej.Info[index])
+Expl = Svy.Excl # from 06_survey
+Expl[] = sprintf("%s%s", Expl, Rej.Info) # from 04_check
 
 # explanation(C, V, Y, Expl) :-
 #     decision(C, V, Y, comment, Expl, _, _).
