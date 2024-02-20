@@ -53,6 +53,13 @@ Svy.Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
 index = Decisions[Decisions$Dec == "acceptSurvey", ]
 Svy.Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
 
+# Multiple surveys for the same year * vaccine combination
+Svy.Expl.Acc = YV.char("")
+if(nrow(index))
+  index = aggregate(list(Info=index$Info), 
+                    list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+Svy.Expl.Acc[cbind(index$Y, index$V)] = index$Info
+
 index = Survey[conf & age & size, ]
 Svy.Title = array(NA_character_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
                   dimnames=list(Y=Yn(), V=Vn(), Id=Idn))

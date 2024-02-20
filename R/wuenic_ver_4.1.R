@@ -27,17 +27,8 @@ if(nrow(index))
 Expl[cbind(index$Y, index$V)] = 
   sprintf("%s%s", Expl[cbind(index$Y, index$V)], index$Info)
 
-# explanation(C, V, Y, Expl) :-
-#     decision(C, V, Y, acceptSurvey, Expl, _, _).
-
-index = Decisions[Decisions$Dec == "acceptSurvey", ]
-
-# Multiple surveys for the same year * vaccine combination
-if(nrow(index))
-  index = aggregate(list(Info=index$Info), 
-                  list(Y=index$Y, V=index$V), FUN=paste, collapse="")
-Expl[cbind(index$Y, index$V)] = 
-  sprintf("%s%s", Expl[cbind(index$Y, index$V)], index$Info)
+# From 06_survey
+Expl[] = sprintf("%s%s", Expl, Svy.Expl.Acc)
 
 # From 03_reported
 Expl[] = sprintf("%s%s", Expl, Rep.Expl)
