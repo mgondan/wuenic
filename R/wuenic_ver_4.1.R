@@ -21,7 +21,9 @@ Expl[] = sprintf("%s%s", Expl, Rej.Info) # from 04_check
 #
 # Multiple decisions for the same year * vaccine combination
 index = Decisions[Decisions$Dec == "comment", ]
-index = aggregate(list(Info=index$Info), list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+if(nrow(index))
+  index = aggregate(list(Info=index$Info), 
+                  list(Y=index$Y, V=index$V), FUN=paste, collapse="")
 Expl[cbind(index$Y, index$V)] = 
   sprintf("%s%s", Expl[cbind(index$Y, index$V)], index$Info)
 
@@ -29,28 +31,16 @@ Expl[cbind(index$Y, index$V)] =
 #     decision(C, V, Y, acceptSurvey, Expl, _, _).
 
 index = Decisions[Decisions$Dec == "acceptSurvey", ]
+
+# Multiple surveys for the same year * vaccine combination
 if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
+  index = aggregate(list(Info=index$Info), 
+                  list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+Expl[cbind(index$Y, index$V)] = 
+  sprintf("%s%s", Expl[cbind(index$Y, index$V)], index$Info)
 
-# explanation(C, V, Y, Expl) :-
-#     decision(C, V, Y, acceptReported, Expl, _, _).
-
-index = Decisions[Decisions$Dec == "acceptReported", ]
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
-
-# explanation(C, V, Y, Expl) :-
-#     decision(C, V, Y, ignoreGov, Expl, _, _).
-
-index = Decisions[Decisions$Dec == "ignoreGov", ]
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
+# From 03_reported
+Expl[] = sprintf("%s%s", Expl, Rep.Expl)
 
 Text = YV.char()
 Text[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)

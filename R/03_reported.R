@@ -42,3 +42,25 @@ ignore = Decisions$Dec == "ignoreGov"
 index[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
 Rep.Cov[index] = Gov[index]
 Rep.Src[index] = "gov"
+
+Rep.Expl = YV.char("")
+
+# explanation(C, V, Y, Expl) :-
+#     decision(C, V, Y, acceptReported, Expl, _, _).
+
+index = Decisions[Decisions$Dec == "acceptReported", ]
+if(nrow(index))
+  index = aggregate(list(Info=index$Info), 
+                    list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+Rep.Expl[cbind(index$Y, index$V)] = 
+  sprintf("%s%s", Rep.Expl[cbind(index$Y, index$V)], index$Info)
+
+# explanation(C, V, Y, Expl) :-
+#     decision(C, V, Y, ignoreGov, Expl, _, _).
+
+index = Decisions[Decisions$Dec == "ignoreGov", ]
+if(nrow(index))
+  index = aggregate(list(Info=index$Info), 
+                    list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+Rep.Expl[cbind(index$Y, index$V)] = 
+  sprintf("%s%s", Rep.Expl[cbind(index$Y, index$V)], index$Info)
