@@ -6,44 +6,10 @@
 
 # explanation(C, V, Y, Expl) :-
 #     survey_reason_to_exclude(C, V, Y, _, Expl).
-
-Expl = Svy.Excl
-
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
 
-index = which(!is.na(Svy.Info), arr.ind=TRUE)
-if(nrow(index))
-  for(i in 1:nrow(index))
-  {
-    Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
-      Expl[index[i, "Y"], index[i, "V"]],
-      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]])
-  }
-
-# explanation(C, V, Y, Expl) :-
-#     reported_reason_to_exclude(C, V, Y, _, Expl).
-#
-# % Reasons to exclude reported data are:
-# %  1. Working group decision.
-# %  2. Coverage > 100%
-# %  3. Inconsistent temporal changes (sawtooth or sudden change most
-# %     recent year)
-# reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
-#     reported(C, V, Y, _, _),
-#     decision(C, V, Y, ignoreReported, Expl0, _, _),
-#     Reason = wdg,
-#     concat_atom(['Reported data excluded. ', Expl0], Expl).
-
-ignore = Decisions[Decisions$Dec == "ignoreReported", ]
-if(nrow(ignore))
-  for(i in 1:nrow(ignore))
-  {
-    if(!is.na(Rep.Cov[ignore$Y[i], ignore$V[i]]))
-      Expl[ignore$Y[i], ignore$V[i]] = sprintf("%sReported data excluded. %s",
-        Expl[ignore$Y[i], ignore$V[i]], ignore$Info[i])
-  }
-
+Expl = Svy.Excl
 
 # reported_reason_to_exclude(C, V, Y, Reason, Expl) :-
 #     reported(C, V, Y, _, Coverage),

@@ -154,4 +154,8 @@ ignore = Decisions[Decisions$Dec == "ignoreReported", ]
 index = cbind(ignore$Y, ignore$V)
 reject[index] = TRUE
 
+Rej.Info[index] = ifelse(is.na(Rep.Cov[index]), 
+  Rej.Info[index],
+  sprintf("Reported data excluded. %s%s", ignore$Info, Rej.Info[index]))
+
 # reject is used in the later course
