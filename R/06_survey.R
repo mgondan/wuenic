@@ -147,7 +147,7 @@ index = which(tround(Svy.Ana[, V13, , drop=FALSE]) != H3Adj, arr.ind=TRUE)
 #         C3, ' percent. '], Expl),
 #         Coverage = Cov0.
 
-Svy.Info = array(NA_character_, dim=c(length(Yn()), length(Vn()), length(Idn)),
+Svy.Info = array("", dim=c(length(Yn()), length(Vn()), length(Idn)),
                  dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
 
 if(any(index))
@@ -163,9 +163,12 @@ if(any(index))
 index = Decisions[Decisions$Dec == "ignoreSurvey", ]
 Svy.Acc = Svy.Ana # todo, collect explanations
 Svy.Acc[cbind(index$Y, index$V, index$Id)] = NA
-Svy.Info[cbind(index$Y, index$V, index$Id)] = NA
+Svy.Info[cbind(index$Y, index$V, index$Id)] = ""
 
 # Todo: Collect explanations for Svy.Ana here, not later
+# Check if this information is also reported for surveys that are ignored
+# by the working group.
+Modi = apply(Svy.Info, c(1, 2), paste, collapse="")
 
 # % Survey information for given year. Multiple surveys are averaged.
 # survey(C, V, Y, Expl, Coverage) :-
@@ -249,5 +252,5 @@ Excl[cbind(ignore$Y, ignore$V, ignore$Id)] =
 Excl[is.na(Svy.Ana)] = ""
 Excl2 = apply(Excl, c(1, 2), paste, collapse="")
 
-Svy.Excl = YV.char("")
-Svy.Excl[] = paste(Excl1, Excl2, sep="")
+Svy.Excl= YV.char("")
+Svy.Excl[] = paste(Excl1, Excl2, Modi, sep="")

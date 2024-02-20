@@ -6,20 +6,10 @@
 
 # explanation(C, V, Y, Expl) :-
 #     survey_reason_to_exclude(C, V, Y, _, Expl).
-
-Expl = Svy.Excl
-
 # explanation(C, V, Y, Expl) :-
 #     survey_modified(C, V, Y, _, Expl, _).
 
-index = which(!is.na(Svy.Info), arr.ind=TRUE)
-if(nrow(index))
-  for(i in 1:nrow(index))
-  {
-    Expl[index[i, "Y"], index[i, "V"]] = sprintf("%s%s",
-      Expl[index[i, "Y"], index[i, "V"]],
-      Svy.Info[index[i, "Y"], index[i, "V"], index[i, "Id"]])
-  }
+Expl = Svy.Excl
 
 # explanation(C, V, Y, Expl) :-
 #     reported_reason_to_exclude(C, V, Y, _, Expl).
