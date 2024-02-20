@@ -10,16 +10,20 @@
 #     survey_modified(C, V, Y, _, Expl, _).
 
 Expl = Svy.Excl # from 06_survey
+
+# explanation(C, V, Y, Expl) :-
+#     reported_reason_to_exclude(C, V, Y, _, Expl).
+
 Expl[] = sprintf("%s%s", Expl, Rej.Info) # from 04_check
 
 # explanation(C, V, Y, Expl) :-
 #     decision(C, V, Y, comment, Expl, _, _).
-
+#
+# Multiple decisions for the same year * vaccine combination
 index = Decisions[Decisions$Dec == "comment", ]
-if(nrow(index))
-  for(i in 1:nrow(index))
-    Expl[index$Y[i], index$V[i]] =
-      sprintf("%s%s", Expl[index$Y[i], index$V[i]], index$Info[i])
+index = aggregate(list(Info=index$Info), list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+Expl[cbind(index$Y, index$V)] = 
+  sprintf("%s%s", Expl[cbind(index$Y, index$V)], index$Info)
 
 # explanation(C, V, Y, Expl) :-
 #     decision(C, V, Y, acceptSurvey, Expl, _, _).
