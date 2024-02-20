@@ -35,4 +35,3 @@ Expl[] = sprintf("%s%s", Expl, Rep.Expl)
 
 # Combine with other texts
 Expl[] = sprintf("%s %s %s %s", Info, Expl, Change, GoC.Expl)
-
