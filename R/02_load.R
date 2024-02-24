@@ -131,11 +131,12 @@ wuenic.load = function(fname = "data.pl")
   #
   # vaccinated(C, V, Y, Vaccinated)
   Vaccinated = YV.int()
-  q = call("vaccinated", 
-           as.name(Code), expression(V), expression(Y), expression(Vac))
-  s = findall(q)
-  if(length(s))
+  if(is.list(once(call("current_predicate",
+                        call("/", as.symbol("vaccinated"), 4L)))))
   {
+    q = call("vaccinated", 
+           as.name(Code), expression(V), expression(Y), expression(Vac))
+    s = findall(q)
     s = lapply(s, atom2char)
     s = lapply(s, as.data.frame)
     s = do.call("rbind", s)
@@ -155,11 +156,12 @@ wuenic.load = function(fname = "data.pl")
   #
   # target(C, V, Y, Target)
   Target = YV.int()
-  q = call("target", 
-           as.name(Code), expression(V), expression(Y), expression(Targ))
-  s = findall(q)
-  if(length(s))
+  if(is.list(once(call("current_predicate",
+                       call("/", as.symbol("target"), 4L)))))
   {
+    q = call("target", 
+           as.name(Code), expression(V), expression(Y), expression(Targ))
+    s = findall(q)
     s = lapply(s, atom2char)
     s = lapply(s, as.data.frame)
     s = do.call("rbind", s)

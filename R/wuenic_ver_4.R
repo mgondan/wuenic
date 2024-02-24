@@ -95,11 +95,12 @@ rep3 = function(pred="births_UNPD")
 
 # Read all pred(C, V, Y, Out) and save Out in a matrix
 rep4 = function(ccode, pred="admin")
-{ q = call(pred, as.name(ccode), expression(V), expression(Y), expression(Out))
-  s = findall(q)
-  if(!length(s))
+{
+  if(!is.list(once(call("current_predicate", call("/", as.symbol(pred), 4L)))))
     return(YV_int)
-
+  
+  q = call(pred, as.name(ccode), expression(V), expression(Y), expression(Out))
+  s = findall(q)
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)
