@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "bgd"
+ccode = "afg"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])

@@ -1,3 +1,12 @@
+.onAttach <- function(libname, pkgname)
+{
+  if(!requireNamespace("rolog", quiet=TRUE))
+    stop("Could not load R package rolog.")
+  
+  if(!rolog::rolog_ok())
+    stop("Could not attach R package rolog.")
+}
+
 # List of all vaccine names
 #
 # Todo: Generate Vn on the fly

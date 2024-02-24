@@ -9,12 +9,13 @@ Maintainer: Matthias Gondan <Matthias.Gondan-Rochon@uibk.ac.at>
 Description: Some R functions that estimate the immunization for WHO member states.
 License: GPL
 Imports:
-    rolog,
     zoo
 Suggests: 
     rmarkdown,
     knitr
-Depends: R (>= 4.3)
+Depends:
+    R (>= 4.3),
+    rolog
 URL: https://github.com/mgondan/wuenic
 BugReports: https://github.com/mgondan/wuenic/issues
 Encoding: UTF-8
