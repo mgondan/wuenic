@@ -70,5 +70,5 @@ wuenic.top = function(Ereq, Rule, Info, Cov, Rub, firstRubellaAtSecondMCV, Decis
   Bounded = Cov
   Bounded[] = pmax(0, pmin(99, tround(Bounded)))
   
-  list(Bounded=Bounded, Rule=Rule, Info=Info)
+  list(Cov=Cov, Bounded=Bounded, Rule=Rule, Info=Info)
 }

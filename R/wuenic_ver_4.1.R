@@ -55,6 +55,7 @@ wuenic.estimate = function(fname="data.pl", outname="wuenic.out")
   
   # 09_toplevel
   s = wuenic.top(Ereq, Rule, Info, Cov, Rub, firstRubellaAtSecondMCV, Decisions)
+  Cov = s$Cov
   Bounded = s$Bounded
   Rule = s$Rule
   Info = s$Info
