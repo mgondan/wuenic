@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "idn"
+ccode = "aut"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -154,12 +154,13 @@ rubella = function()
 
 # Multiple surveys per year, therefore no YV-matrix, but a long data frame
 survey_results = function(ccode)
-{ q = call("survey_results", as.name(ccode), expression(V), expression(Y), 
+{
+  if(!is.list(once(call("current_predicate", quote(survey_results/6L)))))
+    return(data.frame(V=NULL, Y=NULL, Yn=NULL, Id=NULL, Info=NULL, Cov=NULL))
+  
+  q = call("survey_results", as.name(ccode), expression(V), expression(Y), 
     expression(Id), expression(Info), expression(Cov))
   s = findall(q)
-  if(!length(s))
-      return(data.frame(V=NULL, Y=NULL, Yn=NULL, Id=NULL, Info=NULL, Cov=NULL))
-
   s = lapply(s, atom2char)
   s = lapply(s, as.data.frame)
   s = do.call("rbind", s)

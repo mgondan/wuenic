@@ -206,11 +206,11 @@ wuenic.load = function(fname = "data.pl")
   #
   # survey_results(C, V, Y, Id, Info, Cov)
   Survey = data.frame(V=NULL, Y=NULL, Yn=NULL, Id=NULL, Info=NULL, Cov=NULL)
-  q = call("survey_results", as.name(Code), expression(V), expression(Y), 
-           expression(Id), expression(Info), expression(Cov))
-  s = findall(q)
-  if(length(s))
+  if(is.list(once(call("current_predicate", quote(survey_results/6L)))))
   {
+    q = call("survey_results", as.name(Code), expression(V), expression(Y), 
+             expression(Id), expression(Info), expression(Cov))
+    s = findall(q)
     s = lapply(s, atom2char)
     s = lapply(s, as.data.frame)
     s = do.call("rbind", s)
