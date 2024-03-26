@@ -171,7 +171,9 @@ wuenic.survey = function(Survey, Decisions)
   index = Decisions[Decisions$Dec == "ignoreSurvey", ]
   Accept = Ana
   Accept[cbind(index$Y, index$V, index$Id)] = NA
-  Info[cbind(index$Y, index$V, index$Id)] = ""
+  
+  # Commented out (David Brown, 15 March 2024)
+  # Info[cbind(index$Y, index$V, index$Id)] = ""
   
   # Todo: Collect explanations for Svy.Ana here, not later
   # Check if this information is also reported for surveys that are ignored
