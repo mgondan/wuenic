@@ -1,7 +1,7 @@
 library(zoo)
 library(rolog)
 
-ccode = "aut"
+ccode = "nga"
 args = commandArgs(trailingOnly=TRUE)
 if(length(args))
     ccode = tools::file_path_sans_ext(args[1])
@@ -659,7 +659,8 @@ if(any(index))
 ignore = Decisions[Decisions$Dec == "ignoreSurvey" & !is.na(Decisions$Id), ]
 Svy.Acc = Svy.Ana
 Svy.Acc[cbind(ignore$Y, ignore$V, ignore$Id)] = NA
-Svy.Info[cbind(ignore$Y, ignore$V, ignore$Id)] = NA
+# commented out, keep information
+# Svy.Info[cbind(ignore$Y, ignore$V, ignore$Id)] = NA
 
 # Some surveys are ignored by the working group (by year and vaccine, no Id)
 ignore = Decisions[Decisions$Dec == "ignoreSurvey" & is.na(Decisions$Id), ]
@@ -667,7 +668,8 @@ if(nrow(ignore))
   for(i in 1:nrow(ignore))
   {
     Svy.Acc[ignore$Y[i], ignore$V[i], ] = NA
-    Svy.Info[ignore$Y[i], ignore$V[i], ] = NA
+    # commented out, keep information
+    # Svy.Info[ignore$Y[i], ignore$V[i], ] = NA
   }
 
 # % Survey information for given year. Multiple surveys are averaged.
