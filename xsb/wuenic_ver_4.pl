@@ -120,6 +120,11 @@ firstRubellaAtSecondMCV(_C, rcv1, _Y, mcv2).
 year_range(1997, 2022).
 
 % Save all estimates in (country).pl.v40.txt
+%
+% If you run this from the SWI-Prolog GUI, make sure to start in the
+% correct working directory. On my machine, I have to type
+% cd('..').
+% cd(wuenic).
 estimate :-
     country(Code, Country),
     date(Date),
@@ -939,10 +944,12 @@ explanation(C, V, Y, Expl) :-
     survey_reason_to_exclude(C, V, Y, Expl).
 
 % Change in V4: report adjustment only for those surveys that have not
-% been ignored by the working group
+% been ignored by the working group.
+%
+% This change has been reverted (email David Brown from 15 March 2024).
 explanation(C, V, Y, Expl) :-
-    survey_accepted(C, V, Y, ID, _), % V4
-    survey_modified(C, V, Y, ID, Expl, _).
+%    survey_accepted(C, V, Y, ID, _), % V4, commented out again
+    survey_modified(C, V, Y, _ID, Expl, _).
 
 explanation(C, V, Y, Expl) :-
     reported_reason_to_exclude(C, V, Y, Expl).
