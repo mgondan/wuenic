@@ -113,8 +113,8 @@ if(length(args))
 {
   library(rolog)
   ccode = tools::file_path_sans_ext(args[1])
-  fname = sprintf("xsb/%s.pl", ccode)
-  outname = sprintf("out/%s.R41.txt", ccode)
+  fname = sprintf("countries/%s.pl", ccode)
+  outname = sprintf("out/%s.txt", ccode)
   wuenic::wuenic.estimate(fname, outname)
 }
 
