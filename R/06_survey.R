@@ -49,7 +49,7 @@ wuenic.survey = function(Survey, Decisions)
   conf = Survey$Info.confirm == "card or history"
   age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   size = Survey$Info.ss >= 300
-  index = Survey[conf & age & size, ]
+  index = Survey[conf & age, ]
   Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
   
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
@@ -62,7 +62,7 @@ wuenic.survey = function(Survey, Decisions)
                       list(Y=index$Y, V=index$V), FUN=paste, collapse="")
   Expl.Acc[cbind(index$Y, index$V)] = index$Info
   
-  index = Survey[conf & age & size, ]
+  index = Survey[conf & age, ]
   Title = array(NA_character_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
                     dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
   Title[cbind(index$Y, index$V, index$Id)] = index$Info.title
@@ -160,25 +160,39 @@ wuenic.survey = function(Survey, Decisions)
                    dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
   if(any(index))
   {
-    Info[, V13, ][index] = sprintf(
-      "%s card or history results of %.0f percent modifed for recall bias to %.0f percent based on 1st dose card or history coverage of %.0f percent, 1st dose card only coverage of %.0f percent and 3rd dose card only coverage of %.0f percent. ", 
-      Title[, V13, ][index], tround(Ana[, V13, ][index]), H3Adj[index],
-      tround(CH1[index]), tround(Card1[index]), tround(Card3[index]))
-    Ana[, V13, ][index] = H3Adj[index]
+    index3 = cbind(Y=Yn()[index[, "Y"]], V=V13[index[, "V"]], Id=Idn[index[, "Id"]])
+    index1 = cbind(Y=Yn()[index[, "Y"]], V=names(V13)[index[, "V"]], Id=Idn[index[, "Id"]])
+    Info[index3] = sprintf(
+        "%s card or history results of %.0f percent modifed for recall bias to %.0f percent based on 1st dose card or history coverage of %.0f percent, 1st dose card only coverage of %.0f percent and 3rd dose card only coverage of %.0f percent. ",
+        Title[index3], tround(Ana[index3]), H3Adj[index3], tround(CH1[index1]),
+        tround(Card1[index1]), tround(Card3[index3]))
+    Ana[index3] = H3Adj[index3]
   }
-  
-  # Some surveys are ignored by the working group
-  index = Decisions[Decisions$Dec == "ignoreSurvey", ]
-  Accept = Ana
-  Accept[cbind(index$Y, index$V, index$Id)] = NA
-  
-  # Commented out (David Brown, 15 March 2024)
-  # Info[cbind(index$Y, index$V, index$Id)] = ""
-  
+
   # Todo: Collect explanations for Svy.Ana here, not later
   # Check if this information is also reported for surveys that are ignored
   # by the working group.
   Modified = apply(Info, c(1, 2), paste, collapse="")
+
+  # Accepted surveys
+  Accept = Ana
+  
+  # Exclude because sample size is too small
+  exclude = array(NA_real_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
+    dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
+  conf = Survey$Info.confirm == "card or history"
+  age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
+  size = Survey$Info.ss < 300
+  index = Survey[conf & age & size, ]
+  Accept[cbind(index$Y, index$V, index$Id)] = NA
+
+  # Some surveys are ignored by the working group
+  index = Decisions[Decisions$Dec == "ignoreSurvey", ]
+  Accept[cbind(index$Y, index$V, index$Id)] = NA
+  
+  # Some surveys are explicitly accepted
+  index = Decisions[Decisions$Dec == "acceptSurvey", ]
+  Accept[cbind(index$Y, index$V, index$Id)] = Ana[cbind(index$Y, index$V, index$Id)]
   
   # % Survey information for given year. Multiple surveys are averaged.
   # survey(C, V, Y, Expl, Coverage) :-
@@ -228,16 +242,6 @@ wuenic.survey = function(Survey, Decisions)
   Excl[] = ifelse(is.na(exclude), "", 
     sprintf("Survey results ignored. Sample size %i less than 300. ", exclude))
   
-  # Old code
-  # if(nrow(index))
-  #   for(i in 1:nrow(index))
-  #   {
-  #     if(!any(index$V[i] == accept$V & index$Y[i] == accept$Y & index$Id[i] == accept$Id))
-  #       Expl[index$Yn[i], index$V[i]] = sprintf(
-  #         "%sSurvey results ignored. Sample size %i less than 300. ", 
-  #         Expl[index$Yn[i], index$V[i]], index$Info.ss[i])
-  #   }
-  
   # % V4: Keeps explanations for the same survey together
   # survey_reason_to_exclude(C, V, Y, ID, Expl) :-
   #     survey_for_analysis(C, V, Y, ID, Description, _),
@@ -250,15 +254,25 @@ wuenic.survey = function(Survey, Decisions)
   
   Excl1 = apply(Excl, c(1, 2), paste, collapse="")
   
-  # Some surveys are ignored by the working group
-  ignore = Decisions[Decisions$Dec == "ignoreSurvey", ]
-  
   Excl = array("", dim=c(length(Yn()), length(Vn()), length(Idn)), 
                dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
-  Excl[cbind(ignore$Y, ignore$V, ignore$Id)] =
-    sprintf("%s results ignored by working group. %s",
-            Title[cbind(ignore$Y, ignore$V, ignore$Id)],
-            ignore$Info)
+
+  # Some surveys are ignored by the working group
+  ignore = Decisions[Decisions$Dec == "ignoreSurvey", c("Y", "V", "Id", "Info")]
+  
+  # Sometimes, we have multiple decisions on the same survey
+  # Change from V4R, affects lao, nga, ton
+  if(nrow(ignore))
+  {
+    ignore = aggregate(list(Info=ignore$Info), 
+      list(Y=ignore$Y, V=ignore$V, Id=ignore$Id), FUN=paste, collapse="")
+    Excl[cbind(ignore$Y, ignore$V, ignore$Id)] =
+      ifelse(is.na(Title[cbind(ignore$Y, ignore$V, ignore$Id)]), "", 
+             sprintf("%s results ignored by working group.%s ",
+                     Title[cbind(ignore$Y, ignore$V, ignore$Id)],
+                     ignore$Info))
+  }
+  
   Excl[is.na(Ana)] = ""
   Excl2 = apply(Excl, c(1, 2), paste, collapse="")
   

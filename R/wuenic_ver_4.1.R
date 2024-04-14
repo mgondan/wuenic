@@ -1,4 +1,4 @@
-wuenic.estimate = function(fname="data.pl", outname="wuenic.out")
+wuenic.estimate = function(fname="countries/nga.pl", outname="wuenic.out")
 {
   # 02_load
   s = wuenic.load(fname)

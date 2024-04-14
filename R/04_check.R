@@ -145,6 +145,12 @@ wuenic.check = function(Cov, Decisions)
   #     decision(C, V, Y, ignoreReported, _Expl0, _, _),
   #     !.
   ignore = Decisions[Decisions$Dec == "ignoreReported", ]
+  # ignore$Info[ignore$Info == "."] = ""
+
+  # Multiple Decisions for the same YV combination. Change in nga
+  ignore = aggregate(list(Info=ignore$Info), 
+    list(Y=ignore$Y, V=ignore$V), FUN=paste, collapse="")
+  
   index = cbind(ignore$Y, ignore$V)
   Reject[index] = TRUE
   
