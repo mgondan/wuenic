@@ -1,8 +1,11 @@
-wuenic.estimate = function(fname="countries/nga.pl", outname="wuenic.out")
+wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wuenic.out")
 {
+  Country = wuenic.country(ccode=ccode)
+  if(Country != Country1)
+    stop("Country names differ: %s", ccode)
+  
   # 02_load
   s = wuenic.load(fname)
-  Country=s$Country
   Code=s$Code
   Date=s$Date
   Ereq=s$Ereq
@@ -115,6 +118,5 @@ if(length(args))
   ccode = tools::file_path_sans_ext(args[1])
   fname = sprintf("countries/%s.pl", ccode)
   outname = sprintf("out/%s.txt", ccode)
-  wuenic::wuenic.estimate(fname, outname)
+  wuenic::wuenic.estimate(ccode, fname, outname)
 }
-

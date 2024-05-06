@@ -1,3 +1,36 @@
+library(Hmisc)
+
+mdb.tables <- function(fname="countries/wuenic2024.mdb")
+  system2(c("mdb-tables", "-1", fname), stdout=TRUE)
+
+mdb.get.table <- function(fname="countries/wuenic2024.mdb", table)
+{
+  s <- system2(c("mdb-schema", "-T", table, fname), stdout=TRUE)
+  start <- grep("^ \\($", s) + 1
+  end <- grep("^\\);$", s) - 1
+  s <- s[start:end]
+  s <- strsplit(s, "\t")
+  vnames <- sapply(s, function(x) {
+    bracketed = x[2]
+    if (substr(bracketed, 1, 1) == "[") 
+      substr(bracketed, 2, nchar(bracketed) - 1)
+    else bracketed
+  })
+  vnames <- makeNames(vnames, unique = TRUE, allow = NULL)
+  types <- sapply(s, function(x) x[length(x)])
+  datetime <- vnames[grep("DateTime", s)]
+  f <- tempfile()
+  system2(c("mdb-export", fname, table), stdout=f)
+  csv.get(f, datetimevars=datetime, dateformat="%m/%d/%y")
+}
+
+wuenic.country = function(fname="countries/wuenic2024.mdb", ccode="bgd")
+{
+  t = mdb.get.table(fname, table="COUNTRY")
+  cname = t[t$country == toupper(ccode), "countryName"]
+  return(cname)
+}
+
 # 10 km of code that import the country-specific information from the
 # Prolog file
 #
