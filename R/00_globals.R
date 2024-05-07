@@ -16,11 +16,12 @@ Vn = function()
   c("bcg", "bcgx", "dtp1", "dtp1x", "dtp3", "dtp3x", "hepb0", "hepb1",
     "hepb3", "hepb3x", "hepbb","hepbbx", "hib1", "hib3", "hib3x", "opv1",
     "ipv1", "ipv1x", "ipv2", "ipv2x", "mcv1", "mcv1x", "mcv2", "pcv1", 
-    "pcv3", "pcv3x", "pol1", "pol3", "pol3x", "rcv1", "rotac", "rotacx", "yfv")
+    "pcv3", "pcv3x", "pol1", "pol3", "pol3x", "rcv1", "rotac", "rotacx", "yfv",
+    "menga")
 
 # Year range for estimation
 Yn = function()
-  1985:2022
+  1985:2023
 
 # Convenience functions
 YV.char = function(fill=NA_character_)

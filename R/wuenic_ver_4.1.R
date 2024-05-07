@@ -1,14 +1,12 @@
 wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wuenic.out")
 {
-  Country = wuenic.country(ccode=ccode)
-  if(Country != Country1)
-    stop("Country names differ: %s", ccode)
-  
   # 02_load
   s = wuenic.load(fname)
   Code=s$Code
+  if(Code != ccode)
+    stop("Wrong country code/data file: %s", ccode)
+  
   Date=s$Date
-  Ereq=s$Ereq
   Rub=s$Rub
   firstRubellaAtSecondMCV=s$firstRubellaAtSecondMCV
   Legacy=s$Legacy
@@ -20,6 +18,10 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   Births=s$Births
   Survey=s$Survey
   Decisions=s$Decisions
+  
+  # 01_mdb
+  Country = wuenic.country(mdb="countries/wuenic2024.mdb", ccode=ccode)
+  Ereq = wuenic.est_req(mdb="countries/wuenic2024.mdb", ccode=ccode)
 
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)
@@ -86,9 +88,9 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   VY = cbind(Y=VY$Var1[include], V=VY$Var2[include])
   
   Table = data.frame(
-    Country=Country,
-    ProductionDate=Date,
-    ISOCountryCode=Code,
+    Country=rep(Country, nrow(VY)),
+    ProductionDate=rep(Date, nrow(VY)),
+    ISOCountryCode=rep(Code, nrow(VY)),
     Vaccine=VY[, "V"],
     Year=VY[, "Y"],
     WUENIC=Bounded[VY],

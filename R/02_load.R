@@ -1,34 +1,26 @@
-library(Hmisc)
-
-mdb.tables <- function(fname="countries/wuenic2024.mdb")
-  system2(c("mdb-tables", "-1", fname), stdout=TRUE)
-
-mdb.get.table <- function(fname="countries/wuenic2024.mdb", table)
+wuenic.country = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 {
-  s <- system2(c("mdb-schema", "-T", table, fname), stdout=TRUE)
-  start <- grep("^ \\($", s) + 1
-  end <- grep("^\\);$", s) - 1
-  s <- s[start:end]
-  s <- strsplit(s, "\t")
-  vnames <- sapply(s, function(x) {
-    bracketed = x[2]
-    if (substr(bracketed, 1, 1) == "[") 
-      substr(bracketed, 2, nchar(bracketed) - 1)
-    else bracketed
-  })
-  vnames <- makeNames(vnames, unique = TRUE, allow = NULL)
-  types <- sapply(s, function(x) x[length(x)])
-  datetime <- vnames[grep("DateTime", s)]
-  f <- tempfile()
-  system2(c("mdb-export", fname, table), stdout=f)
-  csv.get(f, datetimevars=datetime, dateformat="%m/%d/%y")
+  t = mdb_get(mdb=mdb, tab="COUNTRY")
+  r = t[t$country == toupper(ccode), "countryName"]
+  return(r)
 }
 
-wuenic.country = function(fname="countries/wuenic2024.mdb", ccode="bgd")
+# SELECT vaccine, annum
+#   FROM ESTIMATE_REQUIRED WHERE country = CCODE AND annum >= 1997
+#
+wuenic.est_req = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 {
-  t = mdb.get.table(fname, table="COUNTRY")
-  cname = t[t$country == toupper(ccode), "countryName"]
-  return(cname)
+  t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
+  t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum")]
+  t$vaccine = tolower(t$vaccine)
+  
+  r = YV.bool()
+  unknown = which(!(unique(t$vaccine) %in% colnames(r)))
+  if(length(unknown))
+    warning("Unknown vaccine: %s", unknown)
+  
+  r[cbind(t$annum, t$vaccine)] = TRUE
+  return(r)
 }
 
 # 10 km of code that import the country-specific information from the
@@ -322,8 +314,8 @@ wuenic.load = function(fname = "data.pl")
   s$Y = as.character(s$Y)
   Decisions = s
 
-  list(Country=Country, Code=Code, Date=Date,
-    Ereq=Ereq, Rub=Rub, firstRubellaAtSecondMCV=firstRubellaAtSecondMCV,
+  list(Code=Code, Date=Date,
+    Rub=Rub, firstRubellaAtSecondMCV=firstRubellaAtSecondMCV,
     Legacy=Legacy, Gov=Gov, Admin=Admin,
     Vaccinated=Vaccinated, Target=Target, Surviving=Surviving, Births=Births,
     Survey=Survey, Decisions=Decisions)
