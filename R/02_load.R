@@ -86,6 +86,42 @@ wuenic.leg = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
+# SELECT vaccine, annum, reportedDenom, reportedNum, coverage
+#   FROM REPORTED_NUMERATOR_DENOMINATOR
+#   WHERE country = CCODE AND reportedNum > 0
+wuenic.vaccinated = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR_todeleate") # Name?
+  t$vaccine = tolower(t$vaccine)
+  t = t[t$country == toupper(ccode) & t$reportedNum > 0, 
+        c("vaccine", "annum", "reportedNum")]
+
+  # check: a few lines with NA
+  t = t[complete.cases(t), ]
+  
+  r = YV.int()
+  r[cbind(t$annum, t$vaccine)] = t$reportedNum
+  return(r)
+}
+
+# SELECT vaccine, annum, reportedDenom, reportedNum, coverage
+#   FROM REPORTED_NUMERATOR_DENOMINATOR
+#   WHERE country = CCODE AND reportedNum > 0
+wuenic.target = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR_todeleate")
+  t$vaccine = tolower(t$vaccine)
+  t = t[t$country == toupper(ccode) & t$reportedDenom > 0, 
+        c("vaccine", "annum", "reportedDenom")]
+  
+  # check: a few lines with NA
+  t = t[complete.cases(t), ]
+  
+  r = YV.int()
+  r[cbind(t$annum, t$vaccine)] = t$reportedDenom
+  return(r)
+}
+
 # 10 km of code that import the country-specific information from the
 # Prolog file
 #
