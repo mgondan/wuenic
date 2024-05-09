@@ -1,12 +1,12 @@
-wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wuenic.out")
+wuenic.estimate = function(ccode="bgd", fname="countries/bgd.pl", outname="wuenic.out")
 {
   # 02_load
   s = wuenic.load(fname)
   Code=s$Code
   if(Code != ccode)
-    stop("Wrong country code/data file: %s", ccode)
+    stop("Wrong country code/data file: ", ccode)
   
-  Date=s$Date
+  Date1=s$Date
   firstRubellaAtSecondMCV=s$firstRubellaAtSecondMCV
   Legacy1=s$Legacy
   Gov1=s$Gov
@@ -15,10 +15,11 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   Target1=s$Target
   Surviving1=s$Surviving
   Births1=s$Births
-  Survey=s$Survey
-  Decisions=s$Decisions
+  Survey1=s$Survey
+  Decisions1=s$Decisions
   
   # 01_mdb
+  Date = file.info("countries/wuenic2024.mdb")$mtime
   Country = wuenic.country(ccode=ccode)
   Ereq = wuenic.est_req(ccode=ccode)
   Rub = wuenic.rub(ccode=ccode)
@@ -29,6 +30,8 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   Target = wuenic.target(ccode=ccode)
   Births = wuenic.births(ccode=ccode)
   Surviving = wuenic.si(ccode=ccode)
+  Survey = wuenic.svy(ccode=ccode)
+  Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
   
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)
