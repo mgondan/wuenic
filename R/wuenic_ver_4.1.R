@@ -32,7 +32,7 @@ wuenic.estimate = function(ccode="bgd", fname="countries/bgd.pl", outname="wueni
   Surviving = wuenic.si(ccode=ccode)
   Survey = wuenic.svy(ccode=ccode)
   Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
-  
+
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)
   Rep.Cov = s$Cov
