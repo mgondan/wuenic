@@ -7,7 +7,6 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
     stop("Wrong country code/data file: %s", ccode)
   
   Date=s$Date
-  Rub=s$Rub
   firstRubellaAtSecondMCV=s$firstRubellaAtSecondMCV
   Legacy=s$Legacy
   Gov=s$Gov
@@ -22,7 +21,8 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   # 01_mdb
   Country = wuenic.country(mdb="countries/wuenic2024.mdb", ccode=ccode)
   Ereq = wuenic.est_req(mdb="countries/wuenic2024.mdb", ccode=ccode)
-
+  Rub = wuenic.rub(mdb="countries/wuenic2024.mdb", ccode=ccode)
+  
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)
   Rep.Cov = s$Cov

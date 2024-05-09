@@ -23,6 +23,18 @@ wuenic.est_req = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
+wuenic.rub = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
+  t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum", "presentation")]
+  t$vaccine = tolower(t$vaccine)
+  t$presentation = trimws(tolower(t$presentation))
+  
+  r = YV.char()
+  r[cbind(t$annum, t$vaccine)] = t$presentation
+  return(r)
+}
+
 # 10 km of code that import the country-specific information from the
 # Prolog file
 #
