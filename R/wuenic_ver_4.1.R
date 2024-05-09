@@ -13,8 +13,8 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   Admin1=s$Admin
   Vaccinated1=s$Vaccinated
   Target1=s$Target
-  Surviving=s$Surviving
-  Births=s$Births
+  Surviving1=s$Surviving
+  Births1=s$Births
   Survey=s$Survey
   Decisions=s$Decisions
   
@@ -27,6 +27,8 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   Legacy = wuenic.leg(ccode=ccode)
   Vaccinated = wuenic.vaccinated(ccode=ccode)
   Target = wuenic.target(ccode=ccode)
+  Births = wuenic.births(ccode=ccode)
+  Surviving = wuenic.si(ccode=ccode)
   
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)

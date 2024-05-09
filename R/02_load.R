@@ -122,6 +122,39 @@ wuenic.target = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
+# SELECT annum, valor
+#   FROM DEMOGRAPHIC
+#   WHERE country = CCODE AND annum >= 1997 AND indicator = 'Births' AND valor > 0
+wuenic.births = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  t = mdb_get(mdb=mdb, tab="DEMOGRAPHIC")
+  t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$Indicator == "Births" & t$Valor > 0,
+             c("annum", "Valor")]
+
+  r = rep(NA, length(Yn()))
+  names(r) = Yn()
+  r[as.character(t$annum)] = t$Valor
+  r = r[as.character(Yn())] # drop years outside range
+  return(r)
+}
+
+# SELECT annum, valor
+#   FROM DEMOGRAPHIC
+#   WHERE country = CCODE AND annum >= 1997 AND indicator = 'SI' AND valor > 0
+
+wuenic.si = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  t = mdb_get(mdb=mdb, tab="DEMOGRAPHIC")
+  t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$Indicator == "SI" & t$Valor > 0,
+        c("annum", "Valor")]
+  
+  r = rep(NA, length(Yn()))
+  names(r) = Yn()
+  r[as.character(t$annum)] = t$Valor
+  r = r[as.character(Yn())] # drop years outside range
+  return(r)
+}
+
 # 10 km of code that import the country-specific information from the
 # Prolog file
 #
