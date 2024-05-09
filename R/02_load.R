@@ -155,6 +155,155 @@ wuenic.si = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
+wuenic.svy = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  # SELECT surveyId
+  #   FROM SURVEY_DESCRIPTION
+  #   WHERE ISO3 = CCODE
+  t = mdb_get(mdb, "SURVEY_DESCRIPTION")
+  Ids = t[t$ISO3 == toupper(ccode), ]
+
+  # SELECT *
+  #   FROM SURVEY_COVERAGE
+  #   WHERE surveyId IN Ids AND reanalyzed = "No" AND cohortYear >= 1997 AND validity = "crude" AND vaccine IN vaxs
+  
+  vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
+           'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
+  t = mdb_get(mdb, "SURVEY_COVERAGE")
+  t$vaccine = tolower(t$vaccine)
+  Svy = t[t$surveyId %in% Ids$surveyId & t$reanalyzed == 0 & t$cohortYear >= 1997
+          & t$validity == "crude" & t$vaccine %in% vaxs, ]
+
+  Survey = merge(Ids, Svy, by="surveyId")
+  
+  # Some preprocessing - move to main program
+  #
+  # survey$coverage[is.na(survey$coverage)] <- 0
+  # survey$cardsSeen[is.na(survey$cardsSeen)] <- 0
+  # survey$denominator[is.na(survey$denominator)] <- 0
+  #
+  # survey$cardsSeen[!is.numeric(survey$cardsSeen)] <- 0
+  # survey$coverage[!is.numeric(survey$coverage)]   <- 0
+  #
+  # Cards    <- format(survey$cardsSeen,digits=1)
+  # Coverage <- format(survey$coverage,digits=1)
+  # Children <- as.character(survey$denominator)
+  # ... gsub("'","",survey$surveyNameEnglish),
+  # ... substring(survey$collectBegin,1,4),
+  # ... sub(' +$','',tolower(survey$evidence)),
+  
+  Survey$denominator[is.na(Survey$denominator)] = 0
+  
+  data.frame(V=Survey$vaccine, Y=Survey$cohortYear,
+    Yn=as.character(Survey$cohortYear), Id=tolower(Survey$surveyId), 
+    Info.title=Survey$surveyNameEnglish, Info.type=Survey$surveyType,
+    Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
+    Info.confirm=tolower(Survey$evidence),
+    Info.age=Survey$ageInterview, Info.val=Survey$validity,
+    Info.ss=Survey$denominator, Cov=Survey$coverage)
+}
+
+wuenic.dec = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+{
+  # Legacy estimate for 1997 by working group decision
+  #
+  # SELECT vaccine, annum, coverage
+  #   FROM ESTIMATED_COVERAGE
+  #   WHERE country = CCODE AND annum = 1997 and vaccine IN vaxs
+  t = mdb_get(mdb, "ESTIMATED_COVERAGE")
+  t$vaccine = tolower(t$vaccine)
+  leg1997 = t[t$country == ccode & t$annum == 1997 & t$vaccine %in% vaxs, 
+              c("vaccine", "coverage")]
+
+  # Preprocessing
+  #
+  # vaccine[is.na(vaccine)] <- 'na' # Does not make sense here
+  # cov_formatted <- sprintf("%.0f",d$coverage)
+  wgd1997 = data.frame(V=leg1997$vaccine, Y0=1997, Y1=1997,
+    Dec="assignAnchor", Info="Legacy estimate.", Id=NA, Cov=round(leg1997$coverage))
+
+  # SELECT *
+  #   FROM WGD
+  #   WHERE country = CCODE
+  t = mdb_get(mdb, "WGD")
+  t$vaccine = tolower(t$vaccine)
+  t = t[t$country == toupper(ccode), 
+         c("vaccine", "identifyCoverage", "assignCoverage", "comment",
+           "action",
+           "yearBegin", "yearEnd")]
+
+  # Preprocessing: apply to all vaccines
+  # vaccine[vaccine == 'all'] <- 'X'
+  # surveyID <- tolower(as.character(d$identifyCoverage))
+  # surveyID[is.na(surveyID)] <- 'na'
+  # yearBegin <- d$yearBegin
+  # yearBegin[is.na(yearBegin)] <- 1749   # Edward Jenner's year of birth
+  # 
+  # surveyID <- tolower(as.character(d$identifyCoverage))
+  # surveyID[is.na(surveyID)] <- 'na'
+  # 
+  # assigned_coverageBegin <- as.numeric(d$assignCoverage)
+  # assigned_coverageBegin[is.na(assigned_coverageBegin)] <- 'na'
+  # 
+  # yearEnd <- d$yearEnd
+  # yearEnd[is.na(yearEnd)] <- 2203 # project maximun existance of WHO. Gott's principle, 2011 - 1948 (50%CI)
+  wgd1 = data.frame(V=t$vaccine, Y0=t$yearBegin, Y1=t$yearEnd, Dec=t$action,
+    Info=t$comment, Id=t$identifyCoverage, Cov=t$assignCoverage)
+  
+  s = rbind(wgd1997, wgd1)
+  
+  # Fix strange year ranges
+  s$Y0[is.na(s$Y0)] = min(Yn())
+  s$Y1[is.na(s$Y1)] = max(Yn())
+  s$Y0 = pmax(s$Y0, min(Yn()))
+  s$Y1 = pmin(s$Y1, max(Yn()))
+  
+  # V = NA means that a decision applies to all vaccines
+  V.na = function(d)
+  {
+#    if(is.na(d['V']))
+    if(d['V'] == "all")
+      return(data.frame(V=Vn(), Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], 
+                        Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+    
+    data.frame(V=d['V'], Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'],
+               Id=d['Id'], Info=d['Info'], Cov=d['Cov'])
+  }
+  
+  s = apply(s, MARGIN=1, simplify=FALSE, FUN=V.na)
+  s = do.call("rbind", s)
+  
+  # If a year range is given, apply decision to each included year
+  Y.range = function(d)
+  {
+    data.frame(V=d['V'], Y=d['Y0']:min(max(Yn()), d['Y1']),
+               Dec=d['Dec'], Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL)
+  }
+  
+  s = apply(s, MARGIN=1, simplify=FALSE, FUN=Y.range)
+  s = do.call("rbind", s)
+  
+  # For "ignore survey", the Id is sometimes NA, meaning that it applies to all
+  # surveys of a given year and vaccine
+  Id.na = function(d, Idn)
+  {
+#    if(d['Dec'] == "ignoreSurvey" & is.na(d['Id']))
+    if(d['Dec'] == "ignoreSurvey" & d['Id'] == "")
+      return(data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'], 
+                        Id=Idn, Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+    
+    data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'],
+               Id=d['Id'], Info=d['Info'], Cov=d['Cov'])
+  }
+  
+  s = apply(s, MARGIN=1, simplify=FALSE, FUN=Id.na, Idn=unique(Survey$Id))
+  s = do.call("rbind", s)
+  
+  s$Cov = as.integer(s$Cov)
+  s$Y = as.character(s$Y)
+  return(s)
+}
+
 # 10 km of code that import the country-specific information from the
 # Prolog file
 #
