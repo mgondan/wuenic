@@ -10,7 +10,7 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   firstRubellaAtSecondMCV=s$firstRubellaAtSecondMCV
   Legacy=s$Legacy
   Gov=s$Gov
-  Admin=s$Admin
+  Admin1=s$Admin
   Vaccinated=s$Vaccinated
   Target=s$Target
   Surviving=s$Surviving
@@ -19,9 +19,10 @@ wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wueni
   Decisions=s$Decisions
   
   # 01_mdb
-  Country = wuenic.country(mdb="countries/wuenic2024.mdb", ccode=ccode)
-  Ereq = wuenic.est_req(mdb="countries/wuenic2024.mdb", ccode=ccode)
-  Rub = wuenic.rub(mdb="countries/wuenic2024.mdb", ccode=ccode)
+  Country = wuenic.country(ccode=ccode)
+  Ereq = wuenic.est_req(ccode=ccode)
+  Rub = wuenic.rub(ccode=ccode)
+  Admin = wuenic.admin(ccode=ccode)
   
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)
