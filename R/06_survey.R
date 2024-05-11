@@ -46,7 +46,7 @@ wuenic.survey = function(Survey, Decisions)
   Ana = array(NA_integer_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
                   dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
   
-  conf = Survey$Info.confirm == "card or history"
+  conf = !is.na(Survey$Info.confirm) & Survey$Info.confirm == "card or history"
   age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   size = Survey$Info.ss >= 300
   index = Survey[conf & age, ]
@@ -87,7 +87,7 @@ wuenic.survey = function(Survey, Decisions)
   
   V13 = c(dtp1="dtp3", pol1="pol3", hib1="hib3", hepb1="hepb3", pcv1="pcv3")
   vac = Survey$V %in% V13
-  cnf = Survey$Info.confirm == "card"
+  cnf = !is.na(Survey$Info.confirm) & Survey$Info.confirm == "card"
   age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   index = Survey[vac & cnf & age, ]
   
@@ -103,7 +103,7 @@ wuenic.survey = function(Survey, Decisions)
   #     member(AgeCohortCoH1, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
   
   vac = Survey$V %in% names(V13)
-  cnf = Survey$Info.confirm == "card or history"
+  cnf = !is.na(Survey$Info.confirm) & Survey$Info.confirm == "card or history"
   age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   index = Survey[vac & cnf & age, ]
   
@@ -119,7 +119,7 @@ wuenic.survey = function(Survey, Decisions)
   #     member(AgeCohortCard1Dose, ['12-23 m', '18-29 m', '15-26 m', '24-35 m']),
   
   vac = Survey$V %in% names(V13)
-  cnf = Survey$Info.confirm == "card"
+  cnf = !is.na(Survey$Info.confirm) & Survey$Info.confirm == "card"
   age = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   cv0 = Survey$Cov > 0
   index = Survey[vac & cnf & age & cv0, ]
@@ -180,7 +180,7 @@ wuenic.survey = function(Survey, Decisions)
   # Exclude because sample size is too small
   exclude = array(NA_real_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
     dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
-  conf = Survey$Info.confirm == "card or history"
+  conf = !is.na(Survey$Info.confirm) & Survey$Info.confirm == "card or history"
   age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   size = Survey$Info.ss < 300
   index = Survey[conf & age & size, ]
@@ -228,7 +228,7 @@ wuenic.survey = function(Survey, Decisions)
   # Todo: bgd, bcg/1999: twice the same message, without Survey ID
   exclude = array(NA_real_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
                   dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
-  conf = Survey$Info.confirm == "card or history"
+  conf = !is.na(Survey$Info.confirm) & Survey$Info.confirm == "card or history"
   age  = Survey$Info.age %in% c("12-23 m", "18-29 m", "15-26 m", "24-35 m")
   size = Survey$Info.ss < 300
   index = Survey[conf & age & size, ]
