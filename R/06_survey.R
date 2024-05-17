@@ -276,7 +276,7 @@ wuenic.survey = function(Survey, Decisions)
   Excl[is.na(Ana)] = ""
   Excl2 = apply(Excl, c(1, 2), paste, collapse="")
   
-  Excl= YV.char("")
+  Excl = YV.char("")
   Excl[] = paste(Excl1, Excl2, Modified, sep="")
   
   list(Cov=Cov, Expl=Expl, Expl.Acc=Expl.Acc, Excl=Excl)

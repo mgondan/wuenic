@@ -172,7 +172,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   t = mdb_get(mdb, "SURVEY_COVERAGE")
   t$vaccine = tolower(t$vaccine)
   Svy = t[t$surveyId %in% Ids$surveyId & t$reanalyzed == 0 & t$cohortYear >= 1997
-          & t$validity == "crude" & t$vaccine %in% vaxs, ]
+          & tolower(t$validity) == "crude" & t$vaccine %in% vaxs, ]
 
   Survey = merge(Ids, Svy, by="surveyId")
   
@@ -200,7 +200,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
     Info.confirm=tolower(Survey$evidence),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
-    Info.ss=Survey$denominator, Cov=Survey$coverage)
+    Info.ss=Survey$denominator, Cov=round(Survey$coverage)) # todo: one digit instead of round
 }
 
 wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="bgd", Survey)

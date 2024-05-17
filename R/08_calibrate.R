@@ -60,7 +60,8 @@ wuenic.calibrate = function(TS.Cov, TS.Src, Anchor.Cov, Anchor.Rule, Anchor.Info
   
   # Copy coverage and year
   Prec.Cov = apply(Anchor.Cov, 2, FUN=zoo::na.locf, na.rm=FALSE)
-  Prec.Year = YV.char(Yn())
+  Prec.Year = YV.char()
+  Prec.Year[] = Yn()
   Prec.Year[index] = NA
   Prec.Year = apply(Prec.Year, 2, FUN=zoo::na.locf, na.rm=FALSE)
   
@@ -70,7 +71,8 @@ wuenic.calibrate = function(TS.Cov, TS.Src, Anchor.Cov, Anchor.Rule, Anchor.Info
   
   # Apply differences
   yv = expand.grid(Y=Yn(), V=Vn(), stringsAsFactors=FALSE)
-  Adj = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - TS.Cov[cbind(c(Prec.Year), yv$V)]
+  Adj = YV.int()
+  Adj[] = Anchor.Cov[cbind(c(Prec.Year), yv$V)] - TS.Cov[cbind(c(Prec.Year), yv$V)]
   Cov[index] = TS.Cov[index] + Adj[index]
   
   # Same in the reverse direction

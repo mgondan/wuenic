@@ -1,4 +1,4 @@
-wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wuenic.out")
+wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)
@@ -19,7 +19,13 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Decisions1=s$Decisions
   
   # 01_mdb
-  Date = file.info("countries/wuenic2024.mdb")$mtime
+  Date = file.info("countries/wuenic2023.mdb")$mtime
+
+  loc = Sys.getlocale("LC_TIME")
+  Sys.setlocale("LC_TIME", "C")
+  Date = format(Date, "%a %b %d %H:%M:%S %Y")
+  Sys.setlocale("LC_TIME", loc)
+
   Country = wuenic.country(ccode=ccode)
   Ereq = wuenic.est_req(ccode=ccode)
   Rub = wuenic.rub(ccode=ccode)
@@ -30,6 +36,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Target = wuenic.target(ccode=ccode)
   Births = wuenic.births(ccode=ccode)
   Surviving = wuenic.si(ccode=ccode)
+  Surviving = Births # Hack to reproduce buggy pl files
   Survey = wuenic.svy(ccode=ccode)
   Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
 
