@@ -1,4 +1,4 @@
-wuenic.country = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.country = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   t = mdb_get(mdb=mdb, tab="COUNTRY")
   r = t[t$country == toupper(ccode), "countryName"]
@@ -8,7 +8,7 @@ wuenic.country = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 # SELECT vaccine, annum
 #   FROM ESTIMATE_REQUIRED WHERE country = CCODE AND annum >= 1997
 #
-wuenic.est_req = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.est_req = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
   t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum")]
@@ -23,7 +23,7 @@ wuenic.est_req = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.rub = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.rub = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
   t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum", "presentation")]
@@ -39,7 +39,7 @@ wuenic.rub = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 #   FROM REPORTED_COVERAGE
 #   WHERE country = CCODE AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs AND type = "admin"
 
-wuenic.admin = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
     'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
@@ -54,7 +54,7 @@ wuenic.admin = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.gov = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.gov = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
            'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
@@ -72,7 +72,7 @@ wuenic.gov = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 #   FROM ESTIMATED_COVERAGE
 #   WHERE country = ccode AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs
 
-wuenic.leg = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.leg = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
            'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
@@ -89,9 +89,9 @@ wuenic.leg = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 # SELECT vaccine, annum, reportedDenom, reportedNum, coverage
 #   FROM REPORTED_NUMERATOR_DENOMINATOR
 #   WHERE country = CCODE AND reportedNum > 0
-wuenic.vaccinated = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.vaccinated = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
-  t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR_todeleate") # Name?
+  t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR")
   t$vaccine = tolower(t$vaccine)
   t = t[t$country == toupper(ccode) & t$reportedNum > 0, 
         c("vaccine", "annum", "reportedNum")]
@@ -107,9 +107,9 @@ wuenic.vaccinated = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 # SELECT vaccine, annum, reportedDenom, reportedNum, coverage
 #   FROM REPORTED_NUMERATOR_DENOMINATOR
 #   WHERE country = CCODE AND reportedNum > 0
-wuenic.target = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.target = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
-  t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR_todeleate")
+  t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR")
   t$vaccine = tolower(t$vaccine)
   t = t[t$country == toupper(ccode) & t$reportedDenom > 0, 
         c("vaccine", "annum", "reportedDenom")]
@@ -125,7 +125,7 @@ wuenic.target = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 # SELECT annum, valor
 #   FROM DEMOGRAPHIC
 #   WHERE country = CCODE AND annum >= 1997 AND indicator = 'Births' AND valor > 0
-wuenic.births = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.births = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   t = mdb_get(mdb=mdb, tab="DEMOGRAPHIC")
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$Indicator == "Births" & t$Valor > 0,
@@ -142,7 +142,7 @@ wuenic.births = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
 #   FROM DEMOGRAPHIC
 #   WHERE country = CCODE AND annum >= 1997 AND indicator = 'SI' AND valor > 0
 
-wuenic.si = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.si = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   t = mdb_get(mdb=mdb, tab="DEMOGRAPHIC")
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$Indicator == "SI" & t$Valor > 0,
@@ -155,7 +155,7 @@ wuenic.si = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.svy = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
+wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 {
   # SELECT surveyId
   #   FROM SURVEY_DESCRIPTION
@@ -203,7 +203,7 @@ wuenic.svy = function(mdb="countries/wuenic2024.mdb", ccode="bgd")
     Info.ss=Survey$denominator, Cov=Survey$coverage)
 }
 
-wuenic.dec = function(mdb="countries/wuenic2024.mdb", ccode="bgd", Survey)
+wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="bgd", Survey)
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
            'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
