@@ -37,7 +37,6 @@ wuenic.estimate = function(ccode="ago", fname="countries/ago.pl", outname="wueni
   Target = wuenic.target(ccode=ccode)
   Births = wuenic.births(ccode=ccode)
   Surviving = wuenic.si(ccode=ccode)
-  Surviving = Births # Hack to reproduce buggy pl files
   Survey = wuenic.svy(ccode=ccode)
   Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
 
