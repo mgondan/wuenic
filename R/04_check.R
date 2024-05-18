@@ -148,16 +148,19 @@ wuenic.check = function(Cov, Decisions)
   # ignore$Info[ignore$Info == "."] = ""
 
   # Multiple Decisions for the same YV combination. Change in nga
-  ignore = aggregate(list(Info=ignore$Info), 
+  if(nrow(ignore))
+  {
+    ignore = aggregate(list(Info=ignore$Info), 
     list(Y=ignore$Y, V=ignore$V), FUN=paste, collapse="")
   
-  index = cbind(ignore$Y, ignore$V)
-  Reject[index] = TRUE
+    index = cbind(ignore$Y, ignore$V)
+    Reject[index] = TRUE
   
-  Info[index] = ifelse(is.na(Cov[index]), 
-    Info[index],
-    sprintf("Reported data excluded. %s%s", ignore$Info, Info[index]))
-  
+    Info[index] = ifelse(is.na(Cov[index]), 
+      Info[index],
+      sprintf("Reported data excluded. %s%s", ignore$Info, Info[index]))
+  }
+
   # reject is used in the later course
   list(Reject=Reject, Info=Info)
 }
