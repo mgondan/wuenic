@@ -275,7 +275,7 @@ wuenic.goc = function(Ereq, Rep.Cov, Svy.Cov, Cov, Rule, Rub, Decisions,
   #   estimate_required(C, rcv1, Y, _, na),
   #   !,
   #   confidence(C, mcv1, Y, Expl, Grade).
-  index = Ereq[, "rcv1"] & is.na(Rub[, "rcv1"])
+  index = which(Ereq[, "rcv1"] & Rub[, "rcv1"] == "")
   GoC[index, "rcv1"] = GoC[index, "mcv1"]
   Expl[index, "rcv1"] = Expl[index, "mcv1"]
   
