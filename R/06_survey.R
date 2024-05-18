@@ -192,7 +192,8 @@ wuenic.survey = function(Survey, Decisions)
   
   # Some surveys are explicitly accepted
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
-  Accept[cbind(index$Y, index$V, index$Id)] = Ana[cbind(index$Y, index$V, index$Id)]
+  if(nrow(index))
+    Accept[cbind(index$Y, index$V, index$Id)] = Ana[cbind(index$Y, index$V, index$Id)]
   
   # % Survey information for given year. Multiple surveys are averaged.
   # survey(C, V, Y, Expl, Coverage) :-
