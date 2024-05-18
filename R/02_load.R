@@ -23,15 +23,15 @@ wuenic.est_req = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.rub = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+wuenic.rub = function(mdb="countries/wuenic2023.mdb", ccode="ago")
 {
   t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
-  t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum", "presentation")]
+  t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum", "comment")]
   t$vaccine = tolower(t$vaccine)
-  t$presentation = trimws(tolower(t$presentation))
+  t$comment = trimws(tolower(t$comment))
   
   r = YV.char()
-  r[cbind(t$annum, t$vaccine)] = t$presentation
+  r[cbind(t$annum, t$vaccine)] = t$comment
   return(r)
 }
 
@@ -196,7 +196,8 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   
   data.frame(V=Survey$vaccine, Y=Survey$cohortYear,
     Yn=as.character(Survey$cohortYear), Id=tolower(Survey$surveyId), 
-    Info.title=Survey$surveyNameEnglish, Info.type=Survey$surveyType,
+    Info.title=gsub("'", "", Survey$surveyNameEnglish),
+    Info.type=Survey$surveyType,
     Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
     Info.confirm=tolower(Survey$evidence),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
@@ -250,7 +251,7 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="bgd", Survey)
   # yearEnd <- d$yearEnd
   # yearEnd[is.na(yearEnd)] <- 2203 # project maximun existance of WHO. Gott's principle, 2011 - 1948 (50%CI)
   wgd1 = data.frame(V=t$vaccine, Y0=t$yearBegin, Y1=t$yearEnd, Dec=t$action,
-    Info=t$comment, Id=t$identifyCoverage, Cov=t$assignCoverage)
+    Info=t$comment, Id=tolower(t$identifyCoverage), Cov=t$assignCoverage)
   
   s = rbind(wgd1997, wgd1)
   
