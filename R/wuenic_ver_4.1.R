@@ -1,4 +1,4 @@
-wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wuenic.txt")
+wuenic.estimate = function(ccode="ago", fname="countries/ago.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)
@@ -25,6 +25,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Sys.setlocale("LC_TIME", "C")
   Date = format(Date, "%a %b %d %H:%M:%S %Y")
   Sys.setlocale("LC_TIME", loc)
+  Date = Date1 # Hack to obtain the same date as in the pl-file
 
   Country = wuenic.country(ccode=ccode)
   Ereq = wuenic.est_req(ccode=ccode)
