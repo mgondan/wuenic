@@ -205,7 +205,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.title=gsub("'", "", Survey$surveyNameEnglish),
     Info.type=Survey$surveyType,
     Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
-    Info.confirm=tolower(Survey$evidence),
+    Info.confirm=trimws(tolower(Survey$evidence)),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
     Info.ss=Survey$denominator, Cov=round(Survey$coverage)) # todo: one digit instead of round
 }
