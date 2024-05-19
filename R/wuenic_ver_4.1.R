@@ -1,4 +1,4 @@
-wuenic.estimate = function(ccode="bdi", fname="countries/bdi.pl", outname="wuenic.txt")
+wuenic.estimate = function(ccode="bfa", fname="countries/bfa.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)

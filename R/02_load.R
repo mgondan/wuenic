@@ -124,7 +124,7 @@ wuenic.target = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   t = t[t$vaccine %in% Vn(), ]
   
   r = YV.int()
-  r[cbind(t$annum, t$vaccine)] = t$reportedDenom
+  r[cbind(t$annum, t$vaccine)] = round(t$reportedDenom)
   return(r)
 }
 
@@ -207,7 +207,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
     Info.confirm=trimws(tolower(Survey$evidence)),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
-    Info.ss=Survey$denominator, Cov=round(Survey$coverage)) # todo: one digit instead of round
+    Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
 }
 
 wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="ago", Survey)
