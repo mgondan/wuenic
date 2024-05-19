@@ -59,7 +59,7 @@ wuenic.check = function(Cov, Decisions)
 
   Info = YV.char("")
   Info[cbind(Y, V)] = sprintf(
-    "Reported data excluded due to decline in reported coverage from %i level to %i percent. ",
+    "Reported data excluded due to decline in reported coverage from %.0f level to %.0f percent. ",
     prev[cbind(Y, V)], Cov[cbind(Y, V)])
   
   # For the other vaccines, we check for an absolute change above the threshold.
@@ -75,7 +75,7 @@ wuenic.check = function(Cov, Decisions)
   V = names(jump)[which(J)]
   Reject[cbind(Y, V)] = J[which(J)]
   Info[cbind(Y, V)] = sprintf(
-    "Reported data excluded due to sudden change in coverage from %i level to %i percent. ",
+    "Reported data excluded due to sudden change in coverage from %.0f level to %.0f percent. ",
     prev[cbind(Y, V)], Cov[cbind(Y, V)])
   
   # Reject sudden ups and downs above the sawtooth threshold
@@ -99,7 +99,7 @@ wuenic.check = function(Cov, Decisions)
   index = which(up & down, arr.ind=TRUE)
   Reject[index] = TRUE
   Info[index] = sprintf(
-    "Reported data excluded due to an increase from %i percent to %i percent with decrease to %i percent. ",
+    "Reported data excluded due to an increase from %.0f percent to %.0f percent with decrease to %.0f percent. ",
     prev[index], Cov[index], succ[index])
   
   # First down, then up
@@ -108,7 +108,7 @@ wuenic.check = function(Cov, Decisions)
   index = which(down & up, arr.ind=TRUE)
   Reject[index] = TRUE
   Info[index] = sprintf(
-    "Reported data excluded due to decline in reported coverage from %i percent to %i percent with increase to %i percent. ",
+    "Reported data excluded due to decline in reported coverage from %.0f percent to %.0f percent with increase to %.0f percent. ",
     prev[index], Cov[index], succ[index])
   
   # Reject implausible coverage (i.e., above 100)
@@ -122,7 +122,7 @@ wuenic.check = function(Cov, Decisions)
   index = which(Cov > 100, arr.ind=TRUE)
   Reject[index] = TRUE
   Info[index] = sprintf(
-    "Reported data excluded because %i percent greater than 100 percent. %s", 
+    "Reported data excluded because %.0f percent greater than 100 percent. %s", 
     Cov[index], Info[index])
   
   # Check if a working group decision has been made to accept it anyway

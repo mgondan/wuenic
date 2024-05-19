@@ -64,7 +64,7 @@ wuenic.gov = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     t$coverage > 0 & t$type == "official", c("annum", "vaccine", "coverage")]
   
   r = YV.int()
-  r[cbind(t$annum, t$vaccine)] = t$coverage
+  r[cbind(t$annum, t$vaccine)] = round(t$coverage)
   return(r)
 }
 

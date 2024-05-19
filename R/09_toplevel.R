@@ -45,7 +45,7 @@ wuenic.top = function(Ereq, Rule, Info, Cov, Rub, firstRubellaAtSecondMCV, Decis
     Cov[, "dtp3"] > Cov[, "dtp1"]
   index = index | (is.na(Cov[, "dtp1"]) & !is.na(Cov[, "dtp3"]))
   Rule[index, "dtp1"] = "RMF:"
-  Info[index, "dtp1"] = sprintf("Estimate based on DTP3 coverage of %i. ",
+  Info[index, "dtp1"] = sprintf("Estimate based on DTP3 coverage of %.0f. ",
                                 Cov[index, "dtp3"])
   Cov[index, "dtp1"] =
     tround(-0.0058 * Cov[index, "dtp3"]^2 + 1.3912 * Cov[index, "dtp3"] + 18.258)
