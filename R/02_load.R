@@ -207,7 +207,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
     Info.confirm=trimws(tolower(Survey$evidence)),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
-    Info.ss=Survey$denominator, Cov=round(Survey$coverage, 0)) # unclear why rounded (see pl files)
+    Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
 }
 
 wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="ago", Survey)
