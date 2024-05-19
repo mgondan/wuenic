@@ -38,6 +38,7 @@ wuenic.estimate = function(ccode="blz", fname="countries/blz.pl", outname="wueni
   Births = wuenic.births(ccode=ccode)
   Surviving = wuenic.si(ccode=ccode)
   Survey = wuenic.svy(ccode=ccode)
+  Survey = Survey1 # Hack until problems with decimal places have been resolved
   Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
 
   # 03_rep

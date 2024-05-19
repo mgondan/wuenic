@@ -89,7 +89,7 @@ wuenic.leg = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
 # SELECT vaccine, annum, reportedDenom, reportedNum, coverage
 #   FROM REPORTED_NUMERATOR_DENOMINATOR
 #   WHERE country = CCODE AND reportedNum > 0
-wuenic.vaccinated = function(mdb="countries/wuenic2023.mdb", ccode="alb")
+wuenic.vaccinated = function(mdb="countries/wuenic2023.mdb", ccode="cpv")
 {
   t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR")
   t$vaccine = tolower(t$vaccine)
@@ -103,7 +103,7 @@ wuenic.vaccinated = function(mdb="countries/wuenic2023.mdb", ccode="alb")
   t = t[t$vaccine %in% Vn(), ]
   
   r = YV.int()
-  r[cbind(t$annum, t$vaccine)] = t$reportedNum
+  r[cbind(t$annum, t$vaccine)] = round(t$reportedNum)
   return(r)
 }
 

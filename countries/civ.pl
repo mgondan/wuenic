@@ -1309,40 +1309,32 @@ births_UNPD(civ,1997,688578).
  births_UNPD(civ,2029,1055006).
  births_UNPD(civ,2030,1068104).
 
-si_UNPD(civ,1997,688578).
- si_UNPD(civ,1998,715742).
- si_UNPD(civ,1999,736555).
- si_UNPD(civ,2000,753411).
- si_UNPD(civ,2001,763945).
- si_UNPD(civ,2002,771830).
- si_UNPD(civ,2003,781512).
- si_UNPD(civ,2004,785439).
- si_UNPD(civ,2005,791706).
- si_UNPD(civ,2006,796010).
- si_UNPD(civ,2007,800286).
- si_UNPD(civ,2008,805923).
- si_UNPD(civ,2009,812862).
- si_UNPD(civ,2010,822544).
- si_UNPD(civ,2011,831854).
- si_UNPD(civ,2012,833494).
- si_UNPD(civ,2013,837257).
- si_UNPD(civ,2014,842107).
- si_UNPD(civ,2015,856654).
- si_UNPD(civ,2016,871185).
- si_UNPD(civ,2017,891616).
- si_UNPD(civ,2018,892790).
- si_UNPD(civ,2019,903861).
- si_UNPD(civ,2020,917205).
- si_UNPD(civ,2021,932943).
- si_UNPD(civ,2022,943133).
- si_UNPD(civ,2023,959962).
- si_UNPD(civ,2024,974998).
- si_UNPD(civ,2025,989981).
- si_UNPD(civ,2026,1004962).
- si_UNPD(civ,2027,1020230).
- si_UNPD(civ,2028,1037875).
- si_UNPD(civ,2029,1055006).
- si_UNPD(civ,2030,1068104).
+si_UNPD(civ,1997,638526).
+ si_UNPD(civ,1998,664346).
+ si_UNPD(civ,1999,684417).
+ si_UNPD(civ,2000,700959).
+ si_UNPD(civ,2001,711780).
+ si_UNPD(civ,2002,720232).
+ si_UNPD(civ,2003,730401).
+ si_UNPD(civ,2004,735324).
+ si_UNPD(civ,2005,742519).
+ si_UNPD(civ,2006,747820).
+ si_UNPD(civ,2007,753137).
+ si_UNPD(civ,2008,759836).
+ si_UNPD(civ,2009,767903).
+ si_UNPD(civ,2010,777965).
+ si_UNPD(civ,2011,787488).
+ si_UNPD(civ,2012,789799).
+ si_UNPD(civ,2013,794165).
+ si_UNPD(civ,2014,799626).
+ si_UNPD(civ,2015,814254).
+ si_UNPD(civ,2016,828733).
+ si_UNPD(civ,2017,848894).
+ si_UNPD(civ,2018,850890).
+ si_UNPD(civ,2019,862375).
+ si_UNPD(civ,2020,875926).
+ si_UNPD(civ,2021,891654).
+ si_UNPD(civ,2022,901482).
 
 survey_results(civ,pol1,1997,civ1998141,[title:'Côte d’Ivoire Demographic and Health Survey 1998-99',type:'14',yrcoll:'1998',cr: 73,confirm:'card or history',age:'12-23 m',timead:'',val:'crude',ss:439], 86).
 
