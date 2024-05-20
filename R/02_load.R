@@ -213,7 +213,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
 }
 
-wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="eth", Survey)
+wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="lbr", Survey)
 {
   vaxs = c('bcg','dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepbb','hepb3','hib3','pcv3','rotac')
   # Legacy estimate for 1997 by working group decision
@@ -230,8 +230,12 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="eth", Survey)
   #
   # vaccine[is.na(vaccine)] <- 'na' # Does not make sense here
   # cov_formatted <- sprintf("%.0f",d$coverage)
-  wgd1997 = data.frame(V=leg1997$vaccine, Y0=1997, Y1=1997,
-    Dec="assignAnchor", Info="Legacy estimate.", Id=NA, Cov=round(leg1997$coverage))
+  wgd1997 = data.frame(V=leg1997$vaccine, 
+    Y0=rep(1997, nrow(leg1997)), Y1=rep(1997, nrow(leg1997)),
+    Dec=rep("assignAnchor", nrow(leg1997)),
+    Info=rep("Legacy estimate.", nrow(leg1997)), 
+    Id=rep(NA, nrow(leg1997)), 
+    Cov=round(leg1997$coverage))
 
   # SELECT *
   #   FROM WGD
