@@ -124,6 +124,7 @@ wuenic.target = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   
   # check: unknown vaccines
   t = t[t$vaccine %in% Vn(), ]
+  t = t[t$annum %in% Yn(), ]
   
   r = YV.int()
   r[cbind(t$annum, t$vaccine)] = round(t$reportedDenom)
