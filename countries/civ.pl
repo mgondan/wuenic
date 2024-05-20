@@ -1,8 +1,8 @@
 %  Côte d’Ivoire - CIV 
-%  Wed Sep 06 18:42:02 2023 
+%  Mon May 20 08:43:52 2024 
 
 country(civ,'Côte d’Ivoire'). 
-date('Wed Sep 06 18:42:02 2023').
+date('Mon May 20 08:43:52 2024').
 
 estimate_required(civ,bcg,1997,na,'na').
  estimate_required(civ,bcg,1998,na,'na').
@@ -1335,6 +1335,14 @@ si_UNPD(civ,1997,638526).
  si_UNPD(civ,2020,875926).
  si_UNPD(civ,2021,891654).
  si_UNPD(civ,2022,901482).
+ si_UNPD(civ,2023,917891).
+ si_UNPD(civ,2024,932747).
+ si_UNPD(civ,2025,947551).
+ si_UNPD(civ,2026,962359).
+ si_UNPD(civ,2027,977465).
+ si_UNPD(civ,2028,994822).
+ si_UNPD(civ,2029,1011723).
+ si_UNPD(civ,2030,1024741).
 
 survey_results(civ,pol1,1997,civ1998141,[title:'Côte d’Ivoire Demographic and Health Survey 1998-99',type:'14',yrcoll:'1998',cr: 73,confirm:'card or history',age:'12-23 m',timead:'',val:'crude',ss:439], 86).
 
