@@ -54,7 +54,7 @@ wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.gov = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+wuenic.gov = function(mdb="countries/wuenic2023.mdb", ccode="can")
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
            'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
@@ -62,6 +62,7 @@ wuenic.gov = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   t$vaccine = tolower(t$vaccine)
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$vaccine %in% vaxs &
     t$coverage > 0 & t$type == "official", c("annum", "vaccine", "coverage")]
+  t = t[complete.cases(t), ]
   
   r = YV.int()
   r[cbind(t$annum, t$vaccine)] = round(t$coverage)
@@ -210,7 +211,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
 }
 
-wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="ago", Survey)
+wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="eth", Survey)
 {
   vaxs = c('bcg','dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepbb','hepb3','hib3','pcv3','rotac')
   # Legacy estimate for 1997 by working group decision

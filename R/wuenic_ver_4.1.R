@@ -1,4 +1,4 @@
-wuenic.estimate = function(ccode="blz", fname="countries/blz.pl", outname="wuenic.txt")
+wuenic.estimate = function(ccode="can", fname="countries/can.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)
@@ -104,7 +104,7 @@ wuenic.estimate = function(ccode="blz", fname="countries/blz.pl", outname="wueni
   
   include = Ereq & !is.na(Bounded)
   VY = cbind(Y=VY$Var1[include], V=VY$Var2[include])
-  
+
   Table = data.frame(
     Country=rep(Country, nrow(VY)),
     ProductionDate=rep(Date, nrow(VY)),
@@ -117,16 +117,17 @@ wuenic.estimate = function(ccode="blz", fname="countries/blz.pl", outname="wueni
     AdministrativeCoverage=Admin[VY],
     GovernmentEstimate=Gov[VY],
     ReportedCoverage=Rep.Cov[VY],
-    ChildrenVaccinated=Vaccinated[VY],
+    ChildrenVaccinated=Vaccinated[VY], 
     ChildrenInTarget=Target[VY],
     BirthsUNPD=Births[VY[, "Y"]],
-    SurvivingInfantsUNPD=Surviving[VY[, "Y"]],
+    SurvivingInfantsUNPD=Surviving[VY[, "Y"]], 
     ReportedTimeSeries=TS.Cov[VY],
     ReportedTimeSeriesSource=TS.Src[VY],
     SurveyInformation=Svy.Cov[VY],
     Rule=Rule[VY],
     Comment=Expl[VY])
-  
+
+  options(scipen=20)
   write.table(Table, outname, quote=FALSE, row.names=FALSE, sep="\t", na="")
 }
 
