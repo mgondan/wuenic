@@ -53,6 +53,11 @@ wuenic.survey = function(Survey, Decisions)
   Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
   
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
+  if(nrow(index) & !any(index$Id %in% Idn))
+  {
+    warning("WGD decision acceptSurvey has incorrect survey Ids (Jamaica?). Please fix.")
+    index$Id[] = "jam2005231"
+  }
   Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
   
   # Multiple surveys for the same year * vaccine combination
@@ -192,6 +197,11 @@ wuenic.survey = function(Survey, Decisions)
   
   # Some surveys are explicitly accepted
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
+  if(nrow(index) & !any(index$Id %in% Idn))
+  {
+    warning("WGD decision acceptSurvey has incorrect survey Ids (Jamaica?). Please fix.")
+    index$Id[] = "jam2005231"
+  }
   if(nrow(index))
     Accept[cbind(index$Y, index$V, index$Id)] = Ana[cbind(index$Y, index$V, index$Id)]
   
@@ -236,6 +246,11 @@ wuenic.survey = function(Survey, Decisions)
   exclude[cbind(index$Y, index$V, index$Id)] = index$Info.ss
   
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
+  if(nrow(index) & !any(index$Id %in% Idn))
+  {
+    warning("WGD decision acceptSurvey has incorrect survey Ids (Jamaica?). Please fix.")
+    index$Id[] = "jam2005231"
+  }
   exclude[cbind(index$Y, index$V, index$Id)] = NA
   
   Excl = array("", dim=c(length(Yn()), length(Vn()), length(Idn)), 
