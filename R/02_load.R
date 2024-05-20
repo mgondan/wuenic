@@ -48,6 +48,7 @@ wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$coverage > 0 &
           t$vaccine %in% vaxs & t$type == "admin", 
     c("annum", "vaccine", "coverage")]
+  t = t[complete.cases(t), ]
   
   r = YV.int()
   r[cbind(t$annum, t$vaccine)] = round(t$coverage)
