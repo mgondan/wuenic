@@ -304,7 +304,7 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="lbr", Survey)
   Id.na = function(d, Idn)
   {
 #    if(d['Dec'] == "ignoreSurvey" & is.na(d['Id']))
-    if(d['Dec'] == "ignoreSurvey" & d['Id'] == "")
+    if(d['Dec'] %in% c("acceptSurvey", "ignoreSurvey") & d['Id'] == "")
       return(data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'], 
                         Id=Idn, Info=d['Info'], Cov=d['Cov'], row.names=NULL))
     
