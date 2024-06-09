@@ -1,4 +1,4 @@
-wuenic.country = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+wuenic.country = function(mdb="countries/wuenic2023.mdb", ccode="cri")
 {
   t = mdb_get(mdb=mdb, tab="COUNTRY")
   r = t[t$country == toupper(ccode), "countryName"]
@@ -214,7 +214,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
 }
 
-wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="lbr", Survey)
+wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="jam", Survey)
 {
   vaxs = c('bcg','dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepbb','hepb3','hib3','pcv3','rotac')
   # Legacy estimate for 1997 by working group decision
@@ -314,6 +314,17 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="lbr", Survey)
   
   s = apply(s, MARGIN=1, simplify=FALSE, FUN=Id.na, Idn=unique(Survey$Id))
   s = do.call("rbind", s)
+  
+  if(!all(s$Id[s$Dec == "acceptSurvey"] %in% Idn))
+  {
+    warning("Jamaica? Wrong survey Ids in wgd = acceptSurvey")
+    # Please remove this when the database has been corrected
+    if(ccode == "jam")
+    {
+      s$Cov[s$Dec == "acceptSurvey"] = s$Id[s$Dec == "acceptSurvey"]
+      s$Id[s$Dec == "acceptSurvey"] = "jam2005231"
+    }
+  }
   
   s$Cov = as.integer(s$Cov)
   s$Y = as.character(s$Y)

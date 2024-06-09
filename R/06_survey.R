@@ -53,11 +53,9 @@ wuenic.survey = function(Survey, Decisions)
   Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
   
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
-  if(nrow(index) & !any(index$Id %in% Idn))
-  {
+  if(nrow(index) & !all(index$Id %in% Idn))
     warning("WGD decision acceptSurvey has incorrect survey Ids (Jamaica?). Please fix.")
-    index$Id[] = "jam2005231"
-  }
+
   Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
   
   # Multiple surveys for the same year * vaccine combination
@@ -154,7 +152,7 @@ wuenic.survey = function(Survey, Decisions)
   #     C3 is round(C3Cov),
   #     member(title:Title, Description),
   #     concat_atom([Title, ' card or history results of ', SurveyCovRounded,
-  #         ' percent modifed for recall bias to ', Cov0,
+  #         ' percent modified for recall bias to ', Cov0,
   #         ' percent based on 1st dose card or history coverage of ',
   #         CH1, ' percent, 1st dose card only coverage of ',
   #         C1, ' percent and 3rd dose card only coverage of ',
@@ -168,7 +166,7 @@ wuenic.survey = function(Survey, Decisions)
     index3 = cbind(Y=Yn()[index[, "Y"]], V=V13[index[, "V"]], Id=Idn[index[, "Id"]])
     index1 = cbind(Y=Yn()[index[, "Y"]], V=names(V13)[index[, "V"]], Id=Idn[index[, "Id"]])
     Info[index3] = sprintf(
-        "%s card or history results of %.0f percent modifed for recall bias to %.0f percent based on 1st dose card or history coverage of %.0f percent, 1st dose card only coverage of %.0f percent and 3rd dose card only coverage of %.0f percent. ",
+        "%s card or history results of %.0f percent modified for recall bias to %.0f percent based on 1st dose card or history coverage of %.0f percent, 1st dose card only coverage of %.0f percent and 3rd dose card only coverage of %.0f percent. ",
         Title[index3], tround(Ana[index3]), H3Adj[index3], tround(CH1[index1]),
         tround(Card1[index1]), tround(Card3[index3]))
     Ana[index3] = H3Adj[index3]

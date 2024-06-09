@@ -1,4 +1,10 @@
-wuenic.estimate = function(ccode="syr", fname="countries/syr.pl", outname="wuenic.txt")
+# Changes from V4R
+#
+# irq: V41 is able to read the very large number in target/2
+# lao, nga, ton: avoid duplicate messages when survey is ignored by WG for
+#   multiple reasons
+
+wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)

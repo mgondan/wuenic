@@ -40,7 +40,15 @@ wuenic.reported = function(Admin, Gov, Decisions)
   #    Coverage = Cov0.
   
   index = !is.na(Gov)
-  ignore = Decisions$Dec == "ignoreGov"
+  ignore = (Decisions$Dec == "ignoreGov")
+  index[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
+  # Cov[index] = Gov[index]
+  # Src[index] = "gov"
+  Cov[index] = NA
+  Src[index] = NA
+  
+  index = !is.na(Gov)
+  ignore = (Decisions$Dec == "ignoreGov")
   index[cbind(Decisions$Y[ignore], Decisions$V[ignore])] = FALSE
   Cov[index] = Gov[index]
   Src[index] = "gov"
