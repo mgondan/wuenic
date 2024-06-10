@@ -52,19 +52,6 @@ wuenic.survey = function(Survey, Decisions)
   index = Survey[conf & age, ]
   Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
   
-  index = Decisions[Decisions$Dec == "acceptSurvey", ]
-  if(nrow(index) & !all(index$Id %in% Idn))
-    warning("WGD decision acceptSurvey has incorrect survey Ids (Jamaica?). Please fix.")
-
-  Ana[cbind(index$Y, index$V, index$Id)] = index$Cov
-  
-  # Multiple surveys for the same year * vaccine combination
-  Expl.Acc = YV.char("")
-  if(nrow(index))
-    index = aggregate(list(Info=index$Info), 
-                      list(Y=index$Y, V=index$V), FUN=paste, collapse="")
-  Expl.Acc[cbind(index$Y, index$V)] = index$Info
-  
   index = Survey[conf & age, ]
   Title = array(NA_character_, dim=c(length(Yn()), length(Vn()), length(Idn)), 
                     dimnames=list(Y=Yn(), V=Vn(), Id=Idn))
@@ -196,12 +183,16 @@ wuenic.survey = function(Survey, Decisions)
   # Some surveys are explicitly accepted
   index = Decisions[Decisions$Dec == "acceptSurvey", ]
   if(nrow(index) & !any(index$Id %in% Idn))
-  {
     warning("WGD decision acceptSurvey has incorrect survey Ids (Jamaica?). Please fix.")
-    index$Id[] = "jam2005231"
-  }
   if(nrow(index))
     Accept[cbind(index$Y, index$V, index$Id)] = Ana[cbind(index$Y, index$V, index$Id)]
+  
+  # Collect explanations
+  Expl.Acc = YV.char("")
+  if(nrow(index))
+    index = aggregate(list(Info=index$Info), 
+                      list(Y=index$Y, V=index$V), FUN=paste, collapse="")
+  Expl.Acc[cbind(index$Y, index$V)] = index$Info
   
   # % Survey information for given year. Multiple surveys are averaged.
   # survey(C, V, Y, Expl, Coverage) :-

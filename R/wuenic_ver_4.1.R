@@ -4,7 +4,7 @@
 # lao, nga, ton: avoid duplicate messages when survey is ignored by WG for
 #   multiple reasons
 
-wuenic.estimate = function(ccode="nga", fname="countries/nga.pl", outname="wuenic.txt")
+wuenic.estimate = function(ccode="syr", fname="countries/syr.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)

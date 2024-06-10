@@ -214,7 +214,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
 }
 
-wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="jam", Survey)
+wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="syr", Survey)
 {
   vaxs = c('bcg','dtp1','dtp3','pol3','ipv1','mcv1','mcv2','rcv1','hepbb','hepb3','hib3','pcv3','rotac')
   # Legacy estimate for 1997 by working group decision
@@ -274,10 +274,9 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="jam", Survey)
   s$Y0 = pmax(s$Y0, min(Yn()))
   s$Y1 = pmin(s$Y1, max(Yn()))
   
-  # V = NA means that a decision applies to all vaccines
+  # V = "all" means that a decision applies to all vaccines
   V.na = function(d)
   {
-#    if(is.na(d['V']))
     if(d['V'] == "all")
       return(data.frame(V=Vn(), Y0=d['Y0'], Y1=d['Y1'], Dec=d['Dec'], 
                         Id=d['Id'], Info=d['Info'], Cov=d['Cov'], row.names=NULL))
@@ -303,8 +302,7 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="jam", Survey)
   # surveys of a given year and vaccine
   Id.na = function(d, Idn)
   {
-#    if(d['Dec'] == "ignoreSurvey" & is.na(d['Id']))
-    if(d['Dec'] %in% c("acceptSurvey", "ignoreSurvey") & d['Id'] == "")
+    if(d['Dec'] == "ignoreSurvey" & d['Id'] == "")
       return(data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'], 
                         Id=Idn, Info=d['Info'], Cov=d['Cov'], row.names=NULL))
     
@@ -315,7 +313,23 @@ wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="jam", Survey)
   s = apply(s, MARGIN=1, simplify=FALSE, FUN=Id.na, Idn=unique(Survey$Id))
   s = do.call("rbind", s)
   
-  if(!all(s$Id[s$Dec == "acceptSurvey"] %in% Idn))
+  # For "accept survey", the Id is sometimes NA, meaning that it applies to all
+  # surveys of a given year and vaccine
+  Id.na = function(d)
+  {
+    if(d['Dec'] == "acceptSurvey" & d['Id'] == "")
+      return(data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'],
+               Id=unique(Survey$Id[Survey$Y == d['Y']]),
+               Info=d['Info'], Cov=d['Cov'], row.names=NULL))
+    
+    data.frame(V=d['V'], Y=d['Y'], Dec=d['Dec'],
+      Id=d['Id'], Info=d['Info'], Cov=d['Cov'])
+  }
+  
+  s = apply(s, MARGIN=1, simplify=FALSE, FUN=Id.na)
+  s = do.call("rbind", s)
+  
+  if(!all(s$Id[s$Dec == "acceptSurvey"] %in% unique(Survey$Id)))
   {
     warning("Jamaica? Wrong survey Ids in wgd = acceptSurvey")
     # Please remove this when the database has been corrected
