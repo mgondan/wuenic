@@ -6,7 +6,7 @@
 # nga: avoid duplicate messages when reported data is excluded by WG for
 #   multiple reasons
 
-wuenic.estimate = function(ccode="syr", fname="countries/syr.pl", outname="wuenic.txt")
+wuenic.estimate = function(ccode="ssd", fname="countries/ssd.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)

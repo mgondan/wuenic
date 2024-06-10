@@ -39,11 +39,12 @@ wuenic.rub = function(mdb="countries/wuenic2023.mdb", ccode="ago")
 #   FROM REPORTED_COVERAGE
 #   WHERE country = CCODE AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs AND type = "admin"
 
-wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="ssd")
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
     'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
   t = mdb_get(mdb=mdb, tab="REPORTED_COVERAGE")
+  t$country = toupper(t$country)
   t$vaccine = tolower(t$vaccine)
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$coverage > 0 &
           t$vaccine %in% vaxs & t$type == "admin", 
@@ -60,6 +61,7 @@ wuenic.gov = function(mdb="countries/wuenic2023.mdb", ccode="can")
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
            'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
   t = mdb_get(mdb=mdb, tab="REPORTED_COVERAGE")
+  t$country = toupper(t$country)
   t$vaccine = tolower(t$vaccine)
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$vaccine %in% vaxs &
     t$coverage > 0 & t$type == "official", c("annum", "vaccine", "coverage")]
