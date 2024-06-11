@@ -6,7 +6,7 @@
 # nga: avoid duplicate messages when reported data is excluded by WG for
 #   multiple reasons
 
-wuenic.estimate = function(ccode="ssd", fname="countries/ssd.pl", outname="wuenic.txt")
+wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wuenic.txt")
 {
   # 02_load
   s = wuenic.load(fname)
@@ -46,7 +46,6 @@ wuenic.estimate = function(ccode="ssd", fname="countries/ssd.pl", outname="wueni
   Births = wuenic.births(ccode=ccode)
   Surviving = wuenic.si(ccode=ccode)
   Survey = wuenic.svy(ccode=ccode)
-  Survey = Survey1 # Hack until problems with decimal places have been resolved
   Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
 
   # 03_rep

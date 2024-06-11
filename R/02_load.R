@@ -167,7 +167,7 @@ wuenic.si = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="vnm")
 {
   # SELECT surveyId
   #   FROM SURVEY_DESCRIPTION
@@ -213,7 +213,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
     Info.yrcoll=Survey$collectBegin, Info.cr=Survey$cardsSeen,
     Info.confirm=trimws(tolower(Survey$evidence)),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
-    Info.ss=Survey$denominator, Cov=round(Survey$coverage, 1))
+    Info.ss=Survey$denominator, Cov=as.numeric(format(Survey$coverage, digits=1)))
 }
 
 wuenic.dec = function(mdb="countries/wuenic2023.mdb", ccode="syr", Survey)
