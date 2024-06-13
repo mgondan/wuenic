@@ -212,12 +212,26 @@ vaccinated = function(mdb, ccode)
   return(r)
 }
 
-# SELECT vaccine, annum, reportedDenom, reportedNum, coverage
-#   FROM REPORTED_NUMERATOR_DENOMINATOR
-#   WHERE country = CCODE AND reportedNum > 0
-wuenic.target = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+#' Obtain statistics on vaccinated children
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Year by Vaccine table with target numbers
+#' 
+#' @details
+#' SELECT vaccine, annum, reportedDenom, reportedNum, coverage
+#'   FROM REPORTED_NUMERATOR_DENOMINATOR
+#'   WHERE country = CCODE AND reportedNum > 0
+#'
+target = function(mdb, ccode)
 {
   t = mdb_get(mdb=mdb, tab="REPORTED_NUMERATOR_DENOMINATOR")
+  t$country = toupper(t$country)
   t$vaccine = tolower(t$vaccine)
   t = t[t$country == toupper(ccode) & t$reportedDenom > 0, 
         c("vaccine", "annum", "reportedDenom")]
