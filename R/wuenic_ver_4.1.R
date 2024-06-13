@@ -28,7 +28,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
 
   Country = country(mdb, ccode)
   Ereq = est_req(mdb, ccode)
-  Rub = wuenic.rub(ccode=ccode)
+  Rub = rubella(mdb, ccode)
   Admin = wuenic.admin(ccode=ccode)
   Gov = wuenic.gov(ccode=ccode)
   Legacy = wuenic.leg(ccode=ccode)

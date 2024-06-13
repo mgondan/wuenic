@@ -45,22 +45,37 @@ est_req = function(mdb, ccode)
   return(r)
 }
 
-wuenic.rub = function(mdb="countries/wuenic2023.mdb", ccode="ago")
+#' Timepoint of Rubella vaccination
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Year by Vaccine table with the comments from Table ESTIMATE_REQUIRED
+#' 
+#' @details
+#' SELECT vaccine, annum
+#'   FROM ESTIMATE_REQUIRED WHERE country = CCODE AND annum >= 1997
+#'
+rubella = function(mdb, ccode)
 {
   t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
-  t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum", "comment")]
+  t = t[t$country == toupper(ccode) & t$annum >= 1997,
+        c("vaccine", "annum", "comment")]
   t$vaccine = tolower(t$vaccine)
-  t$comment = trimws(tolower(t$comment))
-  
+
   r = YV.char()
-  r[cbind(t$annum, t$vaccine)] = t$comment
+  r[cbind(t$annum, t$vaccine)] = trimws(tolower(t$comment))
   return(r)
 }
 
-# SELECT annum, vaccine, coverage
-#   FROM REPORTED_COVERAGE
-#   WHERE country = CCODE AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs AND type = "admin"
-
+#' SELECT annum, vaccine, coverage
+#'  FROM REPORTED_COVERAGE
+#'  WHERE country = CCODE AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs 
+#'    AND type = "admin"
 wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="ssd")
 {
   vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
