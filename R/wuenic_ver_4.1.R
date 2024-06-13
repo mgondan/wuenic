@@ -10,21 +10,10 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
 {
   # 02_load
   s = wuenic.load(fname)
-  Code=s$Code
-  if(Code != ccode)
-    stop("Wrong country code/data file: ", ccode)
-  
   Date1=s$Date
-  firstRubellaAtSecondMCV=s$firstRubellaAtSecondMCV
-  Legacy1=s$Legacy
-  Gov1=s$Gov
-  Admin1=s$Admin
-  Vaccinated1=s$Vaccinated
-  Target1=s$Target
-  Surviving1=s$Surviving
-  Births1=s$Births
-  Survey1=s$Survey
-  Decisions1=s$Decisions
+
+  firstRubellaAtSecondMCV = YV.char()
+  firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
   
   # 01_mdb
   Date = file.info("countries/wuenic2023.mdb")$mtime
@@ -115,7 +104,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Table = data.frame(
     Country=rep(Country, nrow(VY)),
     ProductionDate=rep(Date, nrow(VY)),
-    ISOCountryCode=rep(Code, nrow(VY)),
+    ISOCountryCode=rep(ccode, nrow(VY)),
     Vaccine=VY[, "V"],
     Year=VY[, "Y"],
     WUENIC=Bounded[VY],
