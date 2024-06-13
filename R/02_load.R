@@ -9,7 +9,7 @@
 #' @return
 #' Country name
 #' 
-wuenic.country = function(mdb, ccode)
+country = function(mdb, ccode)
 {
   t = mdb_get(mdb=mdb, tab="COUNTRY")
   t[t$country == toupper(ccode), "countryName"]

@@ -8,6 +8,8 @@
 
 wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wuenic.txt")
 {
+  mdb = "countries/wuenic2023.mdb"
+
   # 02_load
   s = wuenic.load(fname)
   Date1=s$Date
@@ -16,7 +18,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
   
   # 01_mdb
-  Date = file.info("countries/wuenic2023.mdb")$mtime
+  Date = file.info(mdb)$mtime
 
   loc = Sys.getlocale("LC_TIME")
   Sys.setlocale("LC_TIME", "C")
@@ -24,7 +26,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Sys.setlocale("LC_TIME", loc)
   Date = Date1 # Hack to obtain the same date as in the pl-file
 
-  Country = wuenic.country(ccode=ccode)
+  Country = country(mdb, ccode)
   Ereq = wuenic.est_req(ccode=ccode)
   Rub = wuenic.rub(ccode=ccode)
   Admin = wuenic.admin(ccode=ccode)
