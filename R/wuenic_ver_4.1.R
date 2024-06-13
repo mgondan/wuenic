@@ -27,7 +27,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Date = Date1 # Hack to obtain the same date as in the pl-file
 
   Country = country(mdb, ccode)
-  Ereq = wuenic.est_req(ccode=ccode)
+  Ereq = est_req(mdb, ccode)
   Rub = wuenic.rub(ccode=ccode)
   Admin = wuenic.admin(ccode=ccode)
   Gov = wuenic.gov(ccode=ccode)

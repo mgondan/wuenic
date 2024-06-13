@@ -15,10 +15,22 @@ country = function(mdb, ccode)
   t[t$country == toupper(ccode), "countryName"]
 }
 
-# SELECT vaccine, annum
-#   FROM ESTIMATE_REQUIRED WHERE country = CCODE AND annum >= 1997
+#' Check list of required estimates
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Year by Vaccine table
+#' 
+#' @details
+#' SELECT vaccine, annum
+#'   FROM ESTIMATE_REQUIRED WHERE country = CCODE AND annum >= 1997
 #
-wuenic.est_req = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+est_req = function(mdb, ccode)
 {
   t = mdb_get(mdb=mdb, tab="ESTIMATE_REQUIRED")
   t = t[t$country == toupper(ccode) & t$annum >= 1997, c("vaccine", "annum")]
