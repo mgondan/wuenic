@@ -72,20 +72,36 @@ rubella = function(mdb, ccode)
   return(r)
 }
 
+#' Timepoint of Rubella vaccination
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Year by Vaccine table with the comments from Table ESTIMATE_REQUIRED
+#' 
+#' @details
 #' SELECT annum, vaccine, coverage
 #'  FROM REPORTED_COVERAGE
-#'  WHERE country = CCODE AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs 
-#'    AND type = "admin"
-wuenic.admin = function(mdb="countries/wuenic2023.mdb", ccode="ssd")
+#'  WHERE country = CCODE AND annum >= 1997 AND coverage > 0 
+#'    AND vaccine IN vaxs AND type = "admin"
+#'
+admin = function(mdb, ccode)
 {
-  vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
-    'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
+  # Check: Why is list of vaccines limited to vaxs?
+  vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2',
+           'rcv1', 'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3',
+           'rotac', 'yfv')
   t = mdb_get(mdb=mdb, tab="REPORTED_COVERAGE")
   t$country = toupper(t$country)
   t$vaccine = tolower(t$vaccine)
+  t$type    = tolower(t$type)
   t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$coverage > 0 &
           t$vaccine %in% vaxs & t$type == "admin", 
-    c("annum", "vaccine", "coverage")]
+        c("annum", "vaccine", "coverage")]
   t = t[complete.cases(t), ]
   
   r = YV.int()
