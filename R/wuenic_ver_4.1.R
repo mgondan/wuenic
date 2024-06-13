@@ -36,7 +36,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Target = target(mdb, ccode)
   Births = births(mdb, ccode)
   Surviving = surviving(mdb, ccode)
-  Survey = wuenic.svy(ccode=ccode)
+  Survey = surveys(mdb, ccode)
   Decisions = wuenic.dec(ccode=ccode, Survey=Survey)
 
   # 03_rep

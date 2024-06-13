@@ -309,7 +309,28 @@ surviving = function(mdb, ccode)
   return(r)
 }
 
-wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="mdg")
+#' Obtain survey data
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Survey data in long format
+#' 
+#' @details
+#' SELECT surveyId
+#'   FROM SURVEY_DESCRIPTION
+#'   WHERE ISO3 = CCODE
+#'
+#' SELECT *
+#'   FROM SURVEY_COVERAGE
+#'   WHERE surveyId IN Ids AND reanalyzed = "No" AND cohortYear >= 1997
+#'     AND validity = "crude" AND vaccine IN vaxs
+#'
+surveys = function(mdb, ccode)
 {
   # SELECT surveyId
   #   FROM SURVEY_DESCRIPTION
@@ -329,22 +350,6 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="mdg")
           & tolower(t$validity) == "crude" & t$vaccine %in% vaxs, ]
 
   Survey = merge(Ids, Svy, by="surveyId")
-  
-  # Some preprocessing - move to main program
-  #
-  # survey$coverage[is.na(survey$coverage)] <- 0
-  # survey$cardsSeen[is.na(survey$cardsSeen)] <- 0
-  # survey$denominator[is.na(survey$denominator)] <- 0
-  #
-  # survey$cardsSeen[!is.numeric(survey$cardsSeen)] <- 0
-  # survey$coverage[!is.numeric(survey$coverage)]   <- 0
-  #
-  # Cards    <- format(survey$cardsSeen,digits=1)
-  # Coverage <- format(survey$coverage,digits=1)
-  # Children <- as.character(survey$denominator)
-  # ... gsub("'","",survey$surveyNameEnglish),
-  # ... substring(survey$collectBegin,1,4),
-  # ... sub(' +$','',tolower(survey$evidence)),
   
   Survey$denominator[is.na(Survey$denominator)] = 0
   Survey$surveyNameEnglish[Survey$surveyNameEnglish == ""] = "NA"
