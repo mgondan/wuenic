@@ -2,7 +2,7 @@
 % Please edit documentation in R/00_globals.R
 \name{svy.scope}
 \alias{svy.scope}
-\title{svy.scope: Average surveys across +/- 2 years}
+\title{svy.scope: When checking for svy.thrs, use surveys across +/- 2 years}
 \usage{
 svy.scope()
 }
@@ -10,5 +10,5 @@ svy.scope()
 2
 }
 \description{
-svy.scope: Average surveys across +/- 2 years
+svy.scope: When checking for svy.thrs, use surveys across +/- 2 years
 }
