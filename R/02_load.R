@@ -143,17 +143,32 @@ gov = function(mdb, ccode)
   return(r)
 }
 
-# SELECT annum, vaccine, coverage
-#   FROM ESTIMATED_COVERAGE
-#   WHERE country = ccode AND annum >= 1997 AND coverage > 0 AND vaccine IN vaxs
-
-wuenic.leg = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+#' Legacy estimates (for comparison if database changes)
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Year by Vaccine table with legacy coverage
+#' 
+#' @details
+#' SELECT annum, vaccine, coverage
+#'   FROM ESTIMATED_COVERAGE
+#'   WHERE country = ccode AND annum >= 1997 AND coverage > 0 
+#'     AND vaccine IN vaxs
+#'
+legacy = function(mdb, ccode)
 {
-  vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2', 'rcv1',
-           'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3', 'rotac', 'yfv')
+  vaxs = c('bcg', 'dtp1', 'dtp3', 'pol1', 'pol3', 'ipv1', 'mcv1', 'mcv2',
+           'rcv1', 'hepbb', 'hepb1', 'hepb3', 'hib1', 'hib3', 'pcv1', 'pcv3',
+           'rotac', 'yfv')
   t = mdb_get(mdb=mdb, tab="ESTIMATED_COVERAGE")
+  t$country = toupper(t$country)
   t$vaccine = tolower(t$vaccine)
-  t = t[t$country == ccode & t$annum >= 1997 & t$vaccine %in% vaxs &
+  t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$vaccine %in% vaxs &
           t$coverage > 0, c("annum", "vaccine", "coverage")]
   
   r = YV.int()
