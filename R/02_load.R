@@ -167,7 +167,7 @@ wuenic.si = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
   return(r)
 }
 
-wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="vnm")
+wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="mdg")
 {
   # SELECT surveyId
   #   FROM SURVEY_DESCRIPTION
@@ -205,6 +205,7 @@ wuenic.svy = function(mdb="countries/wuenic2023.mdb", ccode="vnm")
   # ... sub(' +$','',tolower(survey$evidence)),
   
   Survey$denominator[is.na(Survey$denominator)] = 0
+  Survey$surveyNameEnglish[Survey$surveyNameEnglish == ""] = "NA"
   
   data.frame(V=Survey$vaccine, Y=Survey$cohortYear,
     Yn=as.character(Survey$cohortYear), Id=tolower(Survey$surveyId), 
