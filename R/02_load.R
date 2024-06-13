@@ -1,8 +1,18 @@
-wuenic.country = function(mdb="countries/wuenic2023.mdb", ccode="cri")
+#' Load country name
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Country name
+#' 
+wuenic.country = function(mdb, ccode)
 {
   t = mdb_get(mdb=mdb, tab="COUNTRY")
-  r = t[t$country == toupper(ccode), "countryName"]
-  return(r)
+  t[t$country == toupper(ccode), "countryName"]
 }
 
 # SELECT vaccine, annum
