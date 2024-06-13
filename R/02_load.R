@@ -279,15 +279,28 @@ births = function(mdb, ccode)
   return(r)
 }
 
-# SELECT annum, valor
-#   FROM DEMOGRAPHIC
-#   WHERE country = CCODE AND annum >= 1997 AND indicator = 'SI' AND valor > 0
-
-wuenic.si = function(mdb="countries/wuenic2023.mdb", ccode="bgd")
+#' Obtain statistics on child population
+#' 
+#' @param mdb
+#' path to database
+#' 
+#' @param ccode
+#' Country code, e.g. afg
+#' 
+#' @return
+#' Newborn children by year
+#' 
+#' @details
+#' SELECT annum, valor
+#'   FROM DEMOGRAPHIC
+#'   WHERE country = CCODE AND annum >= 1997 AND indicator = 'SI' AND valor > 0
+#'
+surviving = function(mdb, ccode)
 {
   t = mdb_get(mdb=mdb, tab="DEMOGRAPHIC")
-  t = t[t$country == toupper(ccode) & t$annum >= 1997 & t$Indicator == "SI" & t$Valor > 0,
-        c("annum", "Valor")]
+  t$country = toupper(t$country)
+  t = t[t$country == toupper(ccode) & t$annum >= 1997 &
+    t$Indicator == "SI" & t$Valor > 0, c("annum", "Valor")]
   
   r = rep(NA, length(Yn()))
   names(r) = Yn()
