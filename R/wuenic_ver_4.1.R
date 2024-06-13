@@ -32,7 +32,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Admin = admin(mdb, ccode)
   Gov = gov(mdb, ccode)
   Legacy = legacy(mdb, ccode)
-  Vaccinated = wuenic.vaccinated(ccode=ccode)
+  Vaccinated = vaccinated(mdb, ccode)
   Target = wuenic.target(ccode=ccode)
   Births = wuenic.births(ccode=ccode)
   Surviving = wuenic.si(ccode=ccode)
