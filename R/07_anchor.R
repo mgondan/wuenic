@@ -1,6 +1,25 @@
-# Integrate estimates from reported data and surveys and define the
-# according anchor points (reported | survey | wgd).
-
+#' Integrate estimates from reported data and surveys
+#' 
+#' Define the according anchor points (reported | survey | wgd)
+#' 
+#' @param TS.Cov
+#' Coverage from time series
+#' 
+#' @param TS.Src
+#' Source of the coverage from time series
+#' 
+#' @param Svy.Cov
+#' Coverage from surveys
+#' 
+#' @param Svy.Expl
+#' Explanation derived from surveys
+#'
+#' @param Decisions
+#' List of work group decisions
+#' 
+#' @return 
+#' List with Coverage, Rule/Source, and some explanation (info)
+#'
 wuenic.anchor = function(TS.Cov, TS.Src, Svy.Cov, Svy.Expl, Decisions)
 {
   Rule = YV.char()
@@ -17,7 +36,8 @@ wuenic.anchor = function(TS.Cov, TS.Src, Svy.Cov, Svy.Expl, Decisions)
   #     % abs(Cov0 - Survey) > Threshold,
   #     !,
   #     Rule = 'S: AP',
-  #     concat_atom(['Survey evidence does not support reported data. Estimate based on survey results. ',
+  #     concat_atom(['Survey evidence does not support reported data.
+  #                   Estimate based on survey results. ',
   #     Expl0, ' '], Expl),
   #     Coverage = Survey.
   index = which(abs(Svy.Cov - TS.Cov) > svy.thrs(), arr.ind=TRUE)
@@ -39,9 +59,12 @@ wuenic.anchor = function(TS.Cov, TS.Src, Svy.Cov, Svy.Expl, Decisions)
   #     Rule = 'R: AP',
   #     member(Source-Expl1,
   #       [ gov-'Estimate informed by reported data supported by survey. ',
-  #         admin-'Estimate informed by reported administrative data supported by survey. ',
-  #         interpolated-'Estimate informed by interpolation between reported data supported by survey. ',
-  #         extrapolated-'Estimate based on extrapolation from data reported by national government supported by survey. '
+  #         admin-'Estimate informed by reported administrative data
+  #                supported by survey. ',
+  #         interpolated-'Estimate informed by interpolation between
+  #                reported data supported by survey. ',
+  #         extrapolated-'Estimate based on extrapolation from data reported
+  #                by national government supported by survey. '
   #       ]),
   #     concat_atom([Expl1, Expl0], Expl),
   #     Coverage = Cov0.
