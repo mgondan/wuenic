@@ -1,11 +1,34 @@
-# Estimate coverage by distinguishing different cases
-#
-# * at anchor point
-# * between anchor points
-# * before anchor point
-# * after anchor point
-# * no anchor points
-
+#' Estimate coverage if information is incomplete
+#' 
+#' Distinguish different cases
+#'
+#' * at anchor point
+#' * between anchor points
+#' * before anchor point
+#' * after anchor point
+#' * no anchor points
+#' 
+#' @param TS.Cov
+#' coverage from time series
+#' 
+#' @param TS.Src
+#' source of coverage from time series
+#' 
+#' @param Anchor.Cov
+#' Coverage at anchor points (with converging coverage estimates)
+#' 
+#' @param Anchor.Rule
+#' Rules for anchor points
+#' 
+#' @param Anchor.Info
+#' Additional information at anchor points
+#' 
+#' @param Decisions
+#' List of work group decisions
+#' 
+#' @return 
+#' List with coverage and source, and some explanation
+#'
 wuenic.calibrate = function(TS.Cov, TS.Src, Anchor.Cov, Anchor.Rule, Anchor.Info, Decisions)
 {
   # Default: No anchor points for any year, use reported. If any other rule
