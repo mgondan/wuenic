@@ -1,7 +1,22 @@
-# Generate time series based on reported data where an estimate is required.
-# This means interpolation and extrapolation for years without reported
-# coverage.
-
+#' Generate time series based on reported coverage
+#' 
+#' Use interpolation and extrapolation for years without reported coverage.
+#'
+#' @param Ereq
+#' if an estimate is required
+#' 
+#' @param Rep.Cov
+#' reported coverage
+#' 
+#' @param Rep.Src
+#' Source of reported coverage
+#' 
+#' @param Reject
+#' Information on decisions (reject reported)
+#' 
+#' @return 
+#' list with coverage and source
+#'
 wuenic.ts = function(Ereq, Rep.Cov, Rep.Src, Reject)
 {
   Cov = YV.int()
