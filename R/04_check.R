@@ -1,8 +1,18 @@
-# Check reported data
-#
-# Reasons to exclude reported data are working group decisions, coverage > 100%
-# or temporal inconsistency (sudden jumps, sudden declines, etc.)
-
+#' Check reported data
+#' 
+#' Reasons to exclude reported data are working group decisions,
+#' coverage > 100% or temporal inconsistency (sudden jumps, sudden declines, 
+#' etc.)
+#' 
+#' @param Cov
+#' coverage from admin and gov data
+#' 
+#' @param Decisions
+#' List of work group decisions
+#' 
+#' @return 
+#' Matrix with Flags and Explanation
+#'
 wuenic.check = function(Cov, Decisions)
 {
   # This is the Prolog code
