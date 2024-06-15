@@ -1,13 +1,25 @@
-# Add information from government and administration.
-#
-# Reported to WHO and UNICEF is government estimate. If government estimate
-# missing, then reported is administrative data. Working group decisions may
-# override this rule.
-#
-# In the following implementation, we start at the lowest level, which is the
-# administrative data. If the government also reports the coverage, the former
-# numbers are overwritten.
-
+#' Add information from government and administration
+#' 
+#' Reported to WHO and UNICEF is government estimate. If government estimate
+#' missing, then reported is administrative data. Working group decisions may
+#' override this rule.
+#'
+#' In the following implementation, we start at the lowest level, which is the
+#' administrative data. If the government also reports the coverage, the former
+#' numbers are overwritten.
+#' 
+#' @param Admin
+#' admin data
+#' 
+#' @param Gov
+#' governemt data
+#' 
+#' @param Decisions
+#' List of work group decisions
+#' 
+#' @return 
+#' List with coverage and source, and some explanation
+#'
 wuenic.reported = function(Admin, Gov, Decisions)
 {
   # This was the corresponding Prolog code
