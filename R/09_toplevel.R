@@ -1,3 +1,37 @@
+#' Estimate coverage based on all information
+#' 
+#' Distinguish different cases
+#'
+#' * at anchor point
+#' * between anchor points
+#' * before anchor point
+#' * after anchor point
+#' * no anchor points
+#' 
+#' @param Ereq
+#' Matrix with booleans, is an estimate required?
+#' 
+#' @param Rule
+#' Decision rule (accept reported etc.)
+#' 
+#' @param Info
+#' Additional information
+#' 
+#' @param Cov
+#' Coverage estimate
+#' 
+#' @param Rub
+#' Where to obtain the data for the rubella vaccination
+#' 
+#' @param firstRubellaAtSecondMCV
+#' Where to obtain the data for the rubella vaccination (default)
+#'
+#' @param Decisions
+#' List of work group decisions
+#' 
+#' @return 
+#' List with coverage (incl. bounded 0...99) and source, and some explanation
+#'
 wuenic.top = function(Ereq, Rule, Info, Cov, Rub, firstRubellaAtSecondMCV, Decisions)
 {
   # Obtain estimates for vaccine coverage. At Level 1, check for working group
