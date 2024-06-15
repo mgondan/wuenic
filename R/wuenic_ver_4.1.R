@@ -1,31 +1,46 @@
-# Changes from V4R
-#
-# irq: V41 is able to read the very large number in target/2
-# lao, nga, ton: avoid duplicate messages when survey is ignored by WG for
-#   multiple reasons
-# nga: avoid duplicate messages when reported data is excluded by WG for
-#   multiple reasons
+#' Run from command line
+#' 
+#' @param args
+#' command line arguments (default)
+#'
+#' @return 
+#' TRUE on success
+#'  
+estimate = function(args=commandArgs(trailingOnly=TRUE))
+{
+  if(length(args) == 0)
+  {
+    warning("Usage: R --file=R/wuenic_ver_4.1.R --args <ccode>.pl")
+    return(FALSE)
+  }
 
-wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wuenic.txt")
+  ccode = tools::file_path_sans_ext(commandArgs(trailingOnly=TRUE)[1])
+  fname = sprintf("countries/%s.pl", ccode)
+  outname = sprintf("out/%s.txt", ccode)
+  .estimate(ccode, fname, outname)
+  return(TRUE)
+}
+
+.estimate = function(ccode, fname, outname)
 {
   mdb = "countries/wuenic2023.mdb"
-
+  
   # 02_load
   s = wuenic.load(fname)
   Date1=s$Date
-
+  
   firstRubellaAtSecondMCV = YV.char()
   firstRubellaAtSecondMCV[, "rcv1"] = "mcv2"
   
   # 01_mdb
   Date = file.info(mdb)$mtime
-
+  
   loc = Sys.getlocale("LC_TIME")
   Sys.setlocale("LC_TIME", "C")
   Date = format(Date, "%a %b %d %H:%M:%S %Y")
   Sys.setlocale("LC_TIME", loc)
   Date = Date1 # Hack to obtain the same date as in the pl-file
-
+  
   Country = country(mdb, ccode)
   Ereq = est_req(mdb, ccode)
   Rub = rubella(mdb, ccode)
@@ -38,18 +53,18 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   Surviving = surviving(mdb, ccode)
   Survey = surveys(mdb, ccode)
   Decisions = decisions(mdb, ccode, Survey=Survey)
-
+  
   # 03_rep
   s = wuenic.reported(Admin, Gov, Decisions)
   Rep.Cov = s$Cov
   Rep.Src = s$Src
   Rep.Expl = s$Expl
-
+  
   # 04_check
   s = wuenic.check(Rep.Cov, Decisions)
   reject = s$Reject
   Rej.Info = s$Info
-
+  
   # 05_ts
   s = wuenic.ts(Ereq, Rep.Cov, Rep.Src, reject)
   TS.Cov = s$Cov
@@ -102,7 +117,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
   
   include = Ereq & !is.na(Bounded)
   VY = cbind(Y=VY$Var1[include], V=VY$Var2[include])
-
+  
   Table = data.frame(
     Country=rep(Country, nrow(VY)),
     ProductionDate=rep(Date, nrow(VY)),
@@ -124,18 +139,7 @@ wuenic.estimate = function(ccode="afg", fname="countries/afg.pl", outname="wueni
     SurveyInformation=Svy.Cov[VY],
     Rule=Rule[VY],
     Comment=Expl[VY])
-
+  
   options(scipen=20)
   write.table(Table, outname, quote=FALSE, row.names=FALSE, sep="\t", na="")
-}
-
-# Test
-args = commandArgs(trailingOnly=TRUE)
-if(length(args))
-{
-  library(rolog)
-  ccode = tools::file_path_sans_ext(args[1])
-  fname = sprintf("countries/%s.pl", ccode)
-  outname = sprintf("out/%s.txt", ccode)
-  wuenic::wuenic.estimate(ccode, fname, outname)
 }
