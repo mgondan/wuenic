@@ -1,3 +1,9 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.github$
+v41.txt
+warn41.txt
+^estimate.bat$
+^all.bat$
+^sha1all.bat$
+^sha1sum.bat$
