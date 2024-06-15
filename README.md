@@ -1,6 +1,8 @@
 # wuenic41
 
-Please make sure that R.exe and swipl.exe are on the PATH. R is used for the main task, swipl.exe is used for the SHA checksums.
+Please make sure that R.exe and swipl.exe are on the PATH, as well as the mdb-tools from Cygwin. R is
+used for the main task, swipl.exe is used for the SHA checksums, mdb-export.exe is used for extracting 
+tables from MS Access databases.
 
 Prepare
 ````
