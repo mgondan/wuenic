@@ -365,7 +365,8 @@ surveys = function(mdb, ccode)
     Info.confirm=trimws(tolower(Survey$evidence)),
     Info.age=Survey$ageInterview, Info.val=Survey$validity,
     Info.ss=Survey$denominator, 
-    Cov=as.numeric(format(Survey$coverage, digits=1)))
+    Cov=as.numeric(ifelse(is.na(Survey$coverage), 
+                          NA, format(Survey$coverage, digits=1))))
 }
 
 #' Obtain list of working group decisions
