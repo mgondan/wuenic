@@ -1,3 +1,41 @@
+#' Grade of confidence
+#' 
+#' Do reported data and surveys provide similar estimates, consistent with
+#' child statistics?
+#'
+#' @param Ereq
+#' Is an estimate required?
+#' 
+#' @param Rep.Cov
+#' Reported coverage
+#' 
+#' @param Svy.Cov
+#' Coverage in surveys
+#' 
+#' @param Cov
+#' Coverage synthesis
+#' 
+#' @param Rule
+#' Decision rule for coverage estimate
+#' 
+#' @param Rub
+#' Rubella vaccine given in combination with other vaccine
+#' 
+#' @param Decisions
+#' List of work group decisions
+#'
+#' @param Vaccinated
+#' General information
+#' 
+#' @param Birth
+#' Birth statistics
+#' 
+#' @param Surviving
+#' Birth statistics
+#' 
+#' @return 
+#' Matrix with grade of confidence and explanation
+#'
 wuenic.goc = function(Ereq, Rep.Cov, Svy.Cov, Cov, Rule, Rub, Decisions,
                       Vaccinated, Births, Surviving)
 {
