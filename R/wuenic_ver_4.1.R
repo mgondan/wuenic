@@ -10,15 +10,17 @@ estimate = function(args=commandArgs(trailingOnly=TRUE))
 {
   if(length(args) == 0)
   {
-    warning("Usage: R --file=R/wuenic_ver_4.1.R --args <ccode>.pl")
+    warning("Usage: R -e 'wuenic::estimate()' --args <ccode>.pl")
     return(FALSE)
   }
+  
+  do.call("library", list("rolog"))
 
-  ccode = tools::file_path_sans_ext(commandArgs(trailingOnly=TRUE)[1])
+  ccode = tools::file_path_sans_ext(args[1])
+  message("estimating ", ccode)
   fname = sprintf("countries/%s.pl", ccode)
   outname = sprintf("out/%s.txt", ccode)
   .estimate(ccode, fname, outname)
-  return(TRUE)
 }
 
 .estimate = function(ccode, fname, outname)
