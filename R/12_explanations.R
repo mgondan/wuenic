@@ -1,9 +1,36 @@
-# Collect explanations in natural language terms
+#' Collect explanations in natural language terms
+#' 
+#' # Prolog
+#' collect_explanations(C, V, Y, Explanations) :-
+#'     findall(Expl, explanation(C, V, Y, Expl), Explanations).
 #
-# Prolog
-# collect_explanations(C, V, Y, Explanations) :-
-#     findall(Expl, explanation(C, V, Y, Expl), Explanations).
-
+#' @param Rep.Expl
+#' Explanations for reported data
+#' 
+#' @param Svy.Excl
+#' Excluded surveys
+#' 
+#' @param Svy.Expl.Acc
+#' Accepted surveys
+#' 
+#' @param Rej.Info
+#' Explanations if government data has been rejected
+#' 
+#' @param Decisions
+#' List of work group decisions
+#'
+#' @param Info
+#' General information
+#' 
+#' @param Change
+#' Changes from legacy estimates
+#' 
+#' @param GoC.Expl
+#' Explanations of confidence grading
+#' 
+#' @return 
+#' Matrix with explanations
+#'
 wuenic.explanations = function(Rep.Expl, Svy.Excl, Svy.Expl.Acc, Rej.Info,
   Decisions, Info, Change, GoC.Expl)
 {
