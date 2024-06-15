@@ -1,15 +1,27 @@
-# Survey data. This is a bit more complicated, since we have multiple
-# surveys for the same year. Therefore, the survey results are stored in a 
-# three-dimensional array, Vaccine x Year x Survey Id.
-#
-# Analysis is done in several steps
-# - select subset of surveys that apply for child diseases
-# - remove surveys with low information (e.g. sample size < 300)
-# - correct "recall bias" in surveys, e.g. when 3rd shot rate is implausibly
-#   high
-# - remove surveys when working group decisions say so
-# - average the available surveys for a given vaccine
-
+#' Analyze survey data.
+#' 
+#' This is a bit more complicated, since we have multiple surveys for the
+#' same year. Therefore, the survey results are stored in a three-dimensional
+#' array, Vaccine x Year x Survey Id.
+#'
+#' Analysis is done in several steps
+#' - select subset of surveys that apply for child diseases
+#' - remove surveys with low information (e.g. sample size < 300)
+#' - correct "recall bias" in surveys, e.g. when 3rd shot rate is implausibly
+#'   high
+#' - remove surveys when working group decisions say so
+#' - average the available surveys for a given vaccine
+#' 
+#' @param Survey
+#' Long table with survey information
+#' 
+#' @param Decisions
+#' List of work group decisions
+#' 
+#' @return 
+#' List with coverage, Explanations, and information on accepted and excluded
+#' surveys
+#' 
 wuenic.survey = function(Survey, Decisions)
 {
   # Survey results passed for inclusion in the analysis include:
