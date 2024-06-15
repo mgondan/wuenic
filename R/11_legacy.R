@@ -1,5 +1,14 @@
-# Flag modifications in the program code that change the coverage estimates
-
+#' Flag modifications in the program code that change the coverage estimates
+#'
+#' @param Bounded
+#' Current estimate
+#' 
+#' @param Legacy
+#' Previous estimate
+#' 
+#' @return 
+#' Matrix with comments
+#'
 wuenic.legacy = function(Bounded, Legacy)
 {
   # Prolog

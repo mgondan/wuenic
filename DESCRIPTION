@@ -2,11 +2,11 @@ Package: wuenic
 Type: Package
 Title: WHO and UNICEF estimates for national immunization coverage
 Version: 4.1
-Date: 2024-05-07
+Date: 2024-06-15
 Authors@R: c(person("Matthias", "Gondan", role=c("aut", "com", "cre"),
   email="Matthias.Gondan-Rochon@uibk.ac.at", comment="Universität Innsbruck"))
 Maintainer: Matthias Gondan <Matthias.Gondan-Rochon@uibk.ac.at>
-Description: Some R functions that estimate the immunization for WHO member states.
+Description: R functions to estimate the immunization for WHO member states.
 License: GPL
 Imports:
     zoo,

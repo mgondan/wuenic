@@ -1,4 +1,4 @@
-# Changes from V4R
+# wuenic 4.1
 
 * irq: V41 is able to read the very large number in target/2
 * lao, nga, ton: avoid duplicate messages when survey is ignored by WG for
