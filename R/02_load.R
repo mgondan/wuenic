@@ -508,9 +508,15 @@ decisions = function(mdb, ccode, Survey)
   return(s)
 }
 
-# Read date from pl-file
-#
-wuenic.load = function(fname = "data.pl")
+#' Read date from pl-file
+#'
+#' @param fname
+#' Prolog file with country-specific information
+#'
+#' @details
+#' Legacy code, for compatibility with V4R. Will be removed soon.
+#' 
+wuenic.load = function(fname)
 {
   # load_files("data.pl", [encoding(iso_latin_1)])
   rolog::once(call("load_files", fname,

@@ -27,7 +27,7 @@
 #' @param Vaccinated
 #' General information
 #' 
-#' @param Birth
+#' @param Births
 #' Birth statistics
 #' 
 #' @param Surviving

@@ -34,9 +34,9 @@ wuenic.goc(
 
 \item{Vaccinated}{General information}
 
-\item{Surviving}{Birth statistics}
+\item{Births}{Birth statistics}
 
-\item{Birth}{Birth statistics}
+\item{Surviving}{Birth statistics}
 }
 \value{
 Matrix with grade of confidence and explanation
